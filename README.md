@@ -11,7 +11,11 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   - Marcação de status da fatura: **Em aberto** 🟢, **Fechada** 🟡 e **Paga** 🟢.
   - Ordenação automática (faturas fechadas e pagas vão para o fim da lista; fatura corrente sempre em evidência).
   - Recolhimento e expansão ágil de lançamentos mensais com seta indicativa.
-  - Edição, exclusão e adição rápida de novos lançamentos e parcelamentos.
+  - **Editor de fatura aprimorado:** total e sobra na meta recalculados **ao vivo** enquanto você edita, **busca** por nome do item, **contador** de itens/alterações, remoção com **desfazer** (↩) antes de salvar, selos de tipo (Planilha / Estimado / Manual / Simulada) e bloco recolhível para adicionar lançamentos.
+
+- **📋 Histórico de Simulações:**
+  - Reabrir qualquer simulação com um toque para editar na calculadora.
+  - **Excluir simulações individualmente** (✕ em cada item) ou **limpar todas** de uma vez.
 
 - **🧮 Calculadora de Inteligência Financeira:**
   - Simulações comparativas: À Vista com Desconto vs. Parcelado Sem Juros.
@@ -19,10 +23,6 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   - Pontuação de milhas (2.2 milhas/dólar no Nubank Black).
   - Projeção de impacto visual direto nas faturas futuras antes de efetivar a compra.
   - Botão para adicionar a simulação diretamente na previsão das faturas com um clique.
-
-- **📋 Histórico de Simulações:**
-  - Salva as últimas simulações realizadas.
-  - Permite clicar em qualquer simulação passada para reabrir e editar na calculadora.
 
 - **📱 PWA Nativo para Celular:**
   - Totalmente responsivo para computador e smartphone.
