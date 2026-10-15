@@ -1,0 +1,11 @@
+# Arquivos compactados
+*.zip
+
+# Arquivos temporários de tarefas anteriores
+Camiseta*
+generate_final_assets.py
+remover_fundo_branco.py
+
+# Arquivos de sistema
+Thumbs.db
+.DS_Store
