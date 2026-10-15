@@ -264,12 +264,61 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .modal-bg.on{display:flex}
 .modal{background:#111c2e;border:1px solid rgba(56,189,248,0.35);border-radius:16px;padding:20px;width:100%;max-width:500px;margin:auto;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
 .modal h3{font-size:16px;font-weight:700;margin-bottom:12px;color:#fff}
-.medit-row{display:grid;grid-template-columns:1fr 105px 36px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.medit-row{display:grid;grid-template-columns:1fr 130px 34px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
 .medit-row:last-child{border-bottom:none}
 .medit-row input[type=number]{padding:6px 8px;font-size:14px;text-align:right;min-height:38px}
-.medit-row .desc-txt{font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.medit-row.deleted{opacity:.35;text-decoration:line-through}
+.medit-row .desc-txt{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.medit-row.deleted{opacity:.5}
+.medit-row.deleted .desc-txt{text-decoration:line-through;color:var(--muted)}
+.medit-row.deleted .medit-input-wrap{opacity:.5}
+.medit-main{min-width:0}
+.row-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.row-tag{font-size:9px;font-weight:700;padding:1px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.03em}
+.tag-plan{background:var(--blue-d);color:var(--blue)}
+.tag-est{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
+.tag-extra{background:var(--blue-d);color:var(--blue)}
+.tag-sim{background:var(--purple-d);color:var(--purple)}
+.tag-edited{background:var(--yellow-d);color:var(--yellow)}
+.medit-input-wrap{position:relative;display:flex;align-items:center}
+.medit-prefix{position:absolute;left:8px;font-size:11px;color:var(--muted);pointer-events:none}
+.medit-input-wrap input[type=number]{padding-left:26px;text-align:right;width:100%}
+.row-del-btn{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);border-radius:7px;width:34px;height:38px;font-size:13px;font-weight:700;cursor:pointer;color:var(--red);transition:all .15s;display:inline-flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation}
+.row-del-btn:hover{background:var(--red);color:#fff}
+.row-del-btn.undo{background:rgba(52,211,153,0.14);border-color:rgba(52,211,153,0.4);color:var(--green)}
+.row-del-btn.undo:hover{background:var(--green);color:#0f172a}
+
+/* Cabeçalho-resumo do modal de edição (total ao vivo) */
+.edit-summary{background:linear-gradient(135deg,rgba(56,189,248,0.08),rgba(2,132,199,0.03));border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px;position:sticky;top:0;z-index:2}
+.edit-summary-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.edit-sum-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:2px}
+.edit-sum-val{font-size:19px;font-weight:800;color:#fff}
+.edit-sum-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:7px}
+
+/* Busca dentro do editor */
+.edit-search{display:flex;align-items:center;gap:6px;background:rgba(15,23,42,0.85);border:1.5px solid rgba(255,255,255,0.16);border-radius:10px;padding:0 10px;margin-bottom:8px}
+.edit-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.edit-search-ico{font-size:13px;opacity:.7}
+.edit-search input{border:none!important;background:transparent!important;box-shadow:none!important;padding:9px 2px!important;min-height:40px}
+.edit-search-clear{background:rgba(255,255,255,.1);border:none;color:var(--text-secondary);border-radius:6px;width:26px;height:26px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.edit-search-clear:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* Lista de itens com rolagem */
+.edit-list{max-height:46vh;overflow-y:auto;padding-right:4px;margin-bottom:4px}
+
+/* Bloco recolhível de adicionar item */
+.edit-add{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.edit-add summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--accent);list-style:none;padding:6px 0;user-select:none}
+.edit-add summary::-webkit-details-marker{display:none}
+.edit-add summary:hover{color:#fff}
+
 .mbtns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}
+
+/* TOAST */
+#toastWrap{position:fixed;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:200;pointer-events:none;padding:0 12px}
+.toast{background:#111c2e;border:1px solid rgba(56,189,248,0.4);color:#fff;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.45);max-width:90vw;text-align:center;animation:toastIn .22s ease}
+.toast.out{animation:toastOut .25s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(12px)}}
 
 /* SYNC STATUS */
 .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
@@ -288,6 +337,8 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 }
 .hitem:active{transform:translateY(0)}
 .hhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.hhead-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdel-btn{min-height:30px;min-width:30px;padding:4px 8px}
 .hname{font-weight:700;font-size:15px;color:#fff}
 .hdate{font-size:11px;color:var(--muted)}
 .hmeta{display:flex;gap:14px;font-size:12px;flex-wrap:wrap}
@@ -433,8 +484,8 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   <div id="tab-hist" class="tc">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
-        <div><div class="ctitle">📋 Histórico de Cálculos</div><div class="csub" style="margin:0">Salvo no navegador</div></div>
-        <button class="bsm" onclick="clearHist()">🗑️ Limpar</button>
+        <div><div class="ctitle">📋 Histórico de Cálculos</div><div class="csub" style="margin:0" id="histSub">Salvo no navegador · toque num item para reabrir ou no ✕ para excluir</div></div>
+        <button class="bsm" id="btnClearHist" onclick="clearHist()" style="display:none">🗑️ Limpar todos</button>
       </div>
       <div id="histList"></div>
     </div>
@@ -487,6 +538,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
       </button>
     </div>
   </div>
+
+<!-- TOAST -->
+<div id="toastWrap" aria-live="polite"></div>
 
 <!-- MODAL EDITAR MÊS / ADICIONAR -->
 <div class="modal-bg" id="modalBg" onclick="closeModalIfBg(event)">
@@ -930,8 +984,20 @@ function addHist(h){
   saveLocal();pushToSheets();renderHist();
 }
 function clearHist(){
-  if(!confirm('Apagar histórico?'))return;
+  if(!purchHist.length){ showToast('Histórico já está vazio'); return; }
+  if(!confirm('Apagar TODAS as '+purchHist.length+' simulações do histórico? Esta ação não pode ser desfeita.'))return;
   purchHist=[];saveLocal();pushToSheets();renderHist();
+  showToast('🗑️ Histórico limpo');
+}
+
+/* Exclui uma simulação individual do histórico */
+function delHist(idx){
+  var x=purchHist[idx];
+  if(!x) return;
+  if(!confirm('Excluir a simulação “'+(x.name||'Produto')+'”?')) return;
+  purchHist.splice(idx,1);
+  saveLocal();pushToSheets();renderHist();
+  showToast('Simulação excluída');
 }
 
 function openHistToEdit(idx){
@@ -957,7 +1023,16 @@ function openHistToEdit(idx){
 
 function renderHist(){
   var el=document.getElementById('histList');
-  if(!purchHist.length){el.innerHTML='<div class="empty"><div class="eico">🛒</div><div>Nenhum cálculo ainda</div></div>';return;}
+  var btnClear=document.getElementById('btnClearHist');
+  var sub=document.getElementById('histSub');
+  if(!purchHist.length){
+    el.innerHTML='<div class="empty"><div class="eico">🛒</div><div>Nenhum cálculo ainda</div></div>';
+    if(btnClear) btnClear.style.display='none';
+    if(sub) sub.textContent='Salvo no navegador';
+    return;
+  }
+  if(btnClear) btnClear.style.display='';
+  if(sub) sub.innerHTML=purchHist.length+' '+(purchHist.length===1?'simulação salva':'simulações salvas')+' · toque num item para reabrir ou no ✕ para excluir';
   var h='';
   for(var i=0;i<purchHist.length;i++){
     var x=purchHist[i];var bc=x.winner==='vista'?'bg':'bp';
@@ -968,7 +1043,10 @@ function renderHist(){
       +'<div class="hname">'+esc(x.name)+' <span style="font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</span></div>'
       +'<div class="hdate">'+x.date+'</div>'
       +'</div>'
+      +'<div class="hhead-right">'
       +'<span class="badge '+bc+'">'+wl+'</span>'
+      +'<button class="bdel hdel-btn" onclick="event.stopPropagation();delHist('+i+')" title="Excluir esta simulação" aria-label="Excluir esta simulação">✕</button>'
+      +'</div>'
       +'</div>'
       +'<div class="hmeta">'
       +'<span><em>Valor:</em> <strong>'+fmtBRL(x.cashPrice)+'</strong></span>'
@@ -999,6 +1077,20 @@ function fmtBRLabs(v){return 'R$\u00a0'+Math.abs(v||0).toLocaleString('pt-BR',{m
 function fmtPct(v){return (v||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function overKey(desc,mIdx){return desc+'__'+mIdx;}
+
+/* Toast de feedback rápido (não bloqueante) */
+function showToast(msg,ms){
+  var wrap=document.getElementById('toastWrap');
+  if(!wrap){ return; }
+  var t=document.createElement('div');
+  t.className='toast';
+  t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(function(){
+    t.classList.add('out');
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 260);
+  }, ms||2200);
+}
 
 /* Mantém os badges do topo em sincronia com os valores do Perfil */
 function renderBadges(){
@@ -1335,37 +1427,141 @@ function confirmSimAdd(){
 function openEditMonthModal(mIdx){
   modalMode='edit-month'; modalMonthIdx=mIdx;
   var mn=MNS[mIdx]||('Mês '+(mIdx+1));
-  document.getElementById('modalTitle').textContent='✏️ Fatura '+mn;
+  document.getElementById('modalTitle').textContent='✏️ Editar fatura · '+mn;
   var items=getMonthItems(mIdx);
-  var body='<div style="max-height:55vh;overflow-y:auto;padding-right:4px">';
-  body+='<div class="medit-row" style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);padding-bottom:4px">'
-    +'<span>Item</span><span style="text-align:right">Valor R$</span><span></span></div>';
+  var many=items.length>8;
+
+  // Cabeçalho fixo: total ao vivo + sobra na meta + barra de progresso
+  var body=''
+    +'<div class="edit-summary" id="editSummary">'
+      +'<div class="edit-summary-row">'
+        +'<div><div class="edit-sum-lbl">Total da fatura</div><div class="edit-sum-val" id="editTotalVal">—</div></div>'
+        +'<div style="text-align:right"><div class="edit-sum-lbl">Disponível na meta</div><div class="edit-sum-val" id="editAvailVal">—</div></div>'
+      +'</div>'
+      +'<div class="prog" style="margin-top:8px"><div class="progf" id="editProgBar" style="width:0%"></div></div>'
+      +'<div class="edit-sum-foot"><span id="editCountTxt"></span><span id="editMetaTxt"></span></div>'
+    +'</div>';
+
+  // Busca (só quando há muitos itens)
+  if(many){
+    body+='<div class="edit-search"><span class="edit-search-ico">🔍</span>'
+      +'<input type="text" id="editSearch" placeholder="Buscar item pelo nome…" oninput="filterEditRows()" autocomplete="off"/>'
+      +'<button type="button" class="edit-search-clear" id="editSearchClear" onclick="clearEditSearch()" title="Limpar" style="display:none">✕</button>'
+    +'</div>';
+  }
+
+  // Lista de itens
+  body+='<div class="edit-list" id="editList">';
+  if(!items.length){
+    body+='<div class="empty" style="padding:18px"><div class="eico">🗒️</div><div>Nenhum lançamento neste mês ainda.</div></div>';
+  }
   for(var i=0;i<items.length;i++){
     var it=items[i];
-    var deletable=true;
-    var inputHtml='<input type="number" class="medit-val" data-row="'+i+'" value="'+(it.val||0).toFixed(2)+'" min="0" step="0.01" style="text-align:right"/>';
-    body+='<div class="medit-row" id="mrow_'+i+'" data-isbase="'+(it.isBase?1:0)+'" data-key="'+(it.key||'')+'" data-isextra="'+(it.isExtra?1:0)+'" data-extraidx="'+(it.extraIdx!=null?it.extraIdx:'')+'" data-issim="'+(it.isSimul?1:0)+'" data-simgroup="'+(it.group||'')+'">'
-      +'<span class="desc-txt" title="'+esc(it.desc)+'">'+esc(it.desc)+(it.tag==='sim'?' 📅':it.tag==='extra'?' 🔵':'')+'</span>'
-      +inputHtml
-      +'<button class="bdel" onclick="markRowDeleted('+i+')" title="Remover">✕</button>'
+    var typeBadge = it.tag==='sim'
+      ? '<span class="row-tag tag-sim">📅 Simulada</span>'
+      : it.tag==='extra'
+        ? '<span class="row-tag tag-extra">🔵 Manual</span>'
+        : (it.tag==='var'
+            ? '<span class="row-tag tag-plan">Planilha</span>'
+            : '<span class="row-tag tag-est">Estimado</span>');
+    var editedBadge = (it.isBase && it.val!==it.origVal) ? '<span class="row-tag tag-edited">editado</span>' : '';
+    var searchName = esc((it.desc||'').toLowerCase());
+    body+='<div class="medit-row" id="mrow_'+i+'" data-name="'+searchName+'" data-isbase="'+(it.isBase?1:0)+'" data-key="'+(it.key||'')+'" data-isextra="'+(it.isExtra?1:0)+'" data-extraidx="'+(it.extraIdx!=null?it.extraIdx:'')+'" data-issim="'+(it.isSimul?1:0)+'" data-simgroup="'+(it.group||'')+'" data-orig="'+(it.isBase?(it.origVal||0).toFixed(2):'')+'">'
+      +'<div class="medit-main">'
+        +'<span class="desc-txt" title="'+esc(it.desc)+'">'+esc(it.desc)+'</span>'
+        +'<span class="row-tags">'+typeBadge+editedBadge+'</span>'
+      +'</div>'
+      +'<div class="medit-input-wrap"><span class="medit-prefix">R$</span>'
+        +'<input type="number" class="medit-val" data-row="'+i+'" value="'+(it.val||0).toFixed(2)+'" min="0" step="0.01" inputmode="decimal" oninput="recalcEditTotal()"/></div>'
+      +'<button type="button" class="row-del-btn" id="mdel_'+i+'" onclick="markRowDeleted('+i+')" title="Remover item" aria-label="Remover item">✕</button>'
       +'</div>';
   }
   body+='</div>';
-  // Novo item
-  body+='<div class="sep"></div>'
-    +'<div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:8px">➕ Adicionar neste mês</div>'
-    +'<div class="fg">'
+
+  // Adicionar novo item (recolhível, para não poluir)
+  var endOpts='<option value="-1">Só '+mn+'</option>';
+  for(var m=mIdx;m<MNS.length;m++){
+    if(!isMonthClosed(m) || m===mIdx) endOpts+='<option value="'+m+'">'+MNS[m]+'</option>';
+  }
+  body+='<details class="edit-add">'
+    +'<summary>➕ Adicionar lançamento neste mês</summary>'
+    +'<div class="fg" style="margin-top:10px">'
     +'<div class="ff"><label for="niDesc">Descrição do item</label><input type="text" id="niDesc" placeholder="Ex: Parcela TV 4/10"/></div>'
     +'<div><label for="niVal">Valor (R$)</label><input type="number" id="niVal" placeholder="0,00" min="0" step="0.01" inputmode="decimal"/></div>'
-    +'<div><label for="niEnd">Repetir até</label><select id="niEnd"><option value="-1">Só '+mn+'</option>';
-  for(var m=mIdx;m<MNS.length;m++){
-    if(!isMonthClosed(m) || m===mIdx) {
-      body+='<option value="'+m+'">'+MNS[m]+'</option>';
-    }
-  }
-  body+='</select></div></div>';
+    +'<div><label for="niEnd">Repetir até</label><select id="niEnd">'+endOpts+'</select></div>'
+    +'</div></details>';
+
   document.getElementById('modalBody').innerHTML=body;
   document.getElementById('modalBg').classList.add('on');
+  recalcEditTotal();
+  var se=document.getElementById('editSearch');
+  if(se) se.focus();
+}
+
+/* Recalcula o total/sobra/barra ao vivo enquanto o usuário edita os valores */
+function recalcEditTotal(){
+  var rows=document.querySelectorAll('#editList [id^="mrow_"]');
+  var total=0, counted=0, deleted=0, edited=0;
+  for(var i=0;i<rows.length;i++){
+    var row=rows[i];
+    if(row.getAttribute('data-del')==='1'){ deleted++; continue; }
+    var inp=row.querySelector('.medit-val');
+    var v=inp?parseFloat(inp.value):0;
+    if(!isNaN(v)){ total+=v; }
+    counted++;
+    var orig=row.getAttribute('data-orig');
+    if(orig!=='' && orig!=null && inp && Math.abs((parseFloat(inp.value)||0)-parseFloat(orig))>0.001) edited++;
+  }
+  var meta=profile.meta||0;
+  var avail=meta-total;
+  var pct=meta>0?Math.min(100,total/meta*100):0;
+  var barC=total>meta?'var(--red)':(pct>80?'var(--yellow)':'var(--green)');
+
+  var tv=document.getElementById('editTotalVal'); if(tv){tv.textContent=fmtBRL(total); tv.style.color=total>meta?'var(--red)':'#fff';}
+  var av=document.getElementById('editAvailVal'); if(av){av.textContent=fmtBRL(avail); av.style.color=avail>=0?'var(--green)':'var(--red)';}
+  var pb=document.getElementById('editProgBar'); if(pb){pb.style.width=pct+'%'; pb.style.background=barC;}
+  var ct=document.getElementById('editCountTxt');
+  if(ct){
+    var parts=[counted+' '+(counted===1?'item':'itens')];
+    if(deleted) parts.push('<span style="color:var(--red)">'+deleted+' p/ remover</span>');
+    if(edited)  parts.push('<span style="color:var(--yellow)">'+edited+' editado'+(edited>1?'s':'')+'</span>');
+    ct.innerHTML=parts.join(' · ');
+  }
+  var mt=document.getElementById('editMetaTxt'); if(mt) mt.innerHTML=fmtPct(pct)+' da meta ('+fmtBRL(meta)+')';
+}
+
+/* Filtra os itens da edição pela busca por nome */
+function filterEditRows(){
+  var q=(document.getElementById('editSearch')||{}).value||'';
+  q=q.trim().toLowerCase();
+  var clr=document.getElementById('editSearchClear');
+  if(clr) clr.style.display=q?'inline-flex':'none';
+  var rows=document.querySelectorAll('#editList [id^="mrow_"]');
+  var visible=0;
+  for(var i=0;i<rows.length;i++){
+    var nm=rows[i].getAttribute('data-name')||'';
+    var show=!q || nm.indexOf(q)>=0;
+    rows[i].style.display=show?'':'none';
+    if(show) visible++;
+  }
+  var noRes=document.getElementById('editNoResults');
+  if(visible===0 && q){
+    if(!noRes){
+      noRes=document.createElement('div');
+      noRes.id='editNoResults';
+      noRes.className='empty';
+      noRes.style.padding='14px';
+      noRes.innerHTML='<div>Nenhum item encontrado para “'+esc(q)+'”.</div>';
+      document.getElementById('editList').appendChild(noRes);
+    }
+    noRes.style.display='';
+  } else if(noRes){ noRes.style.display='none'; }
+}
+
+function clearEditSearch(){
+  var se=document.getElementById('editSearch');
+  if(se){ se.value=''; se.focus(); }
+  filterEditRows();
 }
 
 function updateMonthSelects(){
@@ -1449,7 +1645,20 @@ function markRowDeleted(rowIdx){
   var row=document.getElementById('mrow_'+rowIdx);
   if(!row) return;
   row.classList.toggle('deleted');
-  row.setAttribute('data-del', row.classList.contains('deleted')?'1':'0');
+  var isDel=row.classList.contains('deleted');
+  row.setAttribute('data-del', isDel?'1':'0');
+  // Alterna o botão entre remover (✕) e desfazer (↩) para dar feedback claro
+  var btn=document.getElementById('mdel_'+rowIdx);
+  if(btn){
+    btn.innerHTML=isDel?'↩':'✕';
+    btn.title=isDel?'Desfazer remoção':'Remover item';
+    btn.setAttribute('aria-label',btn.title);
+    isDel?btn.classList.add('undo'):btn.classList.remove('undo');
+  }
+  // desabilita/relibera o input da linha
+  var inp=row.querySelector('.medit-val');
+  if(inp) inp.disabled=isDel;
+  recalcEditTotal();
 }
 
 function saveModal(){
@@ -1457,6 +1666,8 @@ function saveModal(){
     var mIdx=modalMonthIdx;
     // Processar cada row
     var rows=document.querySelectorAll('[id^="mrow_"]');
+    var extraIdxToDelete=[]; // coletar índices e remover DEPOIS (evita deslocamento no splice)
+    var changeCount=0;
     for(var i=0;i<rows.length;i++){
       var row=rows[i];
       var isDel=row.getAttribute('data-del')==='1';
@@ -1470,17 +1681,23 @@ function saveModal(){
       var val=inp?parseFloat(inp.value):0;
 
       if(isDel){
-        if(isBase && key) overrides[key]=-1;
-        if(isExtra && extraIdx!=='') {extraItems.splice(parseInt(extraIdx),1);}
-        if(isSim && simGroup) {simItems=simItems.filter(function(x){return x.group!==simGroup;});}
+        if(isBase && key){ overrides[key]=-1; changeCount++; }
+        if(isExtra && extraIdx!==''){ extraIdxToDelete.push(parseInt(extraIdx)); changeCount++; }
+        if(isSim && simGroup){ simItems=simItems.filter(function(x){return x.group!==simGroup;}); changeCount++; }
       } else {
-        if(isBase && key && !isNaN(val) && val>=0) overrides[key]=val;
+        if(isBase && key && !isNaN(val) && val>=0){
+          var origVal=parseFloat(row.getAttribute('data-orig'));
+          if(isNaN(origVal) || Math.abs(val-origVal)>0.001){ overrides[key]=val; changeCount++; }
+          else if(overrides.hasOwnProperty(key)){ delete overrides[key]; } // voltou ao original -> limpa override
+        }
         if(isExtra && extraIdx!==''){
           var ei=parseInt(extraIdx);
-          if(!isNaN(val)&&val>=0&&extraItems[ei]) extraItems[ei].val=val;
+          if(!isNaN(val)&&val>=0&&extraItems[ei] && extraItems[ei].val!==val){ extraItems[ei].val=val; changeCount++; }
         }
       }
     }
+    // Remove extras marcados (do maior índice p/ o menor, para não deslocar)
+    extraIdxToDelete.sort(function(a,b){return b-a;}).forEach(function(ix){ if(!isNaN(ix)) extraItems.splice(ix,1); });
     // Re-indexar extras
     for(var i=0;i<extraItems.length;i++) extraItems[i].extraIdx=i;
     // Novo item
@@ -1491,7 +1708,9 @@ function saveModal(){
       var ate=ne&&parseInt(ne.value)>=0?parseInt(ne.value):mIdx;
       if(ate<mIdx) ate=mIdx;
       extraItems.push({desc:nd.value.trim(),val:parseFloat(nv.value),de:mIdx,ate:ate,tag:'extra',isExtra:true});
+      changeCount++;
     }
+    window._editChangeCount=changeCount;
   } else {
     // ADD
     var nd=document.getElementById('niDesc');
@@ -1506,6 +1725,13 @@ function saveModal(){
   }
   saveLocal();pushToSheets();
   closeModal();renderFaturas();
+  // Feedback de confirmação
+  if(modalMode==='edit-month'){
+    var cc=window._editChangeCount||0;
+    showToast(cc>0 ? '✅ Fatura atualizada ('+cc+' alteração'+(cc>1?'ões':'')+')' : '✅ Fatura salva');
+  } else {
+    showToast('✅ Lançamento adicionado');
+  }
 }
 
 function delExtra(idx){
