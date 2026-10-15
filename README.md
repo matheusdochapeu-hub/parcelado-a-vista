@@ -56,3 +56,27 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 1. Acesse o link da aplicação no navegador do celular (Chrome no Android ou Safari no iPhone).
 2. **No Android**: Toque no menu de 3 pontinhos (`⋮`) e selecione **"Instalar aplicativo"** ou **"Adicionar à tela inicial"**.
 3. **No iPhone**: Toque no botão de **Compartilhar** (`⎋`) e selecione **"Adicionar à Tela de Início"**.
+
+---
+
+## 🌐 Hospedagem no GitHub Pages
+
+O app é 100% estático (HTML/CSS/JS, PWA) e usa **caminhos relativos** em todo lugar
+(`manifest.json`, `sw.js`, ícones), então roda perfeitamente a partir de um
+subdiretório do GitHub Pages — sem nenhuma alteração de código.
+
+### Como ativar o GitHub Pages (passo único, feito pelo dono do repositório)
+
+1. No GitHub, abra o repositório `parcelado-a-vista`.
+2. Vá em **Settings → Pages**.
+3. Em **Build and deployment → Source**, escolha **Deploy from a branch**.
+4. Em **Branch**, selecione `main` e a pasta `/ (root)`. Clique em **Save**.
+5. Aguarde ~1 minuto. O app ficará disponível em:
+   **https://matheusdochapeu-hub.github.io/parcelado-a-vista/**
+
+Esse endereço funciona como PWA instalável, exatamente como no tiiny.host —
+basta abri-lo no celular e usar "Instalar aplicativo" / "Adicionar à Tela de Início".
+
+> O arquivo `.nojekyll` na raiz garante que o Pages sirva todos os arquivos sem
+> processamento Jekyll. Ao publicar mudanças de assets, lembre-se de incrementar o
+> `CACHE_NAME` em `sw.js` para invalidar o cache antigo.
