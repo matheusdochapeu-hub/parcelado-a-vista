@@ -41,6 +41,8 @@
   --red-d:rgba(248,113,113,0.15);
   --blue:#60a5fa;
   --blue-d:rgba(96,165,250,0.15);
+  --purple:#c084fc;        /* Violet — simulações / mês atual / milhas */
+  --purple-d:rgba(192,132,252,0.15);
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
@@ -338,9 +340,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
     <h1>Parcelado ou À Vista?</h1>
     <p>Calculadora financeira · Nubank Black · Matheus &amp; Scarlet</p>
     <div class="hdr-badges">
-      <span class="badge bp">✈️ 2,2 mi/dólar</span>
-      <span class="badge by">📈 Selic 13,75%</span>
-      <span class="badge bb">🎯 Meta R$&nbsp;3.000/mês</span>
+      <span class="badge bp" id="badgeMilhas">✈️ 2,2 mi/dólar</span>
+      <span class="badge by" id="badgeSelic">📈 Selic 13,75%</span>
+      <span class="badge bb" id="badgeMeta">🎯 Meta R$&nbsp;3.000/mês</span>
       <span id="syncBadge" class="badge" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);cursor:pointer" onclick="syncAll()" title="Sincronizar com Google Sheets">
         <span class="sync-dot sync-ing" id="syncDot"></span><span id="syncTxt">Sincronizando…</span>
       </span>
@@ -448,6 +450,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
         <div><label for="cSelic">Taxa Selic anual (%)</label><input type="number" id="cSelic" value="13.75" step="0.25" inputmode="decimal" oninput="saveProfile()"/></div>
         <div><label for="cCambio">Cotação USD/BRL (para cálculo de milhas)</label><input type="number" id="cCambio" value="5.55" step="0.01" inputmode="decimal" oninput="saveProfile()"/></div>
         <div><label for="cMilhas">Milhas por dólar gasto (Nubank Black)</label><input type="number" id="cMilhas" value="2.2" step="0.1" inputmode="decimal" oninput="saveProfile()"/></div>
+        <div><label for="cMilhaVal">Valor de cada milha (R$)</label><input type="number" id="cMilhaVal" value="0.03" step="0.005" min="0" inputmode="decimal" oninput="saveProfile()"/></div>
         <div class="ff">
           <label for="cGasUrl">URL do Google Apps Script (Backup no Google Sheets)</label>
           <input type="text" id="cGasUrl" placeholder="https://script.google.com/macros/s/…/exec" oninput="saveProfile()"/>
@@ -455,6 +458,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
       </div>
       <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <button class="bsm" onclick="syncAll()">🔄 Sincronizar agora</button>
+        <button class="bsm" onclick="exportBackup()">⬇️ Exportar backup (JSON)</button>
+        <button class="bsm" onclick="document.getElementById('importFile').click()">⬆️ Importar backup</button>
+        <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importBackup(event)"/>
         <div id="syncStatus" style="font-size:12px;font-weight:600;color:var(--muted)"></div>
       </div>
       <div id="syncStatusBox" style="display:none;margin-top:10px;border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600"></div>
@@ -504,6 +510,21 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 var MNS=['Set/2026','Out/2026','Nov/2026','Dez/2026','Jan/2027','Fev/2027',
          'Mar/2027','Abr/2027','Mai/2027','Jun/2027','Jul/2027','Ago/2027','Set/2027','Out/2027','Nov/2027+'];
 var MONTHS_DEFAULT=7; // padrão inicial de meses se não houver parcelas posteriores
+
+/* Âncora do calendário: MNS[1] = Out/2026 (fatura).
+   Índice i de MNS ↔ (ano, mês-da-fatura), começando em Set/2026 no índice 0. */
+var MNS_ANCHOR_YEAR=2026, MNS_ANCHOR_MONTH=9; // Set/2026 = índice 0 (mês 9 = setembro)
+
+/* Índice de MNS correspondente ao mês atual REAL (pela data de hoje).
+   Faz o conceito de "mês atual" avançar sozinho com o tempo, sem precisar
+   marcar faturas manualmente. Fica limitado ao intervalo válido de MNS. */
+function getCurrentMonthIndex(){
+  var now=new Date();
+  var idx=(now.getFullYear()-MNS_ANCHOR_YEAR)*12 + (now.getMonth()+1 - MNS_ANCHOR_MONTH);
+  if(idx<1) idx=1;                 // antes da âncora: mantém Out/2026 (comportamento original)
+  if(idx>MNS.length-1) idx=MNS.length-1;
+  return idx;
+}
 
 // Calcula até qual mês existem lançamentos ativos para montar todos os meses subsequentes
 function getMaxActiveMonth(){
@@ -627,7 +648,7 @@ var BASE_ITEMS=[
 /* ═══════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════ */
-var profile={meta:3000,selic:13.75,cambio:5.55,milhas:2.2,gasUrl:''};
+var profile={meta:3000,selic:13.75,cambio:5.55,milhas:2.2,milhaVal:0.03,gasUrl:''};
 var useMiles=true, useBudget=true;
 var extraItems=[];   // itens adicionados/editados pelo usuário
 var simItems=[];     // simulações manuais (adicionadas com botão)
@@ -636,6 +657,7 @@ var purchHist=[];
 var monthStatus={};  // {mIdx: 'aberta' | 'fechada' | 'paga'}
 var collapsedMonths={}; // {mIdx: boolean}
 var lastCalc=null;   // último resultado de cálculo (para botão "adicionar às faturas")
+var selectedPlan=null; // {n, per} escolhido ao clicar numa linha do comparativo (preview); não corrompe lastCalc.best
 var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
@@ -709,12 +731,17 @@ function syncAll(){
   setSyncStatus('ing','Sincronizando…');
   jsonpGet(url,{action:'load'},
     function(data){
-      if(data.extraItems&&data.extraItems.length) extraItems=data.extraItems;
-      if(data.simItems&&data.simItems.length)     simItems=data.simItems;
-      if(data.overrides&&Object.keys(data.overrides).length) overrides=data.overrides;
-      if(data.purchHist&&data.purchHist.length)   purchHist=data.purchHist;
-      if(data.monthStatus&&Object.keys(data.monthStatus).length) monthStatus=data.monthStatus;
-      if(data.collapsedMonths&&Object.keys(data.collapsedMonths).length) collapsedMonths=data.collapsedMonths;
+      if(!data){setSyncStatus('err','Resposta vazia do servidor');return;}
+      // Aplica o estado remoto como fonte de verdade do backup.
+      // Usa "!== undefined" (não "&& .length") para que EXCLUSÕES feitas em
+      // outro dispositivo também se propaguem (lista/objeto vazio zera o local).
+      if(Array.isArray(data.extraItems))  extraItems=data.extraItems;
+      if(Array.isArray(data.simItems))    simItems=data.simItems;
+      if(data.overrides&&typeof data.overrides==='object') overrides=data.overrides;
+      if(Array.isArray(data.purchHist))   purchHist=data.purchHist;
+      if(data.monthStatus&&typeof data.monthStatus==='object') monthStatus=data.monthStatus;
+      if(data.collapsedMonths&&typeof data.collapsedMonths==='object') collapsedMonths=data.collapsedMonths;
+      if(data.profile&&Object.keys(data.profile).length) applyRemoteProfile(data.profile);
       saveLocal();renderHist();renderFaturas();
       setSyncStatus('ok','Sincronizado ✓ '+new Date().toLocaleTimeString('pt-BR'));
     },
@@ -725,7 +752,33 @@ function syncAll(){
 function pushToSheets(){
   var url=profile.gasUrl;
   if(!url) return;
-  var payload={extraItems:extraItems,simItems:simItems,overrides:overrides,purchHist:purchHist,monthStatus:monthStatus,collapsedMonths:collapsedMonths};
+  var payload={extraItems:extraItems,simItems:simItems,overrides:overrides,purchHist:purchHist,monthStatus:monthStatus,collapsedMonths:collapsedMonths,profile:profile};
+
+  // Em https:// usamos POST (fetch) — evita o limite de tamanho da URL do JSONP/GET,
+  // que estoura com muitos itens/histórico. Usamos mode:'no-cors' + text/plain:
+  //  - text/plain não dispara preflight (requisição "simples");
+  //  - no-cors deixa o POST chegar ao Apps Script sem erro de CORS (a resposta
+  //    fica opaca e não é legível, por isso confirmamos o salvamento com um load).
+  // Em file:// (ou se o fetch falhar) caímos para o JSONP/GET.
+  var isHttp=(location.protocol==='http:'||location.protocol==='https:');
+  if(isHttp && typeof fetch==='function'){
+    setSyncStatus('ing','Salvando…');
+    fetch(url,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload)
+    }).then(function(){
+      setSyncStatus('ok','Salvo ✓ '+new Date().toLocaleTimeString('pt-BR'));
+    }).catch(function(){
+      pushToSheetsJsonp(url,payload); // fallback para JSONP/GET
+    });
+    return;
+  }
+  pushToSheetsJsonp(url,payload);
+}
+
+function pushToSheetsJsonp(url,payload){
   jsonpGet(url,{action:'save',data:JSON.stringify(payload)},
     function(r){setSyncStatus('ok',(r&&r.ok?'Salvo ✓':'Erro ao salvar')+' '+new Date().toLocaleTimeString('pt-BR'));},
     function(err){setSyncStatus('err','Falha: '+err);}
@@ -733,10 +786,67 @@ function pushToSheets(){
 }
 
 /* ═══════════════════════════════════════════════
+   BACKUP LOCAL (export/import JSON) — não depende do Sheets
+═══════════════════════════════════════════════ */
+function exportBackup(){
+  var data={
+    _app:'parcelado-a-vista',
+    _version:1,
+    exportadoEm:new Date().toISOString(),
+    profile:profile,
+    extraItems:extraItems,
+    simItems:simItems,
+    overrides:overrides,
+    purchHist:purchHist,
+    monthStatus:monthStatus,
+    collapsedMonths:collapsedMonths
+  };
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var stamp=new Date().toISOString().slice(0,10);
+  a.href=url; a.download='backup-faturas-'+stamp+'.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  setSyncStatus('ok','Backup exportado ✓');
+}
+
+function importBackup(ev){
+  var file=ev.target.files&&ev.target.files[0];
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var data=JSON.parse(reader.result);
+      if(!data||typeof data!=='object') throw new Error('arquivo inválido');
+      if(!confirm('Importar este backup? Os dados atuais serão SUBSTITUÍDOS pelos do arquivo.')) { ev.target.value=''; return; }
+      if(data.profile&&typeof data.profile==='object') applyRemoteProfile(data.profile);
+      if(Array.isArray(data.extraItems)) extraItems=data.extraItems;
+      if(Array.isArray(data.simItems))   simItems=data.simItems;
+      if(data.overrides&&typeof data.overrides==='object') overrides=data.overrides;
+      if(Array.isArray(data.purchHist))  purchHist=data.purchHist;
+      if(data.monthStatus&&typeof data.monthStatus==='object') monthStatus=data.monthStatus;
+      if(data.collapsedMonths&&typeof data.collapsedMonths==='object') collapsedMonths=data.collapsedMonths;
+      saveLocal(); pushToSheets();
+      renderBadges(); renderHist(); renderFaturas();
+      setSyncStatus('ok','Backup importado ✓');
+    }catch(e){
+      setSyncStatus('err','Falha ao importar: '+e.message);
+      alert('Não foi possível ler o arquivo de backup. Verifique se é um JSON exportado por este app.');
+    }
+    ev.target.value='';
+  };
+  reader.onerror=function(){setSyncStatus('err','Erro ao ler o arquivo');ev.target.value='';};
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════ */
 function init(){
   loadLocal();
+  renderBadges();
   renderHist();renderFaturas();
   setSyncStatus('ok','Local');
   if(profile.gasUrl) syncAll();
@@ -759,11 +869,7 @@ function loadLocal(){
   try{
     var s=localStorage.getItem('pv4_profile');
     if(s){var p=JSON.parse(s);for(var k in p)if(profile.hasOwnProperty(k))profile[k]=p[k];
-      document.getElementById('cMeta').value=profile.meta;
-      document.getElementById('cSelic').value=profile.selic;
-      document.getElementById('cCambio').value=profile.cambio;
-      document.getElementById('cMilhas').value=profile.milhas;
-      document.getElementById('cGasUrl').value=profile.gasUrl||'';}
+      fillProfileInputs();}
   }catch(e){}
   try{var e=localStorage.getItem('pv4_extra');     if(e) extraItems=JSON.parse(e);}catch(e){}
   try{var s=localStorage.getItem('pv4_sim');       if(s) simItems=JSON.parse(s);}catch(e){}
@@ -780,14 +886,40 @@ function saveLocal(){
   try{localStorage.setItem('pv4_mstatus',   JSON.stringify(monthStatus));}catch(e){}
   try{localStorage.setItem('pv4_mcollapse', JSON.stringify(collapsedMonths));}catch(e){}
 }
+var _profilePushTimer=null;
 function saveProfile(){
   profile.meta  =parseFloat(document.getElementById('cMeta').value)||3000;
   profile.selic =parseFloat(document.getElementById('cSelic').value)||13.75;
   profile.cambio=parseFloat(document.getElementById('cCambio').value)||5.55;
   profile.milhas=parseFloat(document.getElementById('cMilhas').value)||2.2;
+  profile.milhaVal=parseFloat(document.getElementById('cMilhaVal').value)||0.03;
   profile.gasUrl=(document.getElementById('cGasUrl').value||'').trim();
   try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
   renderFaturas();
+  renderBadges();
+  // Debounce do backup remoto para não disparar a cada tecla digitada
+  if(_profilePushTimer) clearTimeout(_profilePushTimer);
+  _profilePushTimer=setTimeout(function(){ pushToSheets(); }, 1200);
+}
+
+/* Aplica um profile vindo do Sheets (mantém a URL local, que é por-dispositivo) */
+function applyRemoteProfile(p){
+  var localUrl=profile.gasUrl; // preserva a URL configurada neste dispositivo
+  for(var k in p){ if(profile.hasOwnProperty(k) && k!=='gasUrl') profile[k]=p[k]; }
+  if(localUrl) profile.gasUrl=localUrl;
+  fillProfileInputs();
+  try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
+}
+
+/* Preenche os campos do formulário de Perfil a partir do estado */
+function fillProfileInputs(){
+  var set=function(id,val){var el=document.getElementById(id); if(el) el.value=val;};
+  set('cMeta',profile.meta);
+  set('cSelic',profile.selic);
+  set('cCambio',profile.cambio);
+  set('cMilhas',profile.milhas);
+  set('cMilhaVal',(profile.milhaVal!=null?profile.milhaVal:0.03));
+  set('cGasUrl',profile.gasUrl||'');
 }
 
 /* ═══════════════════════════════════════════════
@@ -857,10 +989,26 @@ function togBudget(b){useBudget=!useBudget;useBudget?b.classList.add('on'):b.cla
 /* ═══════════════════════════════════════════════
    FORMAT
 ═══════════════════════════════════════════════ */
-function fmtBRL(v){return 'R$\u00a0'+(Math.abs(v||0)).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtBRL(v){
+  var n=v||0;
+  var sign=n<0?'-':'';
+  return sign+'R$\u00a0'+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+/* Versão sempre positiva (para quando o sinal já é tratado por texto/cor, ex.: "Ultrapassa: ...") */
+function fmtBRLabs(v){return 'R$\u00a0'+Math.abs(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtPct(v){return (v||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function overKey(desc,mIdx){return desc+'__'+mIdx;}
+
+/* Mantém os badges do topo em sincronia com os valores do Perfil */
+function renderBadges(){
+  var bm=document.getElementById('badgeMilhas');
+  var bs=document.getElementById('badgeSelic');
+  var bt=document.getElementById('badgeMeta');
+  if(bm) bm.innerHTML='✈️ '+(profile.milhas||0).toLocaleString('pt-BR',{maximumFractionDigits:2})+' mi/dólar';
+  if(bs) bs.innerHTML='📈 Selic '+fmtPct(profile.selic);
+  if(bt) bt.innerHTML='🎯 Meta '+fmtBRL(profile.meta)+'/mês';
+}
 
 /* ═══════════════════════════════════════════════
    FATURA POR MÊS
@@ -926,10 +1074,14 @@ function isMonthClosed(mIdx){
 }
 
 function getFirstOpenMonth(){
-  for(var m=1; m<MNS.length; m++){
+  // Piso = mês atual real: meses que já passaram não são mais "o atual"
+  var floor=getCurrentMonthIndex();
+  for(var m=floor; m<MNS.length; m++){
     if(!isMonthClosed(m)) return m;
   }
-  return 1;
+  // Se todos a partir do piso estiverem marcados como fechados/pagos,
+  // procura qualquer mês aberto a partir do piso; se não houver, retorna o piso.
+  return floor;
 }
 
 function renderFaturas(){
@@ -945,20 +1097,22 @@ function renderFaturas(){
     ctitleEl.textContent = '💳 Faturas · ' + maxShow + ' meses';
   }
 
-  // Separar meses abertos (em evidência) e meses fechados/pagos (vão para o final da lista)
+  // Separar meses: em aberto (em evidência) vs. encerrados (fechados/pagos OU já
+  // passados pela data atual) — estes vão para o final da lista.
+  var curIdx=getCurrentMonthIndex();
   var openMonths=[];
   var closedMonths=[];
   for(var mi=1;mi<=maxShow;mi++){
-    if(isMonthClosed(mi)){
+    if(isMonthClosed(mi) || mi<curIdx){
       closedMonths.push(mi);
     } else {
       openMonths.push(mi);
     }
   }
 
-  // Primeiro as faturas abertas, depois as fechadas/pagas no final
+  // Primeiro as faturas abertas, depois as encerradas no final
   var orderedMonths = openMonths.concat(closedMonths);
-  var firstOpen = openMonths.length > 0 ? openMonths[0] : 1;
+  var firstOpen = getFirstOpenMonth();
 
   for(var idx=0; idx<orderedMonths.length; idx++){
     var mi = orderedMonths[idx];
@@ -1097,6 +1251,9 @@ function addSimulation(name,perInstall,startMonth,numInst){
 function addToFaturas(){
   if(!lastCalc||!lastCalc.best) return;
   var d=lastCalc;
+  // Usa o plano clicado no comparativo (preview), se houver; senão o melhor plano calculado
+  var planN   = (selectedPlan && selectedPlan.n)   ? selectedPlan.n   : d.best.n;
+  var planPer = (selectedPlan && selectedPlan.per!=null) ? selectedPlan.per : d.best.per;
   modalMode='sim-confirm';
   document.getElementById('modalTitle').textContent='📅 Adicionar parcelas às Faturas';
   var mOff=d.mOff;
@@ -1107,9 +1264,9 @@ function addToFaturas(){
     +'<div><label>Valor total parcelado (R$)</label>'
     +'<input type="number" id="simTotal" value="'+d.instTotal.toFixed(2)+'" min="0.01" step="0.01" oninput="recalcSimParc()"/></div>'
     +'<div><label>Número de parcelas</label>'
-    +'<input type="number" id="simN" value="'+d.best.n+'" min="1" max="60" step="1" oninput="recalcSimParc()"/></div>'
+    +'<input type="number" id="simN" value="'+planN+'" min="1" max="60" step="1" oninput="recalcSimParc()"/></div>'
     +'<div><label>Valor de cada parcela (calculado)</label>'
-    +'<input type="number" id="simPer" value="'+d.best.per.toFixed(2)+'" min="0" step="0.01" style="background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.3)" readonly/></div>'
+    +'<input type="number" id="simPer" value="'+planPer.toFixed(2)+'" min="0" step="0.01" style="background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.3)" readonly/></div>'
     +'<div class="ff"><label>Fatura inicial (onde entra a 1ª parcela)</label>'
     +'<select id="simMonth" onchange="recalcSimParc()">';
   for(var m=1;m<MNS.length;m++){
@@ -1374,7 +1531,7 @@ function npv(base,total,n,ar){
   return{pv:pv,gain:base-pv,per:per};
 }
 function miles(brl){return(brl/profile.cambio)*profile.milhas;}
-function milesVal(m){return m*0.03;}
+function milesVal(m){return m*(profile.milhaVal!=null?profile.milhaVal:0.03);}
 
 /* ═══════════════════════════════════════════════
    CALCULATE
@@ -1410,6 +1567,9 @@ function calculate(){
   var bestNet=best?best.net:Infinity;
   var vistaWins=cNet<=bestNet;
   var savings=Math.abs(cNet-bestNet);
+
+  // Novo cálculo zera o plano de preview anterior (começa pelo melhor plano)
+  selectedPlan=null;
 
   // Guardar último resultado (para botão manual "adicionar às faturas")
   lastCalc={name:name,cashRaw:cashRaw,cashPrice:cashPrice,discPct:discPct,discSave:discSave,
@@ -1588,7 +1748,7 @@ function buildFutureImpactHtml(startM, numInst, perVal){
       +(isAffected ? '<span class="sim-diff" style="background:rgba(192,132,252,.15);color:var(--purple)">+'+fmtBRL(perVal)+'</span>' : '<span class="sim-diff" style="color:var(--muted)">Sem alteração</span>')
       +'<div class="sim-bar-bg"><div class="sim-bar-fill" style="width:'+Math.min(100,pct)+'%;background:'+barColor+'"></div></div>'
       +'<div style="font-size:10px;margin-top:4px;color:'+(newAvail>=0?'var(--green)':'var(--red)')+'">'
-      +(newAvail>=0 ? 'Sobra: '+fmtBRL(newAvail) : 'Ultrapassa: '+fmtBRL(Math.abs(newAvail)))
+      +(newAvail>=0 ? 'Sobra: '+fmtBRL(newAvail) : 'Ultrapassa: '+fmtBRLabs(newAvail))
       +'</div>'
       +'</div>';
   }
@@ -1613,13 +1773,13 @@ function selectPlanImpact(n, per){
     card.replaceWith(tempContainer.firstChild);
   }
 
+  // Guarda o plano escolhido SEM corromper lastCalc.best
+  selectedPlan = {n:n, per:per};
+
   // Se o botão de adicionar estiver ativo, atualiza seu texto para o plano clicado
   var btn = document.getElementById('btnAddFatura');
   if(btn && !btn.disabled){
     btn.textContent = '📅 Adicionar '+n+'x de '+fmtBRL(per)+' às Faturas Previstas';
-    // Atualiza lastCalc temporariamente para caso clique em adicionar
-    lastCalc.best.n = n;
-    lastCalc.best.per = per;
   }
 }
 

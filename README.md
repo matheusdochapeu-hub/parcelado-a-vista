@@ -31,8 +31,13 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   - Ajuste a entalhes de tela (*safe-area-insets* para iOS e Android).
 
 - **☁️ Sincronização e Backup com Google Sheets:**
-  - Backup contínuo via Google Apps Script (JSONP).
+  - Backup contínuo via Google Apps Script (POST em HTTPS, com fallback JSONP para `file://`).
+  - Sincroniza também as **configurações do Perfil** (meta, Selic, câmbio, milhas) entre dispositivos.
   - Armazenamento local redundante no `localStorage`.
+  - **Exportar / Importar backup em JSON** (aba Perfil) — um clique para salvar ou restaurar todos os dados sem depender do Sheets.
+
+- **📆 Calendário que acompanha o tempo:**
+  - O "mês atual" avança automaticamente conforme a data real — faturas de meses já passados vão para o fim da lista sozinhas, sem precisar marcar manualmente.
 
 ---
 
