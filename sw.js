@@ -1,4 +1,4 @@
-const CACHE_NAME = 'faturas-pwa-v2';
+const CACHE_NAME = 'faturas-pwa-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
