@@ -30,6 +30,12 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   - Suporte a cache offline com Service Worker.
   - Ajuste a entalhes de tela (*safe-area-insets* para iOS e Android).
 
+- **🎨 Interface refinada:**
+  - Navegação em *segmented control* fixa no topo (abas sempre acessíveis ao rolar).
+  - Valores financeiros com **números tabulares** (casas decimais alinhadas).
+  - Cartões de fatura com faixa colorida por status, micro-interações suaves e respeito a `prefers-reduced-motion`.
+  - Tokens de design (raios/sombras) para consistência visual em todo o app.
+
 - **☁️ Sincronização e Backup com Google Sheets:**
   - Backup contínuo via Google Apps Script (POST em HTTPS, com fallback JSONP para `file://`).
   - Sincroniza também as **configurações do Perfil** (meta, Selic, câmbio, milhas) entre dispositivos.
