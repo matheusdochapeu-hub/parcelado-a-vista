@@ -49,6 +49,11 @@
   --sh-1:0 2px 8px rgba(0,0,0,0.22);
   --sh-2:0 6px 18px rgba(0,0,0,0.28);
   --sh-3:0 14px 36px rgba(0,0,0,0.42);
+
+  /* Escala tipográfica (consistência de tamanhos) */
+  --fs-xs:11px; --fs-sm:12.5px; --fs-md:14px; --fs-lg:16px; --fs-xl:19px; --fs-2xl:22px;
+  /* Espaçamentos */
+  --sp-1:6px; --sp-2:10px; --sp-3:14px; --sp-4:18px;
 }
 html{scroll-behavior:smooth}
 body{
@@ -107,12 +112,12 @@ body{
 .tabs{
   display:flex;gap:4px;margin-bottom:18px;
   background:rgba(15,23,42,0.6);border:1px solid var(--border);
-  border-radius:14px;padding:5px;box-shadow:var(--sh-1);
+  border-radius:var(--r-lg);padding:5px;box-shadow:var(--sh-1);
   position:sticky;top:calc(8px + env(safe-area-inset-top));z-index:40;
   backdrop-filter:blur(10px);
 }
 .tbtn{
-  flex:1 1 0;min-width:0;padding:11px 10px;border-radius:10px;
+  flex:1 1 0;min-width:0;padding:11px 10px;border-radius:var(--r-md);
   font-size:14px;font-weight:700;cursor:pointer;
   border:1px solid transparent;background:transparent;
   color:var(--muted);transition:color .18s ease,background .18s ease;text-align:center;
@@ -133,24 +138,25 @@ body{
   transition:border-color .2s ease, box-shadow .2s ease;
 }
 .card:hover{border-color:rgba(255,255,255,0.18);box-shadow:var(--sh-2)}
-.ctitle{font-size:16px;font-weight:700;margin-bottom:3px;color:#fff;letter-spacing:-.2px}
-.csub{font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.ctitle{font-size:var(--fs-lg);font-weight:800;margin-bottom:3px;color:#fff;letter-spacing:-.2px}
+.csub{font-size:var(--fs-sm);color:var(--muted);margin-bottom:14px;line-height:1.5}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ff{grid-column:1/-1}
 
-label{font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:5px;letter-spacing:0.02em}
+label{font-size:var(--fs-xs);font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;letter-spacing:0.02em;line-height:1.4}
 
 /* Inputs otimizados para Touch e Acessibilidade (font-size 16px previne zoom no iOS) */
 input[type=text],input[type=number],select{
   width:100%;background:rgba(15,23,42,0.85);border:1.5px solid rgba(255,255,255,0.16);
-  color:#fff;border-radius:10px;padding:11px 14px;font-size:16px;outline:none;
-  transition:all .18s ease;-webkit-appearance:none;min-height:46px;
+  color:#fff;border-radius:var(--r-md);padding:11px 14px;font-size:16px;outline:none;
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;-webkit-appearance:none;min-height:48px;
 }
 input:focus,select:focus{
   border-color:var(--accent);background:rgba(15,23,42,0.98);
   box-shadow:0 0 0 3px var(--accent-glow);
 }
-input::placeholder{color:rgba(255,255,255,0.35)}
+input::placeholder{color:rgba(255,255,255,0.4)}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239fb0c4' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 select option{background:#0f172a;color:#f8fafc;padding:8px}
 
 .bcalc{
@@ -186,15 +192,15 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 
 .bedit{
   background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);
-  border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;
-  color:var(--accent);transition:all .15s;min-height:32px;
+  border-radius:var(--r-sm);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
+  color:var(--accent);transition:background .15s ease, color .15s ease;min-height:34px;
 }
 .bedit:hover{background:var(--accent);color:#0b1120}
 
 .bdel{
   background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);
-  border-radius:7px;padding:4px 9px;font-size:12px;font-weight:700;cursor:pointer;
-  color:var(--red);transition:all .15s;min-height:32px;min-width:32px;
+  border-radius:var(--r-sm);padding:4px 9px;font-size:12px;font-weight:700;cursor:pointer;
+  color:var(--red);transition:background .15s ease, color .15s ease;min-height:34px;min-width:34px;
 }
 .bdel:hover{background:var(--red);color:#fff}
 
@@ -202,8 +208,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .tog.on{background:#0284c7}
 .tog::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
 .tog.on::after{left:21px}
-.togrow{display:flex;align-items:center;gap:8px;cursor:pointer;min-height:36px}
-.togsrow{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.togrow{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px}
+.togrow span{font-size:var(--fs-sm);font-weight:600;color:var(--text-secondary)}
+.togsrow{display:flex;gap:12px 20px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 
 .badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:.02em;text-transform:uppercase;line-height:1.2}
 .bp{background:rgba(56,189,248,0.12);color:var(--accent);border:1px solid rgba(56,189,248,0.35)}
@@ -221,29 +228,33 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .slbl{font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
 .sval{font-size:17px;font-weight:800}
 
-.rwin{background:linear-gradient(135deg,rgba(52,211,153,0.12),rgba(16,185,129,0.06));border:2px solid rgba(52,211,153,0.45);border-radius:14px;padding:16px}
-.rlos{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:16px}
+.rwin{background:linear-gradient(135deg,rgba(52,211,153,0.12),rgba(16,185,129,0.06));border:2px solid rgba(52,211,153,0.45);border-radius:var(--r-lg);padding:16px}
+.rlos{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.09);border-radius:var(--r-lg);padding:16px}
 @keyframes gp{0%,100%{box-shadow:0 0 12px rgba(52,211,153,0.18)}50%{box-shadow:0 0 26px rgba(52,211,153,0.38)}}
 .wglow{animation:gp 2.2s infinite}
 .cmpg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
 
-.ith,.itr{display:grid;grid-template-columns:44px 1fr 1fr 1fr 1fr;gap:6px;padding:8px 10px;border-radius:8px;align-items:center}
-.ith{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ith,.itr{display:grid;grid-template-columns:46px 1fr 1fr 1fr 1fr;gap:6px;padding:9px 10px;border-radius:var(--r-sm);align-items:center}
+.ith{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 .itr{font-size:13px}
+/* valores numéricos (col. 2 a 5) alinhados à direita; label de parcelas à esquerda */
+.ith span:not(:first-child),.itr span:not(:first-child){text-align:right}
 .itr:hover{background:rgba(255,255,255,0.04)}
 .itr.best{background:rgba(52,211,153,0.09)}
+.itr+.itr{border-top:1px solid rgba(255,255,255,0.04)}
 
 .verd{
   background:linear-gradient(135deg,rgba(2,132,199,0.18),rgba(14,165,233,0.06));
-  border:1px solid rgba(56,189,248,0.3);border-radius:16px;padding:18px;text-align:center;margin-bottom:14px;
+  border:1px solid rgba(56,189,248,0.3);border-radius:var(--r-lg);padding:18px;text-align:center;margin-bottom:14px;
 }
-.vlbl{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:5px;font-weight:700}
-.vname{font-size:18px;font-weight:800;margin-bottom:10px;color:#fff}
-.vbadge{display:inline-block;font-size:14px;padding:7px 18px;border-radius:24px;font-weight:700}
-.veco{margin-top:9px;font-size:13px;color:var(--text-secondary)}
+.vlbl{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:6px;font-weight:700}
+.vname{font-size:var(--fs-xl);font-weight:800;margin-bottom:12px;color:#fff;letter-spacing:-.3px}
+.vbadge{display:inline-block;font-size:var(--fs-md);padding:8px 20px;border-radius:999px;font-weight:700}
+.veco{margin-top:10px;font-size:var(--fs-sm);color:var(--text-secondary)}
 
-.bul{display:flex;gap:10px;margin-bottom:10px;font-size:13px;line-height:1.6}
-.bul .ico{flex-shrink:0;font-size:16px}
+.bul{display:flex;gap:10px;margin-bottom:11px;font-size:var(--fs-sm);line-height:1.65}
+.bul:last-child{margin-bottom:0}
+.bul .ico{flex-shrink:0;font-size:16px;line-height:1.4}
 
 .infobox{border-radius:var(--r-md);padding:12px 14px;margin-top:10px}
 .infobox .it{font-size:12px;font-weight:700;margin-bottom:6px}
@@ -269,7 +280,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .macts{display:flex;gap:4px;align-items:center;flex-shrink:0}
 
 /* Botões de status e recolher em seta */
-.bstatus{padding:5px 11px;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:all .15s;min-height:32px;touch-action:manipulation}
+.bstatus{padding:6px 11px;font-size:12px;font-weight:700;border-radius:var(--r-sm);cursor:pointer;border:1px solid transparent;transition:background .15s ease, color .15s ease, box-shadow .15s ease;min-height:34px;touch-action:manipulation}
 .bstatus-fechada{background:rgba(251,191,36,0.14);color:var(--yellow);border-color:rgba(251,191,36,0.35)}
 .bstatus-fechada:hover,.bstatus-fechada.active{background:var(--yellow);color:#0f172a;border-color:var(--yellow);box-shadow:0 0 12px rgba(251,191,36,0.35)}
 .bstatus-paga{background:rgba(52,211,153,0.14);color:var(--green);border-color:rgba(52,211,153,0.35)}
@@ -277,9 +288,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 
 .btn-arrow{
   background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);
-  color:var(--text-secondary);width:32px;height:32px;border-radius:7px;
+  color:var(--text-secondary);width:34px;height:34px;border-radius:var(--r-sm);
   display:inline-flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:11px;transition:all .2s;padding:0;
+  cursor:pointer;font-size:11px;transition:background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;padding:0;
   touch-action:manipulation;
 }
 .btn-arrow:hover{background:rgba(255,255,255,0.16);color:#fff;border-color:var(--accent)}
@@ -400,8 +411,13 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   display:flex;justify-content:space-between;align-items:center;
   margin-bottom:14px;gap:12px;
 }
-.faturas-top-left{flex:1 1 auto}
+.faturas-top-left{flex:1 1 auto;min-width:0}
 .faturas-top-right{flex:0 0 auto}
+
+/* Legenda (infobox) organizada em linhas, não grudada */
+.legenda-list{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+.legenda-item{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--text-secondary);line-height:1.4}
+.legenda-item .badge{flex-shrink:0}
 
 /* Layout dos botões dentro do card do mês (Fechada/Paga em cima de Editar) */
 .mmonth-actions{
@@ -415,25 +431,42 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 }
 
 @media(max-width:580px){
-  .wrap{padding:10px}
+  .wrap{padding:12px 12px 24px}
+  .card{padding:16px}
   .tabs{gap:3px;padding:4px}
   .tbtn{font-size:13px;padding:10px 4px;letter-spacing:-.2px}
-  .fg{grid-template-columns:1fr}.ff{grid-column:1}
+  .fg{grid-template-columns:1fr;gap:12px}.ff{grid-column:1}
   .cmpg{grid-template-columns:1fr}
-  .sg3{grid-template-columns:1fr}
-  .sbox{padding:10px}
-  .ith,.itr{grid-template-columns:36px 1fr 1fr 1fr}
+  /* stat boxes continuam em 3 colunas (compactas) — melhor que empilhar */
+  .sg3{grid-template-columns:repeat(3,1fr);gap:7px}
+  .sbox{padding:10px 6px}
+  .sval{font-size:15px}
+  .slbl{font-size:9.5px}
+  /* comparativo: 4 colunas, 1ª um pouco maior, esconde milhas */
+  .ith,.itr{grid-template-columns:42px 1fr 1fr 1fr;gap:4px;padding:9px 8px}
   .ith span:nth-child(5),.itr span:nth-child(5){display:none}
-  .mhead{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:8px}
+  /* cabeçalho do card de faturas: empilha e botão largura total */
+  .faturas-top-bar{flex-direction:column;align-items:stretch;gap:10px}
+  .faturas-top-right .bsm{width:100%}
+  /* badges do header mais compactas no celular */
+  .hdr{padding:16px 14px 14px}
+  .hdr-logo{font-size:30px}
+  .hdr h1{font-size:21px}
+  .hdr-badges{gap:5px}
+  .hdr-badges .badge{font-size:10px;padding:3px 8px}
+  .mhead{align-items:flex-start}
   .mhead-right-group{align-items:flex-end;gap:8px}
   .sim-grid{grid-template-columns:repeat(2,1fr)}
-  .faturas-top-bar{align-items:flex-start}
+  .modal{padding:16px;border-radius:var(--r-lg)}
+  .mbtns{position:sticky;bottom:0;background:#111c2e;padding-top:10px;margin-top:10px;margin-bottom:-4px;border-top:1px solid var(--border)}
 }
-/* Em telas bem estreitas, troca os rótulos por versões curtas (via ::after) */
+/* Em telas bem estreitas, troca os rótulos das abas por versões curtas (via ::after) */
 @media(max-width:400px){
   .tbtn{position:relative;color:transparent!important;padding:10px 2px}
   .tbtn::after{content:attr(data-short);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)}
   .tbtn.on::after{color:#fff}
+  .hdr h1{font-size:20px}
+  .sg3{grid-template-columns:repeat(3,1fr)}
 }
 </style>
 </head>
@@ -480,11 +513,11 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
     </div>
     <div class="infobox" style="background:var(--yellow-d);border:1px solid rgba(251,191,36,.2)">
       <div class="it" style="color:var(--yellow)">ℹ️ Legenda</div>
-      <p>
-        <span class="badge bb" style="margin-right:4px">Planilha</span>Dado importado da fatura real &nbsp;·&nbsp;
-        <span class="badge" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);margin-right:4px">Estimado</span>Projeção das parcelas ativas &nbsp;·&nbsp;
-        <span class="badge bp" style="margin-right:4px">📅 Sim</span>Parcela simulada (adicionada manualmente)
-      </p>
+      <div class="legenda-list">
+        <div class="legenda-item"><span class="badge bb">Planilha</span><span>Dado importado da fatura real</span></div>
+        <div class="legenda-item"><span class="badge" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)">Estimado</span><span>Projeção das parcelas ativas</span></div>
+        <div class="legenda-item"><span class="badge bp">📅 Simulada</span><span>Parcela adicionada manualmente</span></div>
+      </div>
     </div>
   </div>
 
