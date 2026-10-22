@@ -1,5 +1,5 @@
 // ============================================================
-//  APPS SCRIPT - Backup "Parcelado ou A Vista?"
+//  APPS SCRIPT - Backup "Faturas"
 //  Planilha: Vincule este script a sua planilha Google Sheets pessoal
 //
 //  SEGURANCA:

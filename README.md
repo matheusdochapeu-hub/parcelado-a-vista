@@ -1,4 +1,4 @@
-# 💳 Parcelado ou À Vista? (Faturas & Calculadora Financeira)
+# 💳 Faturas (Controle de Faturas & Calculadora Financeira)
 
 Aplicativo web progressivo (PWA) e calculadora de inteligência financeira voltada para otimização de faturas de cartão de crédito (Nubank Ultravioleta / Black), controle orçamentário mensal e tomada de decisão entre compras à vista com desconto versus parcelamento sem juros aplicando o capital à taxa Selic e acumulando milhas.
 
@@ -88,7 +88,7 @@ Para conectar o app a uma planilha Google privada:
    - Executar como: **Eu**
    - Quem pode acessar: **Qualquer pessoa**
 5. Copie a URL do App da Web gerada.
-6. No app **Parcelado ou À Vista?**, vá na aba **Perfil**:
+6. No app **Faturas**, vá na aba **Perfil**:
    - Cole a URL do App da Web em **URL do Google Apps Script**.
    - Digite o mesmo token no campo **Token de Segurança (opcional)**.
    - Clique em **Salvar Dados do Perfil**.
