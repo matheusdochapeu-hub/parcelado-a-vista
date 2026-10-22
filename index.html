@@ -5,12 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>💳 Parcelado ou À Vista?</title>
 <!-- PWA & Mobile Web App Tags -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://script.google.com https://script.googleusercontent.com;"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
 <meta name="theme-color" content="#0b1120"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/x-icon" href="favicon.ico"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
@@ -25,8 +28,8 @@
   --border-focus:#38bdf8;
   
   --text:#f8fafc;
-  --text-secondary:#cbd5e1;
-  --muted:#9fb0c4;         /* leve aumento de contraste p/ legibilidade */
+  --text-secondary:#e2e8f0;
+  --muted:#cbd5e1;         /* Contraste WCAG 2.1 AA elevado para textos secundários */
 
   --accent:#38bdf8;        /* Sky Blue */
   --accent-glow:rgba(56,189,248,0.25);
@@ -117,11 +120,12 @@ body{
   backdrop-filter:blur(10px);
 }
 .tbtn{
-  flex:1 1 0;min-width:0;padding:11px 10px;border-radius:var(--r-md);
+  flex:1 1 0;min-width:0;min-height:44px;padding:11px 10px;border-radius:var(--r-md);
   font-size:14px;font-weight:700;cursor:pointer;
   border:1px solid transparent;background:transparent;
   color:var(--muted);transition:color .18s ease,background .18s ease;text-align:center;
   touch-action:manipulation;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:inline-flex;align-items:center;justify-content:center;
 }
 .tbtn:hover{color:#fff;background:rgba(255,255,255,0.06)}
 .tbtn.on{
@@ -146,7 +150,7 @@ body{
 label{font-size:var(--fs-xs);font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;letter-spacing:0.02em;line-height:1.4}
 
 /* Inputs otimizados para Touch e Acessibilidade (font-size 16px previne zoom no iOS) */
-input[type=text],input[type=number],select{
+input[type=text],input[type=password],input[type=number],select{
   width:100%;background:rgba(15,23,42,0.85);border:1.5px solid rgba(255,255,255,0.16);
   color:#fff;border-radius:var(--r-md);padding:11px 14px;font-size:16px;outline:none;
   transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;-webkit-appearance:none;min-height:48px;
@@ -181,8 +185,8 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .bsm{
   background:rgba(255,255,255,0.08);color:var(--text);border:1px solid var(--border);
   border-radius:var(--r-sm);padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;
-  transition:background .15s ease, border-color .15s ease, transform .12s ease;min-height:38px;
-  touch-action:manipulation;
+  transition:background .15s ease, border-color .15s ease, transform .12s ease;min-height:44px;
+  touch-action:manipulation;display:inline-flex;align-items:center;justify-content:center;
 }
 .bsm:hover{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.22)}
 .bsm:active{transform:scale(.97)}
@@ -192,15 +196,17 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 
 .bedit{
   background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.35);
-  border-radius:var(--r-sm);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
-  color:var(--accent);transition:background .15s ease, color .15s ease;min-height:34px;
+  border-radius:var(--r-sm);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;
+  color:var(--accent);transition:background .15s ease, color .15s ease;min-height:44px;min-width:44px;
+  display:inline-flex;align-items:center;justify-content:center;
 }
 .bedit:hover{background:var(--accent);color:#0b1120}
 
 .bdel{
   background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);
-  border-radius:var(--r-sm);padding:4px 9px;font-size:12px;font-weight:700;cursor:pointer;
-  color:var(--red);transition:background .15s ease, color .15s ease;min-height:34px;min-width:34px;
+  border-radius:var(--r-sm);padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;
+  color:var(--red);transition:background .15s ease, color .15s ease;min-height:44px;min-width:44px;
+  display:inline-flex;align-items:center;justify-content:center;
 }
 .bdel:hover{background:var(--red);color:#fff}
 
@@ -214,9 +220,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 
 .badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:.02em;text-transform:uppercase;line-height:1.2}
 .bp{background:rgba(56,189,248,0.12);color:var(--accent);border:1px solid rgba(56,189,248,0.35)}
-.bg{background:var(--green-d);color:var(--green);border:1px solid rgba(52,211,153,0.35)}
-.by{background:var(--yellow-d);color:var(--yellow);border:1px solid rgba(251,191,36,0.35)}
-.br{background:var(--red-d);color:var(--red);border:1px solid rgba(248,113,113,0.35)}
+.bg{background:var(--green-d);color:#6ee7b7;border:1px solid rgba(52,211,153,0.4)}
+.by{background:var(--yellow-d);color:#fde047;border:1px solid rgba(251,191,36,0.45)}
+.br{background:var(--red-d);color:#f87171;border:1px solid rgba(248,113,113,0.35)}
 .bb{background:var(--blue-d);color:var(--blue);border:1px solid rgba(96,165,250,0.35)}
 
 .prog{height:8px;border-radius:5px;background:rgba(255,255,255,0.08);overflow:hidden}
@@ -280,17 +286,17 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .macts{display:flex;gap:4px;align-items:center;flex-shrink:0}
 
 /* Botões de status e recolher em seta */
-.bstatus{padding:6px 11px;font-size:12px;font-weight:700;border-radius:var(--r-sm);cursor:pointer;border:1px solid transparent;transition:background .15s ease, color .15s ease, box-shadow .15s ease;min-height:34px;touch-action:manipulation}
-.bstatus-fechada{background:rgba(251,191,36,0.14);color:var(--yellow);border-color:rgba(251,191,36,0.35)}
+.bstatus{padding:8px 12px;font-size:12px;font-weight:700;border-radius:var(--r-sm);cursor:pointer;border:1px solid transparent;transition:background .15s ease, color .15s ease, box-shadow .15s ease;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;touch-action:manipulation}
+.bstatus-fechada{background:rgba(251,191,36,0.16);color:#fde047;border-color:rgba(251,191,36,0.45)}
 .bstatus-fechada:hover,.bstatus-fechada.active{background:var(--yellow);color:#0f172a;border-color:var(--yellow);box-shadow:0 0 12px rgba(251,191,36,0.35)}
-.bstatus-paga{background:rgba(52,211,153,0.14);color:var(--green);border-color:rgba(52,211,153,0.35)}
+.bstatus-paga{background:rgba(52,211,153,0.16);color:#6ee7b7;border-color:rgba(52,211,153,0.45)}
 .bstatus-paga:hover,.bstatus-paga.active{background:var(--green);color:#0f172a;border-color:var(--green);box-shadow:0 0 12px rgba(52,211,153,0.35)}
 
 .btn-arrow{
   background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);
-  color:var(--text-secondary);width:34px;height:34px;border-radius:var(--r-sm);
+  color:var(--text-secondary);width:44px;height:44px;min-width:44px;min-height:44px;border-radius:var(--r-sm);
   display:inline-flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:11px;transition:background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;padding:0;
+  cursor:pointer;font-size:13px;transition:background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;padding:0;
   touch-action:manipulation;
 }
 .btn-arrow:hover{background:rgba(255,255,255,0.16);color:#fff;border-color:var(--accent)}
@@ -323,9 +329,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .modal{background:linear-gradient(180deg,#13203450,#111c2e),#111c2e;border:1px solid rgba(56,189,248,0.28);border-radius:var(--r-xl);padding:20px;width:100%;max-width:500px;margin:auto;box-shadow:var(--sh-3);animation:modalPop .22s cubic-bezier(.2,.9,.3,1.1)}
 @keyframes modalPop{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .modal h3{font-size:17px;font-weight:800;margin-bottom:14px;color:#fff;letter-spacing:-.2px}
-.medit-row{display:grid;grid-template-columns:1fr 130px 34px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.medit-row{display:grid;grid-template-columns:1fr 130px 44px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
 .medit-row:last-child{border-bottom:none}
-.medit-row input[type=number]{padding:6px 8px;font-size:14px;text-align:right;min-height:38px}
+.medit-row input[type=text],.medit-row input[type=number]{padding:6px 8px;font-size:14px;text-align:right;min-height:44px}
 .medit-row .desc-txt{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .medit-row.deleted{opacity:.5}
 .medit-row.deleted .desc-txt{text-decoration:line-through;color:var(--muted)}
@@ -340,8 +346,8 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .tag-edited{background:var(--yellow-d);color:var(--yellow)}
 .medit-input-wrap{position:relative;display:flex;align-items:center}
 .medit-prefix{position:absolute;left:8px;font-size:11px;color:var(--muted);pointer-events:none}
-.medit-input-wrap input[type=number]{padding-left:26px;text-align:right;width:100%}
-.row-del-btn{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);border-radius:7px;width:34px;height:38px;font-size:13px;font-weight:700;cursor:pointer;color:var(--red);transition:all .15s;display:inline-flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation}
+.medit-input-wrap input{padding-left:26px;text-align:right;width:100%}
+.row-del-btn{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);border-radius:7px;width:44px;height:44px;min-width:44px;min-height:44px;font-size:14px;font-weight:700;cursor:pointer;color:var(--red);transition:all .15s;display:inline-flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation}
 .row-del-btn:hover{background:var(--red);color:#fff}
 .row-del-btn.undo{background:rgba(52,211,153,0.14);border-color:rgba(52,211,153,0.4);color:var(--green)}
 .row-del-btn.undo:hover{background:var(--green);color:#0f172a}
@@ -434,7 +440,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   .wrap{padding:12px 12px 24px}
   .card{padding:16px}
   .tabs{gap:3px;padding:4px}
-  .tbtn{font-size:13px;padding:10px 4px;letter-spacing:-.2px}
+  .tbtn{font-size:13px;min-height:44px;padding:10px 4px;letter-spacing:-.2px}
   .fg{grid-template-columns:1fr;gap:12px}.ff{grid-column:1}
   .cmpg{grid-template-columns:1fr}
   /* stat boxes continuam em 3 colunas (compactas) — melhor que empilhar */
@@ -447,7 +453,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   .ith span:nth-child(5),.itr span:nth-child(5){display:none}
   /* cabeçalho do card de faturas: empilha e botão largura total */
   .faturas-top-bar{flex-direction:column;align-items:stretch;gap:10px}
-  .faturas-top-right .bsm{width:100%}
+  .faturas-top-right .bsm{width:100%;min-height:44px}
   /* badges do header mais compactas no celular */
   .hdr{padding:16px 14px 14px}
   .hdr-logo{font-size:30px}
@@ -462,7 +468,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 }
 /* Em telas bem estreitas, troca os rótulos das abas por versões curtas (via ::after) */
 @media(max-width:400px){
-  .tbtn{position:relative;color:transparent!important;padding:10px 2px}
+  .tbtn{position:relative;color:transparent!important;min-height:44px;padding:10px 2px}
   .tbtn::after{content:attr(data-short);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)}
   .tbtn.on::after{color:#fff}
   .hdr h1{font-size:20px}
@@ -528,9 +534,15 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
       <div class="csub">Preencha os valores para comparar à vista com investimentos vs parcelamento</div>
       <div class="fg">
         <div class="ff"><label for="pName">Nome do produto</label><input type="text" id="pName" placeholder="Ex: iPhone 16, Notebook, Geladeira…"/></div>
-        <div><label for="pCash">Valor à vista (R$)</label><input type="number" id="pCash" placeholder="0,00" min="0" step="0.01" inputmode="decimal"/></div>
-        <div><label for="pDisc">Desconto à vista (%)</label><input type="number" id="pDisc" placeholder="0" min="0" max="80" value="0" step="0.5" inputmode="decimal"/></div>
-        <div><label for="pInst">Valor total parcelado (R$) <small style="color:var(--muted)">(vazio = sem juros)</small></label><input type="number" id="pInst" placeholder="Igual ao à vista" min="0" step="0.01" inputmode="decimal"/></div>
+        <div><label for="pCash">Valor à vista (R$)</label><input type="text" id="pCash" placeholder="0,00" inputmode="decimal"/></div>
+        <div><label for="pDisc">Desconto à vista (%)</label><input type="text" id="pDisc" placeholder="0" value="0" inputmode="decimal"/></div>
+        <div><label for="pCashMethod">Forma do à vista</label>
+          <select id="pCashMethod">
+            <option value="cartao" selected>💳 Cartão 1x (fatura · com float e milhas)</option>
+            <option value="pix">⚡ PIX / Dinheiro (imediato · sem float nem milhas)</option>
+          </select>
+        </div>
+        <div><label for="pInst">Valor total parcelado (R$) <small style="color:var(--muted)">(vazio = sem juros)</small></label><input type="text" id="pInst" placeholder="Igual ao à vista" inputmode="decimal"/></div>
         <div><label for="pMaxN">Máximo de parcelas</label>
           <select id="pMaxN">
             <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option>
@@ -584,14 +596,18 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
       <div class="ctitle">⚙️ Configurações &amp; Parâmetros</div>
       <div class="csub">Os dados são salvos automaticamente no navegador e na sua planilha de backup</div>
       <div class="fg">
-        <div><label for="cMeta">Meta mensal do cartão (R$)</label><input type="number" id="cMeta" value="3000" step="10" inputmode="decimal" oninput="saveProfile()"/></div>
-        <div><label for="cSelic">Taxa Selic anual (%)</label><input type="number" id="cSelic" value="13.75" step="0.25" inputmode="decimal" oninput="saveProfile()"/></div>
-        <div><label for="cCambio">Cotação USD/BRL (para cálculo de milhas)</label><input type="number" id="cCambio" value="5.55" step="0.01" inputmode="decimal" oninput="saveProfile()"/></div>
-        <div><label for="cMilhas">Milhas por dólar gasto (Nubank Black)</label><input type="number" id="cMilhas" value="2.2" step="0.1" inputmode="decimal" oninput="saveProfile()"/></div>
-        <div><label for="cMilhaVal">Valor de cada milha (R$)</label><input type="number" id="cMilhaVal" value="0.03" step="0.005" min="0" inputmode="decimal" oninput="saveProfile()"/></div>
+        <div><label for="cMeta">Meta mensal do cartão (R$)</label><input type="text" id="cMeta" value="3000" inputmode="decimal" oninput="saveProfile()"/></div>
+        <div><label for="cSelic">Taxa Selic anual (%)</label><input type="text" id="cSelic" value="13.75" inputmode="decimal" oninput="saveProfile()"/></div>
+        <div><label for="cCambio">Cotação USD/BRL (para cálculo de milhas)</label><input type="text" id="cCambio" value="5.55" inputmode="decimal" oninput="saveProfile()"/></div>
+        <div><label for="cMilhas">Milhas por dólar gasto (Nubank Black)</label><input type="text" id="cMilhas" value="2.2" inputmode="decimal" oninput="saveProfile()"/></div>
+        <div><label for="cMilhaVal">Valor de cada milha (R$)</label><input type="text" id="cMilhaVal" value="0.03" inputmode="decimal" oninput="saveProfile()"/></div>
         <div class="ff">
           <label for="cGasUrl">URL do Google Apps Script (Backup no Google Sheets)</label>
           <input type="text" id="cGasUrl" placeholder="https://script.google.com/macros/s/…/exec" oninput="saveProfile()"/>
+        </div>
+        <div class="ff">
+          <label for="cGasToken">Token Secreto de Acesso (SHARED_SECRET do Apps Script)</label>
+          <input type="password" id="cGasToken" placeholder="Defina a mesma chave configurada no Apps Script" oninput="saveProfile()"/>
         </div>
       </div>
       <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -789,7 +805,7 @@ var BASE_ITEMS=[
 /* ═══════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════ */
-var profile={meta:3000,selic:13.75,cambio:5.55,milhas:2.2,milhaVal:0.03,gasUrl:''};
+var profile={meta:3000,selic:13.75,cambio:5.55,milhas:2.2,milhaVal:0.03,gasUrl:'',gasToken:''};
 var useMiles=true, useBudget=true;
 var extraItems=[];   // itens adicionados/editados pelo usuário
 var simItems=[];     // simulações manuais (adicionadas com botão)
@@ -802,9 +818,18 @@ var selectedPlan=null; // {n, per} escolhido ao clicar numa linha do comparativo
 var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
+/* Utilitário de conversão de decimais (suporte a vírgula em teclados PT-BR - Corrige M4) */
+function parseNum(val){
+  if(typeof val === 'number') return isNaN(val) ? 0 : val;
+  if(val == null) return 0;
+  var s = String(val).trim().replace(/\s+/g, '').replace(',', '.');
+  var n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
 /* ═══════════════════════════════════════════════
    GOOGLE APPS SCRIPT SYNC
-   Usa JSONP para funcionar tanto em file:// quanto https://
+   Usa JSONP para leitura e POST autenticado para gravação
 ═══════════════════════════════════════════════ */
 function setSyncStatus(state,msg){
   var dot=document.getElementById('syncDot');
@@ -836,7 +861,7 @@ function setSyncStatus(state,msg){
   }
 }
 
-/* JSONP GET — funciona de file:// e https:// sem CORS */
+/* JSONP GET — leitura autenticada de dados do Google Apps Script */
 function jsonpGet(url, params, onSuccess, onError){
   var cbName='_gas_cb_'+Date.now();
   var timer=setTimeout(function(){
@@ -870,9 +895,12 @@ function syncAll(){
   var url=profile.gasUrl;
   if(!url){setSyncStatus('err','Sem URL — configure em Perfil');return;}
   setSyncStatus('ing','Sincronizando…');
-  jsonpGet(url,{action:'load'},
+  var params={action:'load'};
+  if(profile.gasToken) params.token=profile.gasToken;
+  jsonpGet(url,params,
     function(data){
       if(!data){setSyncStatus('err','Resposta vazia do servidor');return;}
+      if(data.ok === false){setSyncStatus('err','Acesso negado: '+(data.error||'Verifique o token'));return;}
       // Aplica o estado remoto como fonte de verdade do backup.
       // Usa "!== undefined" (não "&& .length") para que EXCLUSÕES feitas em
       // outro dispositivo também se propaguem (lista/objeto vazio zera o local).
@@ -893,16 +921,21 @@ function syncAll(){
 function pushToSheets(){
   var url=profile.gasUrl;
   if(!url) return;
-  var payload={extraItems:extraItems,simItems:simItems,overrides:overrides,purchHist:purchHist,monthStatus:monthStatus,collapsedMonths:collapsedMonths,profile:profile};
+  var payload={
+    token: profile.gasToken || '',
+    extraItems: extraItems,
+    simItems: simItems,
+    overrides: overrides,
+    purchHist: purchHist,
+    monthStatus: monthStatus,
+    collapsedMonths: collapsedMonths,
+    profile: profile
+  };
 
-  // Em https:// usamos POST (fetch) — evita o limite de tamanho da URL do JSONP/GET,
-  // que estoura com muitos itens/histórico. Usamos mode:'no-cors' + text/plain:
-  //  - text/plain não dispara preflight (requisição "simples");
-  //  - no-cors deixa o POST chegar ao Apps Script sem erro de CORS (a resposta
-  //    fica opaca e não é legível, por isso confirmamos o salvamento com um load).
-  // Em file:// (ou se o fetch falhar) caímos para o JSONP/GET.
-  var isHttp=(location.protocol==='http:'||location.protocol==='https:');
-  if(isHttp && typeof fetch==='function'){
+  // Em conformidade estrita com a LGPD e privacidade (Corrige C1 e C2),
+  // grava exclusivamente via POST com corpo JSON, nunca transmitindo
+  // compras ou dados de faturas na query string GET.
+  if(typeof fetch==='function'){
     setSyncStatus('ing','Salvando…');
     fetch(url,{
       method:'POST',
@@ -911,19 +944,12 @@ function pushToSheets(){
       body:JSON.stringify(payload)
     }).then(function(){
       setSyncStatus('ok','Salvo ✓ '+new Date().toLocaleTimeString('pt-BR'));
-    }).catch(function(){
-      pushToSheetsJsonp(url,payload); // fallback para JSONP/GET
+    }).catch(function(err){
+      setSyncStatus('err','Erro ao salvar no Sheets: '+err);
     });
-    return;
+  } else {
+    setSyncStatus('err','Navegador não suporta requisição POST');
   }
-  pushToSheetsJsonp(url,payload);
-}
-
-function pushToSheetsJsonp(url,payload){
-  jsonpGet(url,{action:'save',data:JSON.stringify(payload)},
-    function(r){setSyncStatus('ok',(r&&r.ok?'Salvo ✓':'Erro ao salvar')+' '+new Date().toLocaleTimeString('pt-BR'));},
-    function(err){setSyncStatus('err','Falha: '+err);}
-  );
 }
 
 /* ═══════════════════════════════════════════════
@@ -983,7 +1009,7 @@ function importBackup(ev){
 }
 
 /* ═══════════════════════════════════════════════
-   INIT
+   INIT & HISTORY API (Corrige A3)
 ═══════════════════════════════════════════════ */
 function init(){
   loadLocal();
@@ -991,17 +1017,77 @@ function init(){
   renderHist();renderFaturas();
   setSyncStatus('ok','Local');
   if(profile.gasUrl) syncAll();
+
+  // Sincroniza a aba ativa com o hash da URL (ou padrão: fatura)
+  var h=(window.location.hash||'').replace('#','');
+  if(h.indexOf('tab=')===0) h=h.slice(4);
+  if(h && document.getElementById('tab-'+h)){
+    showTab(h, null, true);
+  }
 }
 
 /* ═══════════════════════════════════════════════
-   TABS
+   TABS & NAVEGAÇÃO MOBILE (History API)
 ═══════════════════════════════════════════════ */
-function showTab(n,b){
+function showTab(n,b,fromPopstate){
   document.querySelectorAll('.tc').forEach(function(e){e.classList.remove('on');});
   document.querySelectorAll('.tbtn').forEach(function(e){e.classList.remove('on');});
-  document.getElementById('tab-'+n).classList.add('on');
-  b.classList.add('on');
+  var tabEl=document.getElementById('tab-'+n);
+  if(!tabEl) return;
+  tabEl.classList.add('on');
+  if(!b){
+    var btnMap={fatura:'tabFatura',calc:'tabCalc',hist:'tabHist',cfg:'tabCfg'};
+    b=document.getElementById(btnMap[n]);
+  }
+  if(b) b.classList.add('on');
+
+  if(!fromPopstate && window.history && window.history.pushState){
+    var currentHash=(window.location.hash||'').replace('#','');
+    if(currentHash!=='tab='+n && currentHash!==n){
+      window.history.pushState({tab:n},'','#tab='+n);
+    }
+  }
 }
+
+function pushModalHistory(mode){
+  if(window.history && window.history.pushState){
+    window.history.pushState({modal:true, mode:mode}, '', '#modal='+mode);
+  }
+}
+
+function closeModal(fromPopstate){
+  var bg=document.getElementById('modalBg');
+  if(!bg) return;
+  var wasOpen=bg.classList.contains('on');
+  bg.classList.remove('on');
+  if(wasOpen && !fromPopstate && window.history && window.history.state && window.history.state.modal){
+    window.history.back();
+  }
+}
+
+function closeModalIfBg(e){
+  if(e.target===document.getElementById('modalBg')) closeModal();
+}
+
+// Intercepta gesto/botão "Voltar" do smartphone para fechar modais ou voltar abas
+window.addEventListener('popstate', function(e){
+  var bg=document.getElementById('modalBg');
+  if(bg && bg.classList.contains('on')){
+    closeModal(true); // fecha o modal sem duplicar history.back()
+    return;
+  }
+  if(e.state && e.state.tab){
+    showTab(e.state.tab, null, true);
+  } else {
+    var h=(window.location.hash||'').replace('#','');
+    if(h.indexOf('tab=')===0) h=h.slice(4);
+    if(h && document.getElementById('tab-'+h)){
+      showTab(h, null, true);
+    } else {
+      showTab('fatura', null, true);
+    }
+  }
+});
 
 /* ═══════════════════════════════════════════════
    PROFILE
@@ -1029,12 +1115,13 @@ function saveLocal(){
 }
 var _profilePushTimer=null;
 function saveProfile(){
-  profile.meta  =parseFloat(document.getElementById('cMeta').value)||3000;
-  profile.selic =parseFloat(document.getElementById('cSelic').value)||13.75;
-  profile.cambio=parseFloat(document.getElementById('cCambio').value)||5.55;
-  profile.milhas=parseFloat(document.getElementById('cMilhas').value)||2.2;
-  profile.milhaVal=parseFloat(document.getElementById('cMilhaVal').value)||0.03;
-  profile.gasUrl=(document.getElementById('cGasUrl').value||'').trim();
+  profile.meta    =parseNum(document.getElementById('cMeta').value)||3000;
+  profile.selic   =parseNum(document.getElementById('cSelic').value)||13.75;
+  profile.cambio  =parseNum(document.getElementById('cCambio').value)||5.55;
+  profile.milhas  =parseNum(document.getElementById('cMilhas').value)||2.2;
+  profile.milhaVal=parseNum(document.getElementById('cMilhaVal').value)||0.03;
+  profile.gasUrl  =(document.getElementById('cGasUrl').value||'').trim();
+  profile.gasToken=(document.getElementById('cGasToken').value||'').trim();
   try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
   renderFaturas();
   renderBadges();
@@ -1043,11 +1130,13 @@ function saveProfile(){
   _profilePushTimer=setTimeout(function(){ pushToSheets(); }, 1200);
 }
 
-/* Aplica um profile vindo do Sheets (mantém a URL local, que é por-dispositivo) */
+/* Aplica um profile vindo do Sheets (mantém a URL e token locais, que são por-dispositivo) */
 function applyRemoteProfile(p){
-  var localUrl=profile.gasUrl; // preserva a URL configurada neste dispositivo
-  for(var k in p){ if(profile.hasOwnProperty(k) && k!=='gasUrl') profile[k]=p[k]; }
+  var localUrl=profile.gasUrl;
+  var localToken=profile.gasToken;
+  for(var k in p){ if(profile.hasOwnProperty(k) && k!=='gasUrl' && k!=='gasToken') profile[k]=p[k]; }
   if(localUrl) profile.gasUrl=localUrl;
+  if(localToken) profile.gasToken=localToken;
   fillProfileInputs();
   try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
 }
@@ -1061,6 +1150,7 @@ function fillProfileInputs(){
   set('cMilhas',profile.milhas);
   set('cMilhaVal',(profile.milhaVal!=null?profile.milhaVal:0.03));
   set('cGasUrl',profile.gasUrl||'');
+  set('cGasToken',profile.gasToken||'');
 }
 
 /* ═══════════════════════════════════════════════
@@ -1097,6 +1187,9 @@ function openHistToEdit(idx){
   if(document.getElementById('pInst'))  document.getElementById('pInst').value  = (x.instRaw != null ? x.instRaw : (x.instTotal || ''));
   if(document.getElementById('pMaxN'))  document.getElementById('pMaxN').value  = (x.maxN || x.winN || 6);
   if(document.getElementById('pInvest'))document.getElementById('pInvest').value= (x.invest || 'selic');
+  if(document.getElementById('pCashMethod') && x.cashMethod) {
+    document.getElementById('pCashMethod').value = x.cashMethod;
+  }
   if(document.getElementById('pMonth') && x.mOff) {
     document.getElementById('pMonth').value = x.mOff;
   }
@@ -1441,11 +1534,11 @@ function addToFaturas(){
     +'<div class="ff"><label>Nome / descrição</label>'
     +'<input type="text" id="simName" value="'+esc(d.name)+'"/></div>'
     +'<div><label>Valor total parcelado (R$)</label>'
-    +'<input type="number" id="simTotal" value="'+d.instTotal.toFixed(2)+'" min="0.01" step="0.01" oninput="recalcSimParc()"/></div>'
+    +'<input type="text" id="simTotal" value="'+d.instTotal.toFixed(2)+'" inputmode="decimal" oninput="recalcSimParc()"/></div>'
     +'<div><label>Número de parcelas</label>'
-    +'<input type="number" id="simN" value="'+planN+'" min="1" max="60" step="1" oninput="recalcSimParc()"/></div>'
+    +'<input type="number" id="simN" value="'+planN+'" min="1" max="60" step="1" inputmode="numeric" oninput="recalcSimParc()"/></div>'
     +'<div><label>Valor de cada parcela (calculado)</label>'
-    +'<input type="number" id="simPer" value="'+planPer.toFixed(2)+'" min="0" step="0.01" style="background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.3)" readonly/></div>'
+    +'<input type="text" id="simPer" value="'+planPer.toFixed(2)+'" style="background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.3)" readonly/></div>'
     +'<div class="ff"><label>Fatura inicial (onde entra a 1ª parcela)</label>'
     +'<select id="simMonth" onchange="recalcSimParc()">';
   for(var m=1;m<MNS.length;m++){
@@ -1460,6 +1553,7 @@ function addToFaturas(){
   // Trocamos o botão Salvar pelo de confirmar simulação
   document.getElementById('modalSaveBtn').setAttribute('onclick','confirmSimAdd()');
   document.getElementById('modalSaveBtn').textContent='📅 Confirmar e Adicionar';
+  pushModalHistory('sim-confirm');
   document.getElementById('modalBg').classList.add('on');
   recalcSimParc();
 }
@@ -1470,7 +1564,7 @@ function recalcSimParc(){
   var perEl=document.getElementById('simPer');
   var prev=document.getElementById('simPreview');
   if(!totalEl||!nEl) return;
-  var total=parseFloat(totalEl.value)||0;
+  var total=parseNum(totalEl.value);
   var n=parseInt(nEl.value)||1;
   if(n<1) n=1;
   var per=total/n;
@@ -1492,7 +1586,7 @@ function recalcSimParc(){
 
 function confirmSimAdd(){
   var name=(document.getElementById('simName').value||'').trim()||'Produto';
-  var total=parseFloat(document.getElementById('simTotal').value)||0;
+  var total=parseNum(document.getElementById('simTotal').value);
   var n=parseInt(document.getElementById('simN').value)||1;
   var mStart=parseInt(document.getElementById('simMonth').value)||1;
   if(total<=0||n<1){alert('Preencha valor e número de parcelas.');return;}
@@ -1559,7 +1653,7 @@ function openEditMonthModal(mIdx){
         +'<span class="row-tags">'+typeBadge+editedBadge+'</span>'
       +'</div>'
       +'<div class="medit-input-wrap"><span class="medit-prefix">R$</span>'
-        +'<input type="number" class="medit-val" data-row="'+i+'" value="'+(it.val||0).toFixed(2)+'" min="0" step="0.01" inputmode="decimal" oninput="recalcEditTotal()"/></div>'
+        +'<input type="text" class="medit-val" data-row="'+i+'" value="'+(it.val||0).toFixed(2)+'" inputmode="decimal" oninput="recalcEditTotal()"/></div>'
       +'<button type="button" class="row-del-btn" id="mdel_'+i+'" onclick="markRowDeleted('+i+')" title="Remover item" aria-label="Remover item">✕</button>'
       +'</div>';
   }
@@ -1574,11 +1668,12 @@ function openEditMonthModal(mIdx){
     +'<summary>➕ Adicionar lançamento neste mês</summary>'
     +'<div class="fg" style="margin-top:10px">'
     +'<div class="ff"><label for="niDesc">Descrição do item</label><input type="text" id="niDesc" placeholder="Ex: Parcela TV 4/10"/></div>'
-    +'<div><label for="niVal">Valor (R$)</label><input type="number" id="niVal" placeholder="0,00" min="0" step="0.01" inputmode="decimal"/></div>'
+    +'<div><label for="niVal">Valor (R$)</label><input type="text" id="niVal" placeholder="0,00" inputmode="decimal"/></div>'
     +'<div><label for="niEnd">Repetir até</label><select id="niEnd">'+endOpts+'</select></div>'
     +'</div></details>';
 
   document.getElementById('modalBody').innerHTML=body;
+  pushModalHistory('edit-month');
   document.getElementById('modalBg').classList.add('on');
   recalcEditTotal();
   var se=document.getElementById('editSearch');
@@ -1593,11 +1688,11 @@ function recalcEditTotal(){
     var row=rows[i];
     if(row.getAttribute('data-del')==='1'){ deleted++; continue; }
     var inp=row.querySelector('.medit-val');
-    var v=inp?parseFloat(inp.value):0;
+    var v=inp?parseNum(inp.value):0;
     if(!isNaN(v)){ total+=v; }
     counted++;
     var orig=row.getAttribute('data-orig');
-    if(orig!=='' && orig!=null && inp && Math.abs((parseFloat(inp.value)||0)-parseFloat(orig))>0.001) edited++;
+    if(orig!=='' && orig!=null && inp && Math.abs((parseNum(inp.value)||0)-parseNum(orig))>0.001) edited++;
   }
   var meta=profile.meta||0;
   var avail=meta-total;
@@ -1694,7 +1789,7 @@ function openAddModal(){
   document.getElementById('modalTitle').textContent='➕ Adicionar item na fatura';
   var body='<div class="fg">'
     +'<div class="ff"><label for="niDesc">Descrição do item</label><input type="text" id="niDesc" placeholder="Ex: Parcela TV 3/10"/></div>'
-    +'<div><label for="niVal">Valor (R$)</label><input type="number" id="niVal" placeholder="0,00" min="0" step="0.01" inputmode="decimal"/></div>'
+    +'<div><label for="niVal">Valor (R$)</label><input type="text" id="niVal" placeholder="0,00" inputmode="decimal"/></div>'
     +'<div><label for="niStart">Fatura inicial</label><select id="niStart" onchange="updateAddModalEndOptions()">';
   for(var m=1;m<MNS.length;m++){
     if(!isMonthClosed(m)){
@@ -1710,6 +1805,7 @@ function openAddModal(){
   }
   body+='</select></div></div>';
   document.getElementById('modalBody').innerHTML=body;
+  pushModalHistory('add');
   document.getElementById('modalBg').classList.add('on');
 }
 
@@ -1765,7 +1861,7 @@ function saveModal(){
       var extraIdx=row.getAttribute('data-extraidx');
       var simGroup=row.getAttribute('data-simgroup');
       var inp=row.querySelector('.medit-val');
-      var val=inp?parseFloat(inp.value):0;
+      var val=inp?parseNum(inp.value):0;
 
       if(isDel){
         if(isBase && key){ overrides[key]=-1; changeCount++; }
@@ -1773,7 +1869,7 @@ function saveModal(){
         if(isSim && simGroup){ simItems=simItems.filter(function(x){return x.group!==simGroup;}); changeCount++; }
       } else {
         if(isBase && key && !isNaN(val) && val>=0){
-          var origVal=parseFloat(row.getAttribute('data-orig'));
+          var origVal=parseNum(row.getAttribute('data-orig'));
           if(isNaN(origVal) || Math.abs(val-origVal)>0.001){ overrides[key]=val; changeCount++; }
           else if(overrides.hasOwnProperty(key)){ delete overrides[key]; } // voltou ao original -> limpa override
         }
@@ -1791,10 +1887,10 @@ function saveModal(){
     var nd=document.getElementById('niDesc');
     var nv=document.getElementById('niVal');
     var ne=document.getElementById('niEnd');
-    if(nd&&nv&&nd.value.trim()&&parseFloat(nv.value)>0){
+    if(nd&&nv&&nd.value.trim()&&parseNum(nv.value)>0){
       var ate=ne&&parseInt(ne.value)>=0?parseInt(ne.value):mIdx;
       if(ate<mIdx) ate=mIdx;
-      extraItems.push({desc:nd.value.trim(),val:parseFloat(nv.value),de:mIdx,ate:ate,tag:'extra',isExtra:true});
+      extraItems.push({desc:nd.value.trim(),val:parseNum(nv.value),de:mIdx,ate:ate,tag:'extra',isExtra:true});
       changeCount++;
     }
     window._editChangeCount=changeCount;
@@ -1804,11 +1900,11 @@ function saveModal(){
     var nv=document.getElementById('niVal');
     var ns=document.getElementById('niStart');
     var ne=document.getElementById('niEnd');
-    if(!nd||!nv||!nd.value.trim()||!(parseFloat(nv.value)>0)){alert('Preencha descrição e valor.');return;}
+    if(!nd||!nv||!nd.value.trim()||!(parseNum(nv.value)>0)){alert('Preencha descrição e valor.');return;}
     var de=ns?parseInt(ns.value):1;
     var ate=ne&&parseInt(ne.value)>=0?parseInt(ne.value):de;
     if(ate<de) ate=de;
-    extraItems.push({desc:nd.value.trim(),val:parseFloat(nv.value),de:de,ate:ate,tag:'extra',isExtra:true});
+    extraItems.push({desc:nd.value.trim(),val:parseNum(nv.value),de:de,ate:ate,tag:'extra',isExtra:true});
   }
   saveLocal();pushToSheets();
   closeModal();renderFaturas();
@@ -1825,8 +1921,6 @@ function delExtra(idx){
   extraItems.splice(idx,1);
   saveLocal();pushToSheets();renderFaturas();
 }
-function closeModal(){document.getElementById('modalBg').classList.remove('on');}
-function closeModalIfBg(e){if(e.target===document.getElementById('modalBg'))closeModal();}
 
 /* ═══════════════════════════════════════════════
    MATH
@@ -1851,12 +1945,15 @@ function milesVal(m){return m*(profile.milhaVal!=null?profile.milhaVal:0.03);}
 ═══════════════════════════════════════════════ */
 function calculate(){
   var name   =document.getElementById('pName').value.trim()||'Produto';
-  var cashRaw=parseFloat(document.getElementById('pCash').value);
-  var discPct=parseFloat(document.getElementById('pDisc').value)||0;
-  var instRaw=parseFloat(document.getElementById('pInst').value);
-  var maxN   =parseInt(document.getElementById('pMaxN').value);
-  var mOff   =parseInt(document.getElementById('pMonth').value); // = índice da fatura afetada
+  var cashRaw=parseNum(document.getElementById('pCash').value);
+  var discPct=parseNum(document.getElementById('pDisc').value);
+  var instRaw=parseNum(document.getElementById('pInst').value);
+  var maxN   =parseInt(document.getElementById('pMaxN').value)||1;
+  var mOff   =parseInt(document.getElementById('pMonth').value)||1; // = índice da fatura afetada
   var ar     =getRate();
+
+  var cashMethod = (document.getElementById('pCashMethod') ? document.getElementById('pCashMethod').value : 'cartao');
+  var isCardCash = (cashMethod === 'cartao');
 
   if(!cashRaw||cashRaw<=0){showErr('Informe o valor do produto à vista.');return;}
 
@@ -1866,7 +1963,18 @@ function calculate(){
   var bud=getBudget(mOff);
   var avail=bud.available, committed=bud.committed;
 
-  var cMi=miles(cashPrice), cMiV=useMiles?milesVal(cMi):0, cNet=cashPrice-cMiV;
+  // Harmonização de Valor Presente e Float (Corrige A1):
+  // Se pago à vista no Cartão de Crédito (1x):
+  //   - O débito vence apenas na data da 1ª fatura (1 mês de float com rendimento da reserva)
+  //   - Acumula milhas Nubank Black
+  // Se pago via PIX / Débito:
+  //   - A saída de recursos é imediata no instante da compra (t = 0), sem float nem milhas
+  var mr=Math.pow(1+ar,1/12)-1;
+  var cPv=(isCardCash && ar>0)?(cashPrice/(1+mr)):cashPrice;
+  var cMi=isCardCash?miles(cashPrice):0;
+  var cMiV=(isCardCash && useMiles)?milesVal(cMi):0;
+  var cNet=cPv-cMiV;
+
   var opts=[],best=null,bestScore=Infinity;
   for(var n=1;n<=maxN;n++){
     var r=npv(cashRaw,instTotal,n,ar);
@@ -1874,7 +1982,10 @@ function calculate(){
     var netC=r.pv-iMiV, canAff=r.per<=avail;
     var opt={n:n,per:r.per,gain:r.gain,iMi:iMi,iMiV:iMiV,net:netC,canAff:canAff};
     opts.push(opt);
-    var score=netC+(canAff?0:(r.per-avail)*20);
+
+    // Penalidade de orçamento: vinculada estritamente ao toggle useBudget (Corrige C3)
+    var penalty=(useBudget && !canAff)?(r.per-avail)*20:0;
+    var score=netC+penalty;
     if(score<bestScore){bestScore=score;best=opt;}
   }
   var bestNet=best?best.net:Infinity;
@@ -1886,6 +1997,7 @@ function calculate(){
 
   // Guardar último resultado (para botão manual "adicionar às faturas")
   lastCalc={name:name,cashRaw:cashRaw,cashPrice:cashPrice,discPct:discPct,discSave:discSave,
+    cashMethod:cashMethod,isCardCash:isCardCash,cPv:cPv,
     instTotal:instTotal,ar:ar,mOff:mOff,cMi:cMi,cMiV:cMiV,cNet:cNet,
     opts:opts,best:best,bestNet:bestNet,vistaWins:vistaWins,savings:savings,
     avail:avail,committed:committed};
@@ -1896,6 +2008,7 @@ function calculate(){
     cashPrice:cashPrice,
     cashRaw:cashRaw,
     discPct:discPct,
+    cashMethod:cashMethod,
     instRaw:instRaw,
     instTotal:instTotal,
     maxN:maxN,
@@ -1926,20 +2039,24 @@ function renderResults(d){
 
   // VERDICT
   var vc=d.vistaWins?'bg':'bp';
-  var vl=d.vistaWins?'✅ Pagar À Vista':'✅ Parcelar em '+bN+'x';
+  var methodTitle=d.isCardCash ? '💳 Cartão 1x' : '⚡ PIX / Dinheiro';
+  var vl=d.vistaWins ? (d.isCardCash ? '✅ Cartão 1x (À Vista)' : '✅ Pagar no PIX') : ('✅ Parcelar em '+bN+'x');
   var verdH='<div class="verd"><div class="vlbl">Melhor opção para</div>'
     +'<div class="vname">'+esc(d.name)+'</div>'
     +'<span class="badge '+vc+' vbadge">'+vl+'</span>'
     +'<div class="veco">Economia de <strong style="color:var(--green)">'+fmtBRL(d.savings)+'</strong> frente à outra opção</div></div>';
 
   // SIDE BY SIDE
+  var floatGain = (d.isCardCash && d.ar > 0) ? (d.cashPrice - d.cPv) : 0;
   var vH='<div class="'+(d.vistaWins?'rwin wglow':'rlos')+'">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-    +'<span style="font-weight:700;font-size:13px">💵 À Vista</span>'+(d.vistaWins?'<span class="badge bg">✅</span>':'')+'</div>'
+    +'<span style="font-weight:700;font-size:13px">'+methodTitle+'</span>'+(d.vistaWins?'<span class="badge bg">✅</span>':'')+'</div>'
     +(d.discPct>0?'<div style="font-size:11px;color:var(--yellow);margin-bottom:3px">🏷️ Desconto '+d.discPct+'%</div>':'')
     +'<div style="font-size:19px;font-weight:800;margin-bottom:4px">'+fmtBRL(d.cashPrice)+'</div>'
     +(d.discPct>0?'<div style="font-size:11px;margin-bottom:3px">Economiza: <strong style="color:var(--yellow)">'+fmtBRL(d.discSave)+'</strong></div>':'')
-    +(useMiles?'<div style="font-size:11px;margin-bottom:3px">✈️ <strong style="color:var(--purple)">'+Math.round(d.cMi)+' mi</strong> ≈ '+fmtBRL(d.cMiV)+'</div>':'')
+    +(floatGain>0.005?'<div style="font-size:11px;margin-bottom:3px">📈 Ganho float (1m): <strong style="color:var(--green)">+'+fmtBRL(floatGain)+'</strong></div>':'')
+    +(d.isCardCash && useMiles?'<div style="font-size:11px;margin-bottom:3px">✈️ <strong style="color:var(--purple)">'+Math.round(d.cMi)+' mi</strong> ≈ '+fmtBRL(d.cMiV)+'</div>':'')
+    +(!d.isCardCash?'<div style="font-size:11px;color:var(--muted);margin-bottom:3px">Débito imediato (t = 0, sem milhas)</div>':'')
     +'<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)">'
     +'<div style="font-size:10px;color:var(--muted)">Custo real</div>'
     +'<div style="font-size:16px;font-weight:700;color:'+(d.vistaWins?'var(--green)':'rgba(255,255,255,.5)')+'">'+fmtBRL(d.cNet)+'</div>'
@@ -2102,17 +2219,21 @@ function buildBullets(d){
   if(d.vistaWins){
     b.push({i:'💰',t:d.discPct>0
       ?'Desconto de <strong>'+d.discPct+'%</strong> ('+fmtBRL(d.discSave)+') supera o ganho de manter o dinheiro investido durante o parcelamento.'
-      :'Pagar à vista resulta em menor custo real — milhas e custo-oportunidade favorecem o pagamento imediato.'});
-    b.push({i:'📈',t:'Com Selic a <strong>'+rl+' a.a.</strong>, o ganho de investir enquanto parcela ('+fmtBRL(bg)+') não supera o desconto.'});
-    if(useMiles) b.push({i:'✈️',t:'Você acumula <strong>'+Math.round(d.cMi)+' milhas</strong> (≈ '+fmtBRL(d.cMiV)+') pagando à vista.'});
-    b.push({i:'💳',t:'Fatura prevista em <strong>'+mn+'</strong>: <strong>'+fmtBRL(d.committed)+'</strong>. Sem parcela, a fatura fica controlada.'});
-    b.push({i:'🔑',t:'<strong>Estratégia:</strong> pague à vista no crédito (gera milhas + desconto) e garanta saldo antes do vencimento.'});
+      :'Pagar à vista resulta em menor custo real — milhas e custo-oportunidade favorecem a opção.'});
+    b.push({i:'📈',t:'Com Selic a <strong>'+rl+' a.a.</strong>, o ganho de investir enquanto parcela ('+fmtBRL(bg)+') não supera a economia do pagamento à vista.'});
+    if(d.isCardCash && useMiles) b.push({i:'✈️',t:'Você acumula <strong>'+Math.round(d.cMi)+' milhas</strong> (≈ '+fmtBRL(d.cMiV)+') pagando à vista no cartão.'});
+    b.push({i:'💳',t:'Fatura prevista em <strong>'+mn+'</strong>: <strong>'+fmtBRL(d.committed)+'</strong>. Sem parcelas adicionais, as faturas futuras ficam controladas.'});
+    if(d.isCardCash){
+      b.push({i:'🔑',t:'<strong>Estratégia:</strong> pague em 1x no Cartão de Crédito (aproveite 1 mês de rendimento até a fatura vencer + milhas Nubank Black).'});
+    } else {
+      b.push({i:'🔑',t:'<strong>Estratégia:</strong> pague via PIX garantindo o desconto imediato superior a qualquer rendimento de renda fixa.'});
+    }
   } else {
-    b.push({i:'📈',t:'Parcelando em <strong>'+bn+'x</strong> e investindo à Selic ('+rl+'), você ganha <strong style="color:var(--green)">'+fmtBRL(bg)+'</strong> de rendimento.'});
+    b.push({i:'📈',t:'Parcelando em <strong>'+bn+'x</strong> e investindo à Selic ('+rl+'), você ganha <strong style="color:var(--green)">'+fmtBRL(bg)+'</strong> de rendimento acumulado.'});
     if(useMiles) b.push({i:'✈️',t:'Milhas similares: '+Math.round(d.best?d.best.iMi:0)+' mi parcelado vs '+Math.round(d.cMi)+' mi à vista.'});
     b.push({i:'💳',t:'Fatura em <strong>'+mn+'</strong>: <strong>'+fmtBRL(d.committed)+'</strong>. Com parcela de <strong>'+fmtBRL(bp)+'/mês</strong>, '+(d.best&&d.best.canAff?'fica dentro da meta.':'<strong style="color:var(--red)">ultrapassa a meta de '+fmtBRL(profile.meta)+'.</strong>')});
     b.push({i:'📅',t:'Use o botão verde acima para adicionar as parcelas às faturas previstas e ver o impacto mês a mês.'});
-    b.push({i:'🔑',t:'<strong>Estratégia:</strong> parcele no Nubank Black e aplique o total no Tesouro Selic — resgate mensalmente.'});
+    b.push({i:'🔑',t:'<strong>Estratégia:</strong> parcele no Nubank Black e aplique o saldo correspondente no Tesouro Selic — resgatando apenas no vencimento.'});
   }
   return b;
 }

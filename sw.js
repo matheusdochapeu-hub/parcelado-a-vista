@@ -1,8 +1,9 @@
-const CACHE_NAME = 'faturas-pwa-v6';
+const CACHE_NAME = 'faturas-pwa-v7';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './favicon.ico',
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png'
@@ -36,43 +37,57 @@ self.addEventListener('activate', (event) => {
 
 // Estratégia de requisições:
 // - Para o Google Apps Script (sincronização): sempre via rede (network only)
-// - Para arquivos da aplicação: Network-First (busca o mais recente na rede; se offline, usa o cache)
+// - Para navegação HTML (index.html): Network-First com fallback para cache offline
+// - Para ícones e assets estáticos: Cache-First com fallback para rede
 self.addEventListener('fetch', (event) => {
-  const url = event.request.url;
+  const request = event.request;
+  const url = request.url;
 
   // Ignorar chamadas ao Google Apps Script ou extensões para não interferir na sincronização
   if (url.includes('script.google.com') || url.includes('googleusercontent.com') || url.startsWith('chrome-extension')) {
     return;
   }
 
-  // Apenas GET pode ser cacheado
-  if (event.request.method !== 'GET') {
+  // Apenas requisições GET podem ser cacheadas
+  if (request.method !== 'GET') {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Se a resposta for válida e do mesmo domínio, atualiza o cache
+  // Navegações de página HTML sempre tentam a rede primeiro para garantir código atualizado
+  if (request.mode === 'navigate' || url.endsWith('index.html') || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
+    event.respondWith(
+      fetch(request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+            cache.put(request, responseToCache);
           });
         }
         return networkResponse;
-      })
-      .catch(() => {
-        // Se a rede falhar (offline), busca do cache local
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // Fallback para index.html se for navegação
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
+      }).catch(() => {
+        return caches.match(request).then((cachedResponse) => {
+          return cachedResponse || caches.match('./index.html');
         });
       })
+    );
+    return;
+  }
+
+  // Para ícones, manifest e assets estáticos: Cache-First
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) {
+        return cached;
+      }
+      return fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+        }
+        return networkResponse;
+      });
+    })
   );
 });

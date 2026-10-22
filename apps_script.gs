@@ -1,17 +1,23 @@
 // ============================================================
 //  APPS SCRIPT - Backup "Parcelado ou A Vista?"
-//  Planilha: https://docs.google.com/spreadsheets/d/1gOvQKSzyNuaVxUH-HgyQEV5HY_vlJsnAB5fnry4Uc3s
+//  Planilha: Vincule este script a sua planilha Google Sheets pessoal
+//
+//  SEGURANCA:
+//  Defina uma chave secreta abaixo (SHARED_SECRET) e configure a
+//  mesma chave na aba "Perfil" do aplicativo web.
 //
 //  COMO INSTALAR:
-//  1. Menu: Extensoes > Apps Script
-//  2. Apague tudo e cole este codigo
-//  3. Salve (Ctrl+S)
-//  4. Clique em "Implantar" > "Nova implantacao"
-//  5. Tipo: App da Web
-//  6. Executar como: Eu (seu e-mail)
-//  7. Quem tem acesso: Qualquer pessoa
-//  8. Clique em "Implantar" > autorize > copie a URL
-//  9. Cole a URL na aba Perfil do app
+//  1. Abra sua planilha Google Sheets pessoal
+//  2. Menu: Extensoes > Apps Script
+//  3. Apague tudo e cole este codigo
+//  4. Altere a constante SHARED_SECRET para uma senha forte
+//  5. Salve (Ctrl+S)
+//  6. Clique em "Implantar" > "Nova implantacao"
+//  7. Tipo: App da Web
+//  8. Executar como: Eu (seu e-mail)
+//  9. Quem tem acesso: Qualquer pessoa
+//  10. Clique em "Implantar" > autorize > copie a URL
+//  11. Cole a URL e a mesma chave na aba Perfil do app
 //
 //  SE JA EXISTE UMA IMPLANTACAO:
 //  1. "Implantar" > "Gerenciar implantacoes" > lapis (editar)
@@ -20,7 +26,32 @@
 //  4. Implantar (a URL nao muda)
 // ============================================================
 
+var SHARED_SECRET = 'DefinaUmaChaveComplexaAqui123!'; // Chave privada de acesso (ou defina SHEETS_SECRET_TOKEN nas Propriedades do script)
 var SHEET_NAME = 'Backup';
+
+function getSecretToken() {
+  try {
+    var prop = PropertiesService.getScriptProperties().getProperty('SHEETS_SECRET_TOKEN');
+    if (prop) return prop;
+  } catch(err) {}
+  return SHARED_SECRET;
+}
+
+function isAuthorized(e) {
+  var secret = getSecretToken();
+  if (!secret || secret === 'DefinaUmaChaveComplexaAqui123!') {
+    // Permite uso inicial se o usuario ainda nao configurou token exclusivo
+    return true;
+  }
+  var token = (e && e.parameter && e.parameter.token) || '';
+  if (!token && e && e.postData && e.postData.contents) {
+    try {
+      var parsed = JSON.parse(e.postData.contents);
+      token = parsed.token || '';
+    } catch(err) {}
+  }
+  return token === secret;
+}
 
 function getSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -75,34 +106,19 @@ function jsonpResponse(callback, data) {
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
-// GET - carrega dados OU salva via GET (para file://)
+// GET - apenas leitura autenticada de dados
 function doGet(e) {
-  var p        = e.parameter || {};
-  var action   = p.action   || 'load';
+  var p        = (e && e.parameter) || {};
   var callback = p.callback || '';
-  var sh       = getSheet();
 
-  if (action === 'save') {
-    try {
-      var raw     = decodeURIComponent(p.data || '{}');
-      var payload = JSON.parse(raw);
-      if (payload.extraItems !== undefined) writeKey(sh, 'extraItems', payload.extraItems);
-      if (payload.simItems   !== undefined) writeKey(sh, 'simItems',   payload.simItems);
-      if (payload.overrides  !== undefined) writeKey(sh, 'overrides',  payload.overrides);
-      if (payload.purchHist  !== undefined) writeKey(sh, 'purchHist',  payload.purchHist);
-      if (payload.monthStatus !== undefined) writeKey(sh, 'monthStatus', payload.monthStatus);
-      if (payload.collapsedMonths !== undefined) writeKey(sh, 'collapsedMonths', payload.collapsedMonths);
-      if (payload.profile    !== undefined) writeKey(sh, 'profile',    payload.profile);
-      var ok = { ok: true, savedAt: new Date().toISOString() };
-      return callback ? jsonpResponse(callback, ok) : jsonResponse(ok);
-    } catch (err) {
-      var fail = { ok: false, error: err.message };
-      return callback ? jsonpResponse(callback, fail) : jsonResponse(fail);
-    }
+  if (!isAuthorized(e)) {
+    var unauthorized = { ok: false, error: 'Acesso nao autorizado. Verifique o token de autenticacao.' };
+    return callback ? jsonpResponse(callback, unauthorized) : jsonResponse(unauthorized);
   }
 
-  // action = 'load'
+  var sh = getSheet();
   var result = {
+    ok: true,
     extraItems: readKey(sh, 'extraItems') || [],
     simItems:   readKey(sh, 'simItems')   || [],
     overrides:  readKey(sh, 'overrides')  || {},
@@ -114,12 +130,19 @@ function doGet(e) {
   return callback ? jsonpResponse(callback, result) : jsonResponse(result);
 }
 
-// POST - salva dados (para quando app estiver hospedado em https://)
+// POST - salva dados com autenticacao e trava de concorrencia (LockService)
 function doPost(e) {
+  if (!isAuthorized(e)) {
+    return jsonResponse({ ok: false, error: 'Acesso nao autorizado. Verifique o token de autenticacao.' });
+  }
+
+  var lock = LockService.getScriptLock();
   try {
-    var body    = e.postData ? e.postData.contents : '{}';
+    lock.waitLock(10000); // Aguarda ate 10s para evitar race conditions
+    var body    = (e && e.postData) ? e.postData.contents : '{}';
     var payload = JSON.parse(body);
     var sh      = getSheet();
+
     if (payload.extraItems !== undefined) writeKey(sh, 'extraItems', payload.extraItems);
     if (payload.simItems   !== undefined) writeKey(sh, 'simItems',   payload.simItems);
     if (payload.overrides  !== undefined) writeKey(sh, 'overrides',  payload.overrides);
@@ -127,8 +150,11 @@ function doPost(e) {
     if (payload.monthStatus !== undefined) writeKey(sh, 'monthStatus', payload.monthStatus);
     if (payload.collapsedMonths !== undefined) writeKey(sh, 'collapsedMonths', payload.collapsedMonths);
     if (payload.profile    !== undefined) writeKey(sh, 'profile',    payload.profile);
+
     return jsonResponse({ ok: true, savedAt: new Date().toISOString() });
   } catch (err) {
     return jsonResponse({ ok: false, error: err.message });
+  } finally {
+    lock.releaseLock();
   }
 }

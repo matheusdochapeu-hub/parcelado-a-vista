@@ -19,26 +19,34 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 
 - **🧮 Calculadora de Inteligência Financeira:**
   - Simulações comparativas: À Vista com Desconto vs. Parcelado Sem Juros.
-  - Cálculo de rendimento real de aplicações (100% CDI / Tesouro Selic) resgatando mês a mês para pagamento das parcelas.
-  - Pontuação de milhas (2.2 milhas/dólar no Nubank Black).
+  - Método de pagamento à vista configurável: **PIX / Dinheiro** (débito imediato no momento $t=0$) ou **Cartão de Crédito 1x** (com float de 1 mês no CDI e acúmulo de milhas).
+  - Cálculo de rendimento real de aplicações (100% CDI / Tesouro Selic) resgatando mês a mês para pagamento das parcelas via VPL/VP.
+  - Pontuação de milhas configurável (ex: 2.2 milhas/dólar no Nubank Ultravioleta).
+  - Respeito à chave de "Considerar meta de gastos": penalizações de orçamento só são aplicadas se a opção estiver ativada.
   - Projeção de impacto visual direto nas faturas futuras antes de efetivar a compra.
   - Botão para adicionar a simulação diretamente na previsão das faturas com um clique.
 
-- **📱 PWA Nativo para Celular:**
+- **📱 PWA Nativo & Navegação Mobile:**
   - Totalmente responsivo para computador e smartphone.
-  - Ícone de aplicativo dedicado e funcionamento em tela cheia (standalone).
-  - Suporte a cache offline com Service Worker.
+  - Ícone de aplicativo dedicado, `favicon.ico` multi-resolução e funcionamento em tela cheia (standalone).
+  - Suporte a cache offline com Service Worker (estratégia **Network-First** para atualizações transparentes do app e **Cache-First** para assets estáticos).
   - Ajuste a entalhes de tela (*safe-area-insets* para iOS e Android).
+  - Suporte completo ao botão "Voltar" do navegador/celular via **History API** (fecha modais abertos e navega entre abas sem fechar o app).
+  - Campos numéricos com `inputmode="decimal"` tolerantes à vírgula brasileira (PT-BR).
 
-- **🎨 Interface refinada (foco mobile):**
+- **🎨 Interface refinada (foco mobile & acessibilidade):**
   - Navegação em *segmented control* fixa no topo (abas sempre acessíveis ao rolar).
   - Valores financeiros com **números tabulares** e colunas alinhadas à direita no comparativo.
   - Cartões de fatura com faixa colorida por status, micro-interações suaves e respeito a `prefers-reduced-motion`.
+  - Contraste aprimorado de cores atendendo às diretrizes de acessibilidade WCAG AA (texto secundário e badges).
   - Escala tipográfica e tokens de design (raios/sombras/espaços) para consistência em todo o app.
-  - Layout mobile ajustado: cabeçalho de faturas empilhado com botão largura total, legenda em lista legível, campos com seta própria no `select`, barra de ações do modal fixa ao rolar, e áreas de toque ≥ 44px.
+  - Layout mobile com áreas de toque mínimas de 44x44px em todos os controles interativos.
 
-- **☁️ Sincronização e Backup com Google Sheets:**
-  - Backup contínuo via Google Apps Script (POST em HTTPS, com fallback JSONP para `file://`).
+- **🔒 Segurança & Sincronização com Google Sheets:**
+  - **Autenticação por Token Secreto:** Suporte a `SHARED_SECRET` configurado no Apps Script e no Perfil do app.
+  - **Proteção de Dados:** Envio exclusivo via `HTTP POST` (JSON no corpo da requisição), eliminando o vazamento de dados financeiros em URLs ou logs de proxy.
+  - **Controle de Concorrência:** `LockService` no Google Apps Script evitando race conditions e sobreposição em gravações simultâneas.
+  - **Content Security Policy (CSP):** Cabeçalho de segurança reforçado contra injeção e XSS.
   - Sincroniza também as **configurações do Perfil** (meta, Selic, câmbio, milhas) entre dispositivos.
   - Armazenamento local redundante no `localStorage`.
   - **Exportar / Importar backup em JSON** (aba Perfil) — um clique para salvar ou restaurar todos os dados sem depender do Sheets.
@@ -53,13 +61,37 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 ```
 ├── index.html              # Aplicação completa (HTML, CSS e JS)
 ├── manifest.json           # Manifesto PWA para instalação no celular
-├── sw.js                   # Service Worker para cache e uso offline
+├── sw.js                   # Service Worker (Network-First para HTML, Cache-First para estáticos)
+├── favicon.ico             # Ícone do navegador (16x16, 32x32, 48x48)
+├── robots.txt              # Diretrizes para indexadores de busca
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── apps_script.gs          # Código de integração do Google Sheets
-└── generate_pwa_icons.py   # Script de geração dos ícones gráficos
+├── apps_script.gs          # Script de integração Google Sheets (com LockService e Auth)
+└── scripts/
+    └── generate_pwa_icons.py # Script de geração de ícones PWA
 ```
+
+---
+
+## 🔑 Configuração do Google Sheets e Token de Segurança
+
+Para conectar o app a uma planilha Google privada:
+
+1. Crie uma planilha no Google Sheets com as abas `Faturas` e `Config`.
+2. Acesse **Extensões → Apps Script** e cole o código de `apps_script.gs`.
+3. (Opcional, recomendado) Em **Configurações do Projeto (ícone de engrenagem) → Propriedades do script**, adicione:
+   - **Propriedade:** `SHEETS_SECRET_TOKEN`
+   - **Valor:** `uma-senha-ou-token-forte-aqui`
+4. Clique em **Implantar → Nova implantação**:
+   - Tipo: **App da Web**
+   - Executar como: **Eu**
+   - Quem pode acessar: **Qualquer pessoa**
+5. Copie a URL do App da Web gerada.
+6. No app **Parcelado ou À Vista?**, vá na aba **Perfil**:
+   - Cole a URL do App da Web em **URL do Google Apps Script**.
+   - Digite o mesmo token no campo **Token de Segurança (opcional)**.
+   - Clique em **Salvar Dados do Perfil**.
 
 ---
 
