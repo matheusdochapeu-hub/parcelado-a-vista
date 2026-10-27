@@ -13,6 +13,14 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   - Recolhimento e expansão ágil de lançamentos mensais com seta indicativa.
   - **Editor de fatura aprimorado:** total e sobra na meta recalculados **ao vivo** enquanto você edita, **busca** por nome do item, **contador** de itens/alterações, remoção com **desfazer** (↩) antes de salvar, selos de tipo (Planilha / Estimado / Manual / Simulada) e bloco recolhível para adicionar lançamentos.
 
+- **📊 Categorizador de Gastos & Análise Financeira Anual:**
+  - **Categorização Automática Inteligente:** Classificação instantânea de lançamentos reais e futuros em categorias (Alimentação, Vestuário & Moda, Saúde & Fitness, Casa, Assinaturas, Pets, Transporte, Compras).
+  - **Personalização Total:** Crie novas categorias com emoji e cor própria, crie regras por palavras-chave e reclassifique qualquer item diretamente na lista com 1 clique.
+  - **Gráfico Donut (Rosca) Interativo:** Gráfico vetorial SVG puro responsivo com cálculo exato de proporções e centro interativo.
+  - **Visualizador Anual das Faturas:** Gráfico de barras verticais SVG mês a mês com linha pontilhada da meta orçamentária, identificando faturas pagas (verde), fechadas (amarelo) e abertas (azul/vermelho).
+  - **Rastreador de Milhas Ganhas:** Contabilização de milhas acumuladas em faturas pagas vs. projeção de faturas futuras e equivalência estimada em R$.
+  - **Painel de Faturas Pagas e a Vencer:** Cards de resumo (KPIs) e tabela consolidada mês a mês com status, % da meta e milhas.
+
 - **📋 Histórico de Simulações:**
   - Reabrir qualquer simulação com um toque para editar na calculadora.
   - **Excluir simulações individualmente** (✕ em cada item) ou **limpar todas** de uma vez.

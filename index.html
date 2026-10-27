@@ -466,14 +466,67 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   .modal{padding:16px;border-radius:var(--r-lg)}
   .mbtns{position:sticky;bottom:0;background:#111c2e;padding-top:10px;margin-top:10px;margin-bottom:-4px;border-top:1px solid var(--border)}
 }
-/* Em telas bem estreitas, troca os rótulos das abas por versões curtas (via ::after) */
-@media(max-width:400px){
+
+/* ═══════════════════════════════════════════════
+   ESTILOS: ABA GASTOS, GRÁFICOS & CATEGORIZADOR
+═══════════════════════════════════════════════ */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;display:flex;flex-direction:column;gap:5px;box-shadow:var(--sh-1);transition:transform .18s ease,border-color .18s ease}
+.kpi-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.22)}
+.kpi-header{display:flex;align-items:center;justify-content:space-between}
+.kpi-icon{font-size:22px}
+.kpi-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kpi-val{font-size:21px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.kpi-sub{font-size:11.5px;color:var(--text-secondary);line-height:1.4}
+
+.gastos-filter-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;background:rgba(21,31,50,0.8);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px}
+.gastos-filter-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+.chart-scroll-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.chart-svg{min-width:640px;width:100%;height:auto;display:block}
+
+.cat-viz-grid{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:center}
+@media(max-width:760px){
+  .cat-viz-grid{grid-template-columns:1fr;justify-items:center}
+}
+.donut-wrap{position:relative;width:240px;height:240px;margin:0 auto}
+.donut-svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:12px}
+.donut-center-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.donut-center-val{font-size:18px;font-weight:800;color:#fff;margin:2px 0;font-variant-numeric:tabular-nums}
+.donut-center-sub{font-size:11px;color:var(--accent)}
+
+.cat-bar-item{margin-bottom:10px;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;transition:background .15s ease,transform .15s ease;border:1px solid transparent}
+.cat-bar-item:hover{background:rgba(255,255,255,0.06);transform:translateX(3px);border-color:var(--border)}
+.cat-bar-item.selected{background:rgba(56,189,248,0.12);border-color:rgba(56,189,248,0.4)}
+.cat-bar-header{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;margin-bottom:4px}
+.cat-bar-track{width:100%;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+
+.gastos-item-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06);transition:background .15s ease}
+.gastos-item-row:hover{background:rgba(255,255,255,0.04)}
+.cat-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.cat-select-inline{background:#0b1120;border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;outline:none}
+.cat-select-inline:focus{border-color:var(--accent)}
+
+.faturas-summary-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.faturas-summary-table th{background:rgba(15,23,42,0.8);color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.05em;padding:9px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.faturas-summary-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.06);font-variant-numeric:tabular-nums}
+.faturas-summary-table tr:hover td{background:rgba(255,255,255,0.03)}
+
+@media(max-width:580px){
+  .gastos-item-row{grid-template-columns:1fr auto;gap:6px}
+  .gastos-item-row > .cat-actions-cell{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+  .faturas-summary-table th:nth-child(5), .faturas-summary-table td:nth-child(5){display:none}
+}
+@media(max-width:480px){
   .tbtn{position:relative;color:transparent!important;min-height:44px;padding:10px 2px}
-  .tbtn::after{content:attr(data-short);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)}
+  .tbtn::after{content:attr(data-short);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted)}
   .tbtn.on::after{color:#fff}
   .hdr h1{font-size:20px}
   .sg3{grid-template-columns:repeat(3,1fr)}
 }
+
 </style>
 </head>
 <body>
@@ -498,6 +551,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 <div class="wrap">
   <div class="tabs" role="tablist">
     <button id="tabFatura" class="tbtn on" data-short="💳 Faturas" onclick="showTab('fatura',this)">💳 Faturas</button>
+    <button id="tabGastos" class="tbtn" data-short="📊 Gastos" onclick="showTab('gastos',this)">📊 Gastos</button>
     <button id="tabCalc" class="tbtn" data-short="🧮 Calc" onclick="showTab('calc',this)">🧮 Calculadora</button>
     <button id="tabHist" class="tbtn" data-short="📋 Hist" onclick="showTab('hist',this)">📋 Histórico</button>
     <button id="tabCfg" class="tbtn" data-short="⚙️ Perfil" onclick="showTab('cfg',this)">⚙️ Perfil</button>
@@ -523,6 +577,91 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
         <div class="legenda-item"><span class="badge bb">Planilha</span><span>Dado importado da fatura real</span></div>
         <div class="legenda-item"><span class="badge" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)">Estimado</span><span>Projeção das parcelas ativas</span></div>
         <div class="legenda-item"><span class="badge bp">📅 Simulada</span><span>Parcela adicionada manualmente</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GASTOS & ANÁLISE -->
+  <div id="tab-gastos" class="tc">
+    <!-- FILTRO DE PERÍODO & AÇÕES RÁPIDAS -->
+    <div class="gastos-filter-bar">
+      <div class="gastos-filter-group">
+        <span style="font-size:13px;font-weight:700;color:#fff">📅 Período:</span>
+        <select id="gastosMonthSelect" class="cat-select-inline" style="font-size:12px;padding:6px 10px" onchange="setGastosMonthFilter(this.value)">
+          <option value="all">🌐 Todos os meses (Visão Consolidada)</option>
+        </select>
+      </div>
+      <div class="gastos-filter-group">
+        <button class="bsm" style="padding:6px 12px;font-size:12px" onclick="openNewCategoryModal()">➕ Nova Categoria</button>
+        <button class="bsm" style="padding:6px 12px;font-size:12px" onclick="openRulesModal()">⚙️ Regras & Categorias</button>
+      </div>
+    </div>
+
+    <!-- CARDS DE RESUMO (KPIS: PAGAS, A VENCER, MILHAS, TOTAL) -->
+    <div class="kpi-grid" id="gastosKpis"></div>
+
+    <!-- VISUALIZADOR ANUAL DE GASTOS (GRÁFICO DE BARRAS SVG) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div>
+          <div class="ctitle">📅 Evolução Anual das Faturas</div>
+          <div class="csub" style="margin:0">Total por mês com status de pagamento e linha da meta orçamentária (clique no mês para filtrar)</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:11px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px;color:#34d399"><span style="width:10px;height:10px;background:#34d399;border-radius:2px;display:inline-block"></span> Paga</span>
+          <span style="display:flex;align-items:center;gap:4px;color:#fbbf24"><span style="width:10px;height:10px;background:#fbbf24;border-radius:2px;display:inline-block"></span> Fechada</span>
+          <span style="display:flex;align-items:center;gap:4px;color:#38bdf8"><span style="width:10px;height:10px;background:#38bdf8;border-radius:2px;display:inline-block"></span> Em aberto</span>
+          <span style="display:flex;align-items:center;gap:4px;color:#f87171"><span style="width:10px;height:10px;background:#f87171;border-radius:2px;display:inline-block"></span> Acima da meta</span>
+          <span style="display:flex;align-items:center;gap:4px;color:#fbbf24"><span style="width:14px;border-top:2px dashed #fbbf24;display:inline-block"></span> Meta</span>
+        </div>
+      </div>
+      <div class="chart-scroll-wrap" id="anualChartWrap"></div>
+    </div>
+
+    <!-- DETALHAMENTO DE MILHAS DO PERÍODO -->
+    <div class="card" id="milhasDetailCard"></div>
+
+    <!-- CATEGORIZADOR: GRÁFICOS (DONUT + BARRAS HORIZONTAIS) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div>
+          <div class="ctitle">🏷️ Gastos por Categoria</div>
+          <div class="csub" style="margin:0">Divisão percentual automática dos lançamentos (clique para filtrar os itens abaixo)</div>
+        </div>
+        <button class="bsm" id="btnResetCatFilter" style="display:none;padding:4px 10px;font-size:11px" onclick="setGastosCatFilter('all')">✕ Limpar filtro de categoria</button>
+      </div>
+      <div class="cat-viz-grid">
+        <div class="donut-wrap">
+          <svg viewBox="0 0 280 280" class="donut-svg" id="donutSvg"></svg>
+          <div class="donut-center" id="donutCenter"></div>
+        </div>
+        <div id="catBarsList"></div>
+      </div>
+    </div>
+
+    <!-- LISTA DE LANÇAMENTOS E RECLASSIFICAÇÃO EM TEMPO REAL -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <div class="ctitle">📋 Lançamentos do Período</div>
+          <div class="csub" style="margin:0" id="gastosItemsCount">Carregando itens…</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="gastosSearchInput" placeholder="🔍 Buscar lançamento…" style="padding:7px 12px;font-size:12px;width:180px;border-radius:var(--r-sm)" oninput="setGastosSearch(this.value)"/>
+          <select id="gastosCatQuickFilter" class="cat-select-inline" style="padding:7px 10px;font-size:12px" onchange="setGastosCatFilter(this.value)">
+            <option value="all">Todas as categorias</option>
+          </select>
+        </div>
+      </div>
+      <div id="gastosItemsList" style="max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-md);background:rgba(15,23,42,0.4)"></div>
+    </div>
+
+    <!-- COMPARATIVO TABULAR: FATURAS PAGAS VS A VENCER -->
+    <div class="card">
+      <div class="ctitle">📑 Extrato Geral das Faturas</div>
+      <div class="csub">Resumo detalhado mês a mês de valores, status e milhas acumuladas</div>
+      <div style="overflow-x:auto">
+        <div id="faturasSummaryTableWrap"></div>
       </div>
     </div>
   </div>
@@ -653,6 +792,20 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
     <div class="mbtns">
       <button class="bsm" onclick="closeModal()">Cancelar</button>
       <button class="bcalc" id="modalSaveBtn" style="width:auto;margin:0;padding:8px 18px;font-size:13px" onclick="saveModal()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GERENCIAR CATEGORIAS E REGRAS -->
+<div class="modal-bg" id="catModalBg" onclick="closeCatModalIfBg(event)">
+  <div class="modal" id="catModalBox" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 id="catModalTitle" style="margin:0;font-size:18px">🏷️ Categorias & Regras</h3>
+      <button class="bsm" style="padding:4px 10px;font-size:13px" onclick="closeCatModal()">✕</button>
+    </div>
+    <div id="catModalBody"></div>
+    <div class="mbtns" id="catModalBtns">
+      <button class="bsm" onclick="closeCatModal()">Fechar</button>
     </div>
   </div>
 </div>
@@ -910,8 +1063,12 @@ function syncAll(){
       if(Array.isArray(data.purchHist))   purchHist=data.purchHist;
       if(data.monthStatus&&typeof data.monthStatus==='object') monthStatus=data.monthStatus;
       if(data.collapsedMonths&&typeof data.collapsedMonths==='object') collapsedMonths=data.collapsedMonths;
+      if(Array.isArray(data.userCategories)) userCategories=data.userCategories;
+      if(Array.isArray(data.userCatRules))   userCatRules=data.userCatRules;
+      if(data.itemCatMap&&typeof data.itemCatMap==='object') itemCatMap=data.itemCatMap;
       if(data.profile&&Object.keys(data.profile).length) applyRemoteProfile(data.profile);
       saveLocal();renderHist();renderFaturas();
+      if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')) renderGastosView();
       setSyncStatus('ok','Sincronizado ✓ '+new Date().toLocaleTimeString('pt-BR'));
     },
     function(err){setSyncStatus('err','Erro: '+err);}
@@ -929,6 +1086,9 @@ function pushToSheets(){
     purchHist: purchHist,
     monthStatus: monthStatus,
     collapsedMonths: collapsedMonths,
+    userCategories: userCategories,
+    userCatRules: userCatRules,
+    itemCatMap: itemCatMap,
     profile: profile
   };
 
@@ -966,7 +1126,10 @@ function exportBackup(){
     overrides:overrides,
     purchHist:purchHist,
     monthStatus:monthStatus,
-    collapsedMonths:collapsedMonths
+    collapsedMonths:collapsedMonths,
+    userCategories:userCategories,
+    userCatRules:userCatRules,
+    itemCatMap:itemCatMap
   };
   var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob);
@@ -995,8 +1158,12 @@ function importBackup(ev){
       if(Array.isArray(data.purchHist))  purchHist=data.purchHist;
       if(data.monthStatus&&typeof data.monthStatus==='object') monthStatus=data.monthStatus;
       if(data.collapsedMonths&&typeof data.collapsedMonths==='object') collapsedMonths=data.collapsedMonths;
+      if(Array.isArray(data.userCategories)) userCategories=data.userCategories;
+      if(Array.isArray(data.userCatRules))   userCatRules=data.userCatRules;
+      if(data.itemCatMap&&typeof data.itemCatMap==='object') itemCatMap=data.itemCatMap;
       saveLocal(); pushToSheets();
       renderBadges(); renderHist(); renderFaturas();
+      if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')) renderGastosView();
       setSyncStatus('ok','Backup importado ✓');
     }catch(e){
       setSyncStatus('err','Falha ao importar: '+e.message);
@@ -1015,6 +1182,7 @@ function init(){
   loadLocal();
   renderBadges();
   renderHist();renderFaturas();
+  renderGastosView();
   setSyncStatus('ok','Local');
   if(profile.gasUrl) syncAll();
 
@@ -1036,10 +1204,11 @@ function showTab(n,b,fromPopstate){
   if(!tabEl) return;
   tabEl.classList.add('on');
   if(!b){
-    var btnMap={fatura:'tabFatura',calc:'tabCalc',hist:'tabHist',cfg:'tabCfg'};
+    var btnMap={fatura:'tabFatura',gastos:'tabGastos',calc:'tabCalc',hist:'tabHist',cfg:'tabCfg'};
     b=document.getElementById(btnMap[n]);
   }
   if(b) b.classList.add('on');
+  if(n === 'gastos') renderGastosView();
 
   if(!fromPopstate && window.history && window.history.pushState){
     var currentHash=(window.location.hash||'').replace('#','');
@@ -1071,6 +1240,11 @@ function closeModalIfBg(e){
 
 // Intercepta gesto/botão "Voltar" do smartphone para fechar modais ou voltar abas
 window.addEventListener('popstate', function(e){
+  var catBg=document.getElementById('catModalBg');
+  if(catBg && catBg.classList.contains('on')){
+    closeCatModal(true);
+    return;
+  }
   var bg=document.getElementById('modalBg');
   if(bg && bg.classList.contains('on')){
     closeModal(true); // fecha o modal sem duplicar history.back()
@@ -1104,6 +1278,9 @@ function loadLocal(){
   try{var h=localStorage.getItem('pv4_hist');      if(h) purchHist=JSON.parse(h);}catch(e){}
   try{var ms=localStorage.getItem('pv4_mstatus');  if(ms) monthStatus=JSON.parse(ms);}catch(e){}
   try{var cl=localStorage.getItem('pv4_mcollapse');if(cl) collapsedMonths=JSON.parse(cl);}catch(e){}
+  try{var uc=localStorage.getItem('pv4_custom_categories');if(uc) userCategories=JSON.parse(uc);}catch(e){}
+  try{var ur=localStorage.getItem('pv4_cat_rules');        if(ur) userCatRules=JSON.parse(ur);}catch(e){}
+  try{var im=localStorage.getItem('pv4_item_categories');  if(im) itemCatMap=JSON.parse(im);}catch(e){}
 }
 function saveLocal(){
   try{localStorage.setItem('pv4_extra',     JSON.stringify(extraItems));}catch(e){}
@@ -1112,6 +1289,9 @@ function saveLocal(){
   try{localStorage.setItem('pv4_hist',      JSON.stringify(purchHist));}catch(e){}
   try{localStorage.setItem('pv4_mstatus',   JSON.stringify(monthStatus));}catch(e){}
   try{localStorage.setItem('pv4_mcollapse', JSON.stringify(collapsedMonths));}catch(e){}
+  try{localStorage.setItem('pv4_custom_categories', JSON.stringify(userCategories));}catch(e){}
+  try{localStorage.setItem('pv4_cat_rules',         JSON.stringify(userCatRules));}catch(e){}
+  try{localStorage.setItem('pv4_item_categories',   JSON.stringify(itemCatMap));}catch(e){}
 }
 var _profilePushTimer=null;
 function saveProfile(){
@@ -2285,6 +2465,986 @@ if ('serviceWorker' in navigator) {
       console.log('SW falhou ao registrar:', err);
     });
   });
+}
+
+
+/* ═══════════════════════════════════════════════
+   CATEGORIZADOR DE GASTOS, GRÁFICOS & ANÁLISE ANUAL
+═══════════════════════════════════════════════ */
+
+var DEFAULT_CATEGORIES = [
+  { id: 'alim',     name: 'Alimentação & Gastronomia', icon: '🍔', color: '#f59e0b' },
+  { id: 'moda',     name: 'Vestuário & Moda',          icon: '👟', color: '#38bdf8' },
+  { id: 'saude',    name: 'Saúde, Fitness & Cuidados', icon: '💊', color: '#10b981' },
+  { id: 'casa',     name: 'Casa & Utilidades',         icon: '🏠', color: '#8b5cf6' },
+  { id: 'servicos', name: 'Serviços & Assinaturas',    icon: '📱', color: '#06b6d4' },
+  { id: 'pets',     name: 'Pets & Animais',            icon: '🐾', color: '#ec4899' },
+  { id: 'transp',   name: 'Transporte & Viagem',       icon: '🚗', color: '#f97316' },
+  { id: 'compras',  name: 'Compras & Variados',        icon: '🛍️', color: '#6366f1' },
+  { id: 'outros',   name: 'Outros',                    icon: '🏷️', color: '#94a3b8' }
+];
+
+var DEFAULT_CAT_RULES = [
+  // Compras & E-commerce (antes de 'mercado' para evitar falso positivo em mercadolivre)
+  { match: 'mercadolivre', cat: 'compras' },
+  { match: 'mercado livre', cat: 'compras' },
+  { match: 'amazon', cat: 'compras' },
+  { match: 'shopee', cat: 'compras' },
+  { match: 'aliexpress', cat: 'compras' },
+  { match: 'shopping', cat: 'compras' },
+  { match: 'kabum', cat: 'compras' },
+  { match: 'magalu', cat: 'compras' },
+
+  // Alimentação & Gastronomia
+  { match: 'borelli', cat: 'alim' },
+  { match: 'gelatto', cat: 'alim' },
+  { match: 'quiosque', cat: 'alim' },
+  { match: 'ifood', cat: 'alim' },
+  { match: 'restaurante', cat: 'alim' },
+  { match: 'burger', cat: 'alim' },
+  { match: 'padaria', cat: 'alim' },
+  { match: 'supermercado', cat: 'alim' },
+  { match: 'mercado', cat: 'alim' },
+  { match: 'choperia', cat: 'alim' },
+  { match: 'café', cat: 'alim' },
+  { match: 'cafe', cat: 'alim' },
+  { match: 'bar ', cat: 'alim' },
+  { match: 'outback', cat: 'alim' },
+
+  // Vestuário & Moda
+  { match: 'tennis one', cat: 'moda' },
+  { match: 'converse', cat: 'moda' },
+  { match: 'cotton on', cat: 'moda' },
+  { match: 'pernambucanas', cat: 'moda' },
+  { match: 'lupo', cat: 'moda' },
+  { match: 'caedu', cat: 'moda' },
+  { match: 'black creek', cat: 'moda' },
+  { match: 'bagaggio', cat: 'moda' },
+  { match: 'inovathi', cat: 'moda' },
+  { match: 'le sac', cat: 'moda' },
+  { match: 'calcado', cat: 'moda' },
+  { match: 'calçado', cat: 'moda' },
+  { match: 'roupa', cat: 'moda' },
+  { match: 'vestuario', cat: 'moda' },
+  { match: 'zara', cat: 'moda' },
+  { match: 'nike', cat: 'moda' },
+  { match: 'adidas', cat: 'moda' },
+
+  // Saúde, Fitness & Cuidados
+  { match: 'studio rocha', cat: 'saude' },
+  { match: 'rd saude', cat: 'saude' },
+  { match: 'raia', cat: 'saude' },
+  { match: 'drogasil', cat: 'saude' },
+  { match: 'drogaria', cat: 'saude' },
+  { match: 'farmacia', cat: 'saude' },
+  { match: 'farmácia', cat: 'saude' },
+  { match: 'corrida sampa', cat: 'saude' },
+  { match: 'corrida', cat: 'saude' },
+  { match: 'academia', cat: 'saude' },
+  { match: 'smart fit', cat: 'saude' },
+  { match: 'exame', cat: 'saude' },
+  { match: 'consulta', cat: 'saude' },
+  { match: 'medico', cat: 'saude' },
+  { match: 'médico', cat: 'saude' },
+  { match: 'dentista', cat: 'saude' },
+
+  // Casa & Utilidades
+  { match: 'casa almeida', cat: 'casa' },
+  { match: 'maravilhas do lar', cat: 'casa' },
+  { match: 'tramontina', cat: 'casa' },
+  { match: 'divai', cat: 'casa' },
+  { match: 'cobertura', cat: 'casa' },
+  { match: 'casas bahia', cat: 'casa' },
+  { match: 's v comercio', cat: 'casa' },
+  { match: 'leroy', cat: 'casa' },
+  { match: 'tok&stok', cat: 'casa' },
+  { match: 'mobly', cat: 'casa' },
+  { match: 'moveis', cat: 'casa' },
+  { match: 'móveis', cat: 'casa' },
+
+  // Pets
+  { match: 'petlove', cat: 'pets' },
+  { match: 'cobasi', cat: 'pets' },
+  { match: 'petz', cat: 'pets' },
+  { match: 'veterinario', cat: 'pets' },
+  { match: 'veterinário', cat: 'pets' },
+  { match: 'racao', cat: 'pets' },
+  { match: 'ração', cat: 'pets' },
+  { match: 'pet shop', cat: 'pets' },
+
+  // Serviços & Assinaturas
+  { match: 'claro', cat: 'servicos' },
+  { match: 'vivo', cat: 'servicos' },
+  { match: 'tim', cat: 'servicos' },
+  { match: 'globoplay', cat: 'servicos' },
+  { match: 'estrategia', cat: 'servicos' },
+  { match: 'estratégia', cat: 'servicos' },
+  { match: 'netflix', cat: 'servicos' },
+  { match: 'spotify', cat: 'servicos' },
+  { match: 'amazon prime', cat: 'servicos' },
+  { match: 'youtube', cat: 'servicos' },
+  { match: 'apple', cat: 'servicos' },
+  { match: 'google', cat: 'servicos' },
+  { match: 'chatgpt', cat: 'servicos' },
+  { match: 'openai', cat: 'servicos' },
+
+  // Transporte & Viagem
+  { match: 'estacionamento', cat: 'transp' },
+  { match: 'estac', cat: 'transp' },
+  { match: 'sigapay', cat: 'transp' },
+  { match: 'uber', cat: 'transp' },
+  { match: '99app', cat: 'transp' },
+  { match: '99 taxi', cat: 'transp' },
+  { match: 'posto', cat: 'transp' },
+  { match: 'combustivel', cat: 'transp' },
+  { match: 'combustível', cat: 'transp' },
+  { match: 'gasolina', cat: 'transp' },
+  { match: 'sem parar', cat: 'transp' },
+  { match: 'veloe', cat: 'transp' },
+  { match: 'pedagio', cat: 'transp' },
+  { match: 'pedágio', cat: 'transp' },
+  { match: 'latam', cat: 'transp' },
+  { match: 'gol', cat: 'transp' },
+  { match: 'azul', cat: 'transp' }
+];
+
+var userCategories = []; // [{id, name, icon, color}]
+var userCatRules = [];   // [{match: 'termo', cat: 'catId'}]
+var itemCatMap = {};     // {"mIdx::itemDesc" ou "itemDesc": "catId"}
+var gastosMonthFilter = 'all'; // 'all' ou índice do mês
+var gastosCatFilter = 'all';   // 'all' ou catId
+var gastosSearchQuery = '';
+
+function getAllCategories(){
+  var map = {};
+  for(var i=0; i<DEFAULT_CATEGORIES.length; i++){
+    var c = DEFAULT_CATEGORIES[i];
+    map[c.id] = { id: c.id, name: c.name, icon: c.icon, color: c.color, isDefault: true };
+  }
+  for(var i=0; i<userCategories.length; i++){
+    var uc = userCategories[i];
+    map[uc.id] = { id: uc.id, name: uc.name, icon: uc.icon || '🏷️', color: uc.color || '#38bdf8', isDefault: false };
+  }
+  var list = [];
+  for(var k in map){
+    list.push(map[k]);
+  }
+  return list;
+}
+
+function getCategoryById(id){
+  var cats = getAllCategories();
+  for(var i=0; i<cats.length; i++){
+    if(cats[i].id === id) return cats[i];
+  }
+  return { id: 'outros', name: 'Outros', icon: '🏷️', color: '#94a3b8' };
+}
+
+function getItemCategory(desc, mIdx){
+  if(!desc) return getCategoryById('outros');
+  var sDesc = String(desc).trim();
+  // 1. Sobrescrita específica do mês
+  if(mIdx != null && itemCatMap[mIdx + '::' + sDesc]){
+    return getCategoryById(itemCatMap[mIdx + '::' + sDesc]);
+  }
+  // 2. Sobrescrita global pelo nome do item
+  if(itemCatMap[sDesc]){
+    return getCategoryById(itemCatMap[sDesc]);
+  }
+  // 3. Regras customizadas do usuário
+  var low = sDesc.toLowerCase();
+  for(var i=0; i<userCatRules.length; i++){
+    var r = userCatRules[i];
+    if(r.match && low.indexOf(r.match.toLowerCase().trim()) !== -1){
+      return getCategoryById(r.cat);
+    }
+  }
+  // 4. Regras padrão automáticas
+  for(var i=0; i<DEFAULT_CAT_RULES.length; i++){
+    var dr = DEFAULT_CAT_RULES[i];
+    if(dr.match && low.indexOf(dr.match) !== -1){
+      return getCategoryById(dr.cat);
+    }
+  }
+  return getCategoryById('outros');
+}
+
+function reclassifyItem(desc, mIdx, newCatId, applyToAll){
+  if(!desc || !newCatId) return;
+  var sDesc = String(desc).trim();
+  if(applyToAll){
+    itemCatMap[sDesc] = newCatId;
+    delete itemCatMap[mIdx + '::' + sDesc];
+  } else {
+    itemCatMap[mIdx + '::' + sDesc] = newCatId;
+  }
+  saveLocal();
+  pushToSheets();
+  renderGastosView();
+  showToast('✓ Categoria atualizada: ' + getCategoryById(newCatId).name);
+}
+
+function promptReclassify(desc, mIdx, currentCatId){
+  var cats = getAllCategories();
+  var opts = '';
+  for(var i=0; i<cats.length; i++){
+    opts += '<option value="' + cats[i].id + '"' + (cats[i].id === currentCatId ? ' selected' : '') + '>' + cats[i].icon + ' ' + esc(cats[i].name) + '</option>';
+  }
+  var safeDesc = esc(desc).replace(/'/g, "\\'");
+  openCatModal('🏷️ Categorizar Lançamento', 
+    '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">'
+    + 'Alterar categoria de: <strong style="color:#fff">' + esc(desc) + '</strong> (' + (MNS[mIdx] || 'Mês ' + mIdx) + ')'
+    + '</div>'
+    + '<div class="fg" style="margin-bottom:14px">'
+    + '<div class="ff"><label>Nova Categoria</label>'
+    + '<select id="reclassCatSelect" style="width:100%">' + opts + '</select></div>'
+    + '<div class="ff" style="display:flex;align-items:center;gap:8px;margin-top:6px">'
+    + '<input type="checkbox" id="reclassApplyAll" checked style="width:18px;height:18px;cursor:pointer"/>'
+    + '<label for="reclassApplyAll" style="margin:0;cursor:pointer;font-size:12px;color:#fff">Aplicar para todos os lançamentos com este nome (regra geral)</label>'
+    + '</div>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:flex-end;gap:8px">'
+    + '<button class="bsm" onclick="closeCatModal()">Cancelar</button>'
+    + '<button class="bcalc" style="width:auto;margin:0;padding:8px 16px;font-size:12px" onclick="confirmReclassify(\'' + safeDesc + '\', ' + mIdx + ')">Salvar Categoria</button>'
+    + '</div>'
+  );
+}
+
+function confirmReclassify(desc, mIdx){
+  var sel = document.getElementById('reclassCatSelect');
+  var chk = document.getElementById('reclassApplyAll');
+  if(!sel) return;
+  var newCatId = sel.value;
+  var applyAll = chk ? chk.checked : false;
+  closeCatModal();
+  reclassifyItem(desc, mIdx, newCatId, applyAll);
+}
+
+function getGastosAnalysisData(filterMonth){
+  var maxShow = getMaxActiveMonth();
+  var allItems = [];
+  var monthsData = [];
+
+  var totalGeral = 0;
+  var totalPago = 0;
+  var totalFechado = 0;
+  var totalAVencer = 0;
+
+  var countPagas = 0;
+  var countFechadas = 0;
+  var countAVencer = 0;
+
+  var milhasPagas = 0;
+  var milhasFechadas = 0;
+  var milhasAVencer = 0;
+  var milhasTotal = 0;
+
+  var isAll = (filterMonth === 'all' || filterMonth == null);
+  var targetM = isAll ? null : parseInt(filterMonth);
+
+  for(var mi=1; mi<=maxShow; mi++){
+    var mItems = getMonthItems(mi);
+    var mTot = 0;
+    for(var k=0; k<mItems.length; k++) mTot += mItems[k].val;
+
+    var st = monthStatus[mi] || 'aberta';
+    var isPaid = (st === 'paga');
+    var isClosed = (st === 'fechada');
+
+    var usd = mTot / Math.max(0.1, profile.cambio);
+    var milhasMes = Math.round(usd * profile.milhas);
+
+    if(isPaid){
+      totalPago += mTot;
+      countPagas++;
+      milhasPagas += milhasMes;
+    } else if(isClosed){
+      totalFechado += mTot;
+      countFechadas++;
+      milhasFechadas += milhasMes;
+    } else {
+      totalAVencer += mTot;
+      countAVencer++;
+      milhasAVencer += milhasMes;
+    }
+
+    totalGeral += mTot;
+    milhasTotal += milhasMes;
+
+    var mObj = {
+      mIdx: mi,
+      name: MNS[mi] || ('Mês ' + (mi+1)),
+      total: mTot,
+      status: st,
+      milhas: milhasMes,
+      avail: profile.meta - mTot,
+      isOver: (mTot > profile.meta && !isClosed && !isPaid),
+      itemsCount: mItems.length
+    };
+    monthsData.push(mObj);
+
+    if(isAll || targetM === mi){
+      for(var j=0; j<mItems.length; j++){
+        var it = mItems[j];
+        var cat = getItemCategory(it.desc, mi);
+        allItems.push({
+          desc: it.desc,
+          val: it.val,
+          tag: it.tag,
+          isBase: it.isBase,
+          isExtra: it.isExtra,
+          isSimul: it.isSimul,
+          mIdx: mi,
+          monthName: MNS[mi] || ('Mês ' + (mi+1)),
+          cat: cat
+        });
+      }
+    }
+  }
+
+  var periodTotal = 0;
+  var catTotals = {};
+  for(var i=0; i<allItems.length; i++){
+    var it = allItems[i];
+    periodTotal += it.val;
+    var cId = it.cat.id;
+    if(!catTotals[cId]){
+      catTotals[cId] = { cat: it.cat, total: 0, count: 0, items: [] };
+    }
+    catTotals[cId].total += it.val;
+    catTotals[cId].count++;
+    catTotals[cId].items.push(it);
+  }
+
+  var catList = [];
+  for(var cId in catTotals){
+    var cObj = catTotals[cId];
+    cObj.pct = periodTotal > 0 ? (cObj.total / periodTotal) * 100 : 0;
+    catList.push(cObj);
+  }
+  catList.sort(function(a,b){ return b.total - a.total; });
+
+  var milhasPeriodo = Math.round((periodTotal / Math.max(0.1, profile.cambio)) * profile.milhas);
+  var milhasValorBRL = milhasTotal * (profile.milhaVal != null ? profile.milhaVal : 0.03);
+
+  return {
+    isAll: isAll,
+    targetM: targetM,
+    periodTotal: periodTotal,
+    periodItems: allItems,
+    catList: catList,
+    catTotals: catTotals,
+    monthsData: monthsData,
+    maxShow: maxShow,
+    totalGeral: totalGeral,
+    totalPago: totalPago,
+    totalFechado: totalFechado,
+    totalAVencer: totalAVencer,
+    countPagas: countPagas,
+    countFechadas: countFechadas,
+    countAVencer: countAVencer,
+    milhasPagas: milhasPagas,
+    milhasFechadas: milhasFechadas,
+    milhasAVencer: milhasAVencer,
+    milhasTotal: milhasTotal,
+    milhasPeriodo: milhasPeriodo,
+    milhasValorBRL: milhasValorBRL
+  };
+}
+
+function renderGastosKpis(data){
+  var el = document.getElementById('gastosKpis');
+  if(!el) return;
+
+  var mediaPaga = data.countPagas > 0 ? (data.totalPago / data.countPagas) : 0;
+  var mediaAVencer = data.countAVencer > 0 ? (data.totalAVencer / data.countAVencer) : 0;
+
+  var html = ''
+    + '<div class="kpi-card" style="border-top:3px solid #34d399">'
+    + '<div class="kpi-header"><span class="kpi-lbl">Faturas Pagas</span><span class="kpi-icon">✓</span></div>'
+    + '<div class="kpi-val" style="color:#34d399">' + fmtBRL(data.totalPago) + '</div>'
+    + '<div class="kpi-sub">' + data.countPagas + ' fatura(s) quitada(s)<br/>Média: ' + fmtBRL(mediaPaga) + '/mês</div>'
+    + '</div>'
+
+    + '<div class="kpi-card" style="border-top:3px solid #38bdf8">'
+    + '<div class="kpi-header"><span class="kpi-lbl">Faturas a Vencer</span><span class="kpi-icon">📅</span></div>'
+    + '<div class="kpi-val" style="color:#38bdf8">' + fmtBRL(data.totalAVencer) + '</div>'
+    + '<div class="kpi-sub">' + data.countAVencer + ' fatura(s) em aberto<br/>Média: ' + fmtBRL(mediaAVencer) + '/mês</div>'
+    + '</div>'
+
+    + '<div class="kpi-card" style="border-top:3px solid #c084fc">'
+    + '<div class="kpi-header"><span class="kpi-lbl">Milhas Acumuladas</span><span class="kpi-icon">✈️</span></div>'
+    + '<div class="kpi-val" style="color:#c084fc">' + data.milhasTotal.toLocaleString('pt-BR') + ' mi</div>'
+    + '<div class="kpi-sub">' + data.milhasPagas.toLocaleString('pt-BR') + ' mi pagas · ' + data.milhasAVencer.toLocaleString('pt-BR') + ' mi a receber<br/>'
+    + '<span style="color:#34d399;font-weight:700">≈ ' + fmtBRL(data.milhasValorBRL) + '</span> em milhas</div>'
+    + '</div>'
+
+    + '<div class="kpi-card" style="border-top:3px solid #fbbf24">'
+    + '<div class="kpi-header"><span class="kpi-lbl">' + (data.isAll ? 'Total Comprometido' : 'Total do Mês') + '</span><span class="kpi-icon">💳</span></div>'
+    + '<div class="kpi-val" style="color:#fbbf24">' + fmtBRL(data.periodTotal) + '</div>'
+    + '<div class="kpi-sub">' + data.periodItems.length + ' lançamentos no período<br/>' + (data.isAll ? ('Consolidado de ' + data.maxShow + ' meses') : (MNS[data.targetM] || 'Mês selecionado')) + '</div>'
+    + '</div>';
+
+  el.innerHTML = html;
+}
+
+function renderAnualChart(data){
+  var wrap = document.getElementById('anualChartWrap');
+  if(!wrap) return;
+
+  var months = data.monthsData;
+  if(!months.length){
+    wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Sem dados de faturas</div>';
+    return;
+  }
+
+  var w = Math.max(680, months.length * 62);
+  var h = 230;
+  var padT = 32;
+  var padB = 44;
+  var padL = 24;
+  var padR = 24;
+  var plotW = w - padL - padR;
+  var plotH = h - padT - padB;
+
+  var maxVal = profile.meta * 1.15;
+  for(var i=0; i<months.length; i++){
+    if(months[i].total > maxVal) maxVal = months[i].total * 1.12;
+  }
+
+  var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" class="chart-svg" xmlns="http://www.w3.org/2000/svg">';
+
+  // Linha guia da meta
+  var metaY = padT + plotH - (profile.meta / maxVal) * plotH;
+  svg += '<line x1="' + padL + '" y1="' + metaY.toFixed(1) + '" x2="' + (w - padR) + '" y2="' + metaY.toFixed(1) + '" stroke="rgba(251,191,36,0.65)" stroke-width="1.5" stroke-dasharray="4,4"/>';
+  svg += '<text x="' + (w - padR) + '" y="' + (metaY - 6).toFixed(1) + '" fill="#fbbf24" font-size="10" font-weight="700" text-anchor="end">Meta ' + fmtBRL(profile.meta) + '</text>';
+
+  var n = months.length;
+  var colW = plotW / n;
+  var barW = Math.min(40, colW * 0.65);
+
+  for(var i=0; i<n; i++){
+    var m = months[i];
+    var cx = padL + i * colW + colW / 2;
+    var bx = cx - barW / 2;
+    var barH = Math.max(4, (m.total / maxVal) * plotH);
+    var by = padT + plotH - barH;
+
+    var color = '#38bdf8'; // aberta dentro da meta
+    if(m.status === 'paga') color = '#34d399';
+    else if(m.status === 'fechada') color = '#fbbf24';
+    else if(m.total > profile.meta) color = '#f87171'; // acima da meta
+
+    var isSelected = (gastosMonthFilter !== 'all' && parseInt(gastosMonthFilter) === m.mIdx);
+    var strokeAttr = isSelected ? ' stroke="#fff" stroke-width="2.5"' : '';
+
+    svg += '<g style="cursor:pointer" onclick="setGastosMonthFilter(\'' + m.mIdx + '\')">';
+    svg += '<title>' + m.name + ': ' + fmtBRL(m.total) + ' (' + m.status + ') - ' + m.milhas + ' mi - Clique para filtrar</title>';
+    svg += '<rect x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + barH.toFixed(1) + '" rx="5" ry="5" fill="' + color + '"' + strokeAttr + '/>';
+    svg += '<text x="' + cx.toFixed(1) + '" y="' + (by - 5).toFixed(1) + '" fill="#fff" font-size="9.5" font-weight="700" text-anchor="middle">R$' + Math.round(m.total) + '</text>';
+    svg += '<text x="' + cx.toFixed(1) + '" y="' + (h - padB + 16).toFixed(1) + '" fill="' + (isSelected ? '#fff' : '#cbd5e1') + '" font-size="10.5" font-weight="' + (isSelected ? '800' : '600') + '" text-anchor="middle">' + m.name + '</text>';
+    svg += '<text x="' + cx.toFixed(1) + '" y="' + (h - padB + 28).toFixed(1) + '" fill="var(--muted)" font-size="8.5" text-anchor="middle">' + m.milhas + ' mi</text>';
+    svg += '</g>';
+  }
+
+  svg += '</svg>';
+  wrap.innerHTML = svg;
+}
+
+function renderMilhasSection(data){
+  var el = document.getElementById('milhasDetailCard');
+  if(!el) return;
+
+  var pctPagas = data.milhasTotal > 0 ? (data.milhasPagas / data.milhasTotal) * 100 : 0;
+  var pctAVencer = 100 - pctPagas;
+
+  el.innerHTML = ''
+    + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">'
+    + '<div>'
+    + '<div class="ctitle">✈️ Milhas & Benefícios (Nubank Ultravioleta / Black)</div>'
+    + '<div class="csub" style="margin:0">Regra: ' + profile.milhas + ' milhas/US$ · Câmbio base R$ ' + profile.cambio.toFixed(2) + ' · Valor R$ ' + ((profile.milhaVal||0.03)*1000).toFixed(2) + '/milheiro</div>'
+    + '</div>'
+    + '<div style="text-align:right">'
+    + '<span class="badge bp" style="font-size:12px;padding:5px 12px">Total ' + data.milhasTotal.toLocaleString('pt-BR') + ' milhas</span>'
+    + '</div>'
+    + '</div>'
+    + '<div style="margin-bottom:10px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px">'
+    + '<span style="color:#34d399">✓ Pagas: ' + data.milhasPagas.toLocaleString('pt-BR') + ' mi (' + pctPagas.toFixed(0) + '%)</span>'
+    + '<span style="color:#38bdf8">📅 A Vencer: ' + data.milhasAVencer.toLocaleString('pt-BR') + ' mi (' + pctAVencer.toFixed(0) + '%)</span>'
+    + '</div>'
+    + '<div class="cat-bar-track" style="height:12px;display:flex">'
+    + '<div style="width:' + pctPagas.toFixed(1) + '%;background:#34d399;height:100%" title="Milhas pagas"></div>'
+    + '<div style="width:' + pctAVencer.toFixed(1) + '%;background:#38bdf8;height:100%" title="Milhas a receber"></div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;font-size:11.5px;color:var(--text-secondary);background:rgba(15,23,42,0.4);border-radius:var(--r-sm);padding:10px 12px;border:1px solid var(--border)">'
+    + '<div>💰 <strong>Valor das milhas pagas:</strong> ' + fmtBRL(data.milhasPagas * (profile.milhaVal || 0.03)) + '</div>'
+    + '<div>✈️ <strong>Projeção a receber:</strong> ' + fmtBRL(data.milhasAVencer * (profile.milhaVal || 0.03)) + '</div>'
+    + '<div>🏷️ <strong>Total em benefícios:</strong> <span style="color:#34d399;font-weight:700">' + fmtBRL(data.milhasValorBRL) + '</span></div>'
+    + '</div>';
+}
+
+function setDonutCenter(title, val, sub){
+  var centerEl = document.getElementById('donutCenter');
+  if(!centerEl) return;
+  centerEl.innerHTML = ''
+    + '<div class="donut-center-title">' + esc(title) + '</div>'
+    + '<div class="donut-center-val">' + esc(val) + '</div>'
+    + '<div class="donut-center-sub">' + esc(sub) + '</div>';
+}
+
+function resetDonutCenter(){
+  var data = getGastosAnalysisData(gastosMonthFilter);
+  if(gastosCatFilter !== 'all' && data.catTotals[gastosCatFilter]){
+    var selCat = data.catTotals[gastosCatFilter];
+    setDonutCenter(selCat.cat.icon + ' ' + selCat.cat.name, fmtBRL(selCat.total), selCat.pct.toFixed(1) + '% · ' + selCat.count + ' item(s)');
+  } else {
+    var title = data.isAll ? 'Total Geral' : (MNS[data.targetM] || 'Total');
+    setDonutCenter(title, fmtBRL(data.periodTotal), data.periodItems.length + ' lançamentos');
+  }
+}
+
+function renderCategoryViz(data){
+  var svgEl = document.getElementById('donutSvg');
+  var barsEl = document.getElementById('catBarsList');
+  var btnReset = document.getElementById('btnResetCatFilter');
+  if(!svgEl || !barsEl) return;
+
+  if(btnReset){
+    btnReset.style.display = (gastosCatFilter !== 'all') ? 'inline-block' : 'none';
+  }
+
+  var cats = data.catList;
+  if(!cats.length){
+    svgEl.innerHTML = '<circle cx="140" cy="140" r="90" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="32"/>';
+    setDonutCenter('Sem gastos', 'R$ 0,00', '0 itens');
+    barsEl.innerHTML = '<div style="color:var(--muted);padding:10px">Nenhum lançamento no período selecionado.</div>';
+    return;
+  }
+
+  var r = 90;
+  var cx = 140;
+  var cy = 140;
+  var sw = 32;
+  var circ = 2 * Math.PI * r;
+
+  var svgHtml = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="' + sw + '"/>';
+  var offset = 0;
+
+  for(var i=0; i<cats.length; i++){
+    var c = cats[i];
+    var dash = circ * (c.pct / 100);
+    var space = Math.max(0, circ - dash);
+    var isSel = (gastosCatFilter === c.cat.id);
+
+    var hoverTitle = esc(c.cat.icon + ' ' + c.cat.name).replace(/'/g, "\\'");
+    var hoverVal = fmtBRL(c.total).replace(/'/g, "\\'");
+    var hoverSub = (c.pct.toFixed(1) + '% · ' + c.count + ' item(s)').replace(/'/g, "\\'");
+
+    svgHtml += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none"'
+      + ' stroke="' + c.cat.color + '"'
+      + ' stroke-width="' + (isSel ? (sw + 6) : sw) + '"'
+      + ' stroke-dasharray="' + dash.toFixed(2) + ' ' + space.toFixed(2) + '"'
+      + ' stroke-dashoffset="' + (-offset).toFixed(2) + '"'
+      + ' style="cursor:pointer;transition:stroke-width .2s ease,opacity .2s ease;' + (gastosCatFilter !== 'all' && !isSel ? 'opacity:0.35' : 'opacity:1') + '"'
+      + ' onclick="setGastosCatFilter(\'' + c.cat.id + '\')"'
+      + ' onmouseenter="setDonutCenter(\'' + hoverTitle + '\', \'' + hoverVal + '\', \'' + hoverSub + '\')"'
+      + ' onmouseleave="resetDonutCenter()"'
+      + '/>';
+
+    offset += dash;
+  }
+  svgEl.innerHTML = svgHtml;
+
+  resetDonutCenter();
+
+  var barsHtml = '';
+  for(var i=0; i<cats.length; i++){
+    var c = cats[i];
+    var isSel = (gastosCatFilter === c.cat.id);
+    barsHtml += '<div class="cat-bar-item' + (isSel ? ' selected' : '') + '" onclick="setGastosCatFilter(\'' + c.cat.id + '\')">'
+      + '<div class="cat-bar-header">'
+      + '<span style="display:flex;align-items:center;gap:6px">'
+      + '<span style="font-size:16px">' + c.cat.icon + '</span>'
+      + '<span style="color:#fff">' + esc(c.cat.name) + '</span>'
+      + '<span style="font-size:11px;color:var(--muted)">(' + c.count + ')</span>'
+      + '</span>'
+      + '<span>'
+      + '<strong style="color:#fff;margin-right:6px">' + fmtBRL(c.total) + '</strong>'
+      + '<span style="font-size:11px;color:' + c.cat.color + ';font-weight:700">' + c.pct.toFixed(1) + '%</span>'
+      + '</span>'
+      + '</div>'
+      + '<div class="cat-bar-track">'
+      + '<div class="cat-bar-fill" style="width:' + c.pct.toFixed(1) + '%;background:' + c.cat.color + '"></div>'
+      + '</div>'
+      + '</div>';
+  }
+  barsEl.innerHTML = barsHtml;
+}
+
+function renderGastosItemsList(data){
+  var listEl = document.getElementById('gastosItemsList');
+  var countEl = document.getElementById('gastosItemsCount');
+  if(!listEl) return;
+
+  var items = data.periodItems.slice();
+
+  if(gastosCatFilter !== 'all'){
+    items = items.filter(function(it){ return it.cat.id === gastosCatFilter; });
+  }
+
+  if(gastosSearchQuery){
+    var q = gastosSearchQuery.toLowerCase().trim();
+    items = items.filter(function(it){
+      return it.desc.toLowerCase().indexOf(q) !== -1 || it.cat.name.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  if(countEl){
+    countEl.textContent = items.length + ' lançamento(s) exibido(s)' + (gastosCatFilter !== 'all' ? ' em ' + getCategoryById(gastosCatFilter).name : '');
+  }
+
+  if(!items.length){
+    listEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">Nenhum lançamento encontrado com os filtros atuais.</div>';
+    return;
+  }
+
+  items.sort(function(a,b){ return b.val - a.val; });
+
+  var allCats = getAllCategories();
+
+  var html = '';
+  for(var i=0; i<items.length; i++){
+    var it = items[i];
+
+    var catOpts = '';
+    for(var c=0; c<allCats.length; c++){
+      catOpts += '<option value="' + allCats[c].id + '"' + (allCats[c].id === it.cat.id ? ' selected' : '') + '>'
+        + allCats[c].icon + ' ' + esc(allCats[c].name)
+        + '</option>';
+    }
+
+    var tagBadge = it.isSimul ? ' <span class="badge bp" style="font-size:9px">📅 Simulada</span>' : (it.tag === 'parc' ? ' <span class="badge" style="background:rgba(255,255,255,0.06);color:var(--muted);font-size:9px">Parcela</span>' : '');
+    var safeDesc = esc(it.desc).replace(/'/g, "\\'");
+
+    html += '<div class="gastos-item-row">'
+      + '<div>'
+      + '<span class="cat-pill" style="background:' + it.cat.color + '22;color:' + it.cat.color + ';border:1px solid ' + it.cat.color + '44" onclick="promptReclassify(\'' + safeDesc + '\', ' + it.mIdx + ', \'' + it.cat.id + '\')" title="Clique para alterar categoria">'
+      + it.cat.icon + ' ' + esc(it.cat.name)
+      + '</span>'
+      + '</div>'
+
+      + '<div>'
+      + '<div style="font-size:13px;font-weight:600;color:#fff">' + esc(it.desc) + tagBadge + '</div>'
+      + '<div style="font-size:11px;color:var(--muted)">' + it.monthName + '</div>'
+      + '</div>'
+
+      + '<div style="text-align:right">'
+      + '<span style="font-size:14px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums">' + fmtBRL(it.val) + '</span>'
+      + '</div>'
+
+      + '<div class="cat-actions-cell">'
+      + '<select class="cat-select-inline" onchange="handleItemCatChange(this, \'' + safeDesc + '\', ' + it.mIdx + ')">'
+      + catOpts
+      + '</select>'
+      + '</div>'
+      + '</div>';
+  }
+
+  listEl.innerHTML = html;
+}
+
+function handleItemCatChange(selEl, desc, mIdx){
+  var newCat = selEl.value;
+  var applyAll = confirm('Deseja aplicar a categoria "' + getCategoryById(newCat).name + '" para TODOS os lançamentos com o nome "' + desc + '"? \n\nClique OK para regra geral, ou Cancelar para alterar apenas este mês.');
+  reclassifyItem(desc, mIdx, newCat, applyAll);
+}
+
+function renderFaturasSummaryTable(data){
+  var wrap = document.getElementById('faturasSummaryTableWrap');
+  if(!wrap) return;
+
+  var months = data.monthsData;
+  var curIdx = getCurrentMonthIndex();
+
+  var html = '<table class="faturas-summary-table">'
+    + '<thead><tr>'
+    + '<th>Mês da Fatura</th>'
+    + '<th>Status</th>'
+    + '<th>Total (R$)</th>'
+    + '<th>% Meta (' + fmtBRL(profile.meta) + ')</th>'
+    + '<th>Milhas Geradas</th>'
+    + '<th style="text-align:right">Ações</th>'
+    + '</tr></thead><tbody>';
+
+  for(var i=0; i<months.length; i++){
+    var m = months[i];
+    var pct = (m.total / Math.max(1, profile.meta)) * 100;
+    var stBadge = '';
+    if(m.status === 'paga') stBadge = '<span class="badge bg">✓ Paga</span>';
+    else if(m.status === 'fechada') stBadge = '<span class="badge by">🔒 Fechada</span>';
+    else if(m.mIdx === curIdx) stBadge = '<span class="badge" style="background:rgba(56,189,248,0.18);color:var(--accent);border:1px solid rgba(56,189,248,0.4)">🟢 Em aberto · Atual</span>';
+    else stBadge = '<span class="badge" style="background:rgba(52,211,153,0.14);color:var(--green);border:1px solid rgba(52,211,153,0.35)">🟢 Em aberto</span>';
+
+    var valColor = m.status === 'paga' ? '#34d399' : m.status === 'fechada' ? '#fbbf24' : (m.total > profile.meta ? '#f87171' : '#38bdf8');
+
+    html += '<tr>'
+      + '<td><strong>' + m.name + '</strong></td>'
+      + '<td>' + stBadge + '</td>'
+      + '<td><strong style="color:' + valColor + '">' + fmtBRL(m.total) + '</strong></td>'
+      + '<td><span style="color:' + (pct > 100 ? '#f87171' : 'var(--text-secondary)') + '">' + pct.toFixed(1) + '%</span></td>'
+      + '<td><span style="color:#c084fc;font-weight:700">✈️ ' + m.milhas.toLocaleString('pt-BR') + ' mi</span></td>'
+      + '<td style="text-align:right">'
+      + '<button class="bsm" style="padding:4px 8px;font-size:11px" onclick="setGastosMonthFilter(\'' + m.mIdx + '\')">Filtrar</button>'
+      + '</td>'
+      + '</tr>';
+  }
+
+  html += '<tr style="background:rgba(255,255,255,0.04);font-weight:800">'
+    + '<td>TOTAL CONSOLIDADO</td>'
+    + '<td>' + data.countPagas + ' pagas / ' + data.countAVencer + ' a vencer</td>'
+    + '<td><strong style="color:#fbbf24">' + fmtBRL(data.totalGeral) + '</strong></td>'
+    + '<td>—</td>'
+    + '<td><span style="color:#c084fc">✈️ ' + data.milhasTotal.toLocaleString('pt-BR') + ' mi</span></td>'
+    + '<td></td>'
+    + '</tr>';
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderGastosView(){
+  var mSelect = document.getElementById('gastosMonthSelect');
+  var maxShow = getMaxActiveMonth();
+  if(mSelect){
+    var opts = '<option value="all"' + (gastosMonthFilter === 'all' ? ' selected' : '') + '>🌐 Todos os meses (Visão Consolidada)</option>';
+    for(var m=1; m<=maxShow; m++){
+      var st = monthStatus[m] || 'aberta';
+      var stIcon = st === 'paga' ? '✓ ' : st === 'fechada' ? '🔒 ' : '';
+      opts += '<option value="' + m + '"' + (String(gastosMonthFilter) === String(m) ? ' selected' : '') + '>'
+        + stIcon + (MNS[m] || ('Mês ' + (m+1)))
+        + '</option>';
+    }
+    mSelect.innerHTML = opts;
+  }
+
+  var catQuickSelect = document.getElementById('gastosCatQuickFilter');
+  if(catQuickSelect){
+    var allCats = getAllCategories();
+    var qOpts = '<option value="all"' + (gastosCatFilter === 'all' ? ' selected' : '') + '>Todas as categorias</option>';
+    for(var i=0; i<allCats.length; i++){
+      qOpts += '<option value="' + allCats[i].id + '"' + (gastosCatFilter === allCats[i].id ? ' selected' : '') + '>'
+        + allCats[i].icon + ' ' + esc(allCats[i].name)
+        + '</option>';
+    }
+    catQuickSelect.innerHTML = qOpts;
+  }
+
+  var data = getGastosAnalysisData(gastosMonthFilter);
+  renderGastosKpis(data);
+  renderAnualChart(data);
+  renderMilhasSection(data);
+  renderCategoryViz(data);
+  renderGastosItemsList(data);
+  renderFaturasSummaryTable(data);
+}
+
+function openCatModal(title, bodyHtml, btnsHtml){
+  var titleEl = document.getElementById('catModalTitle');
+  var bodyEl = document.getElementById('catModalBody');
+  var btnsEl = document.getElementById('catModalBtns');
+  if(titleEl) titleEl.innerHTML = title;
+  if(bodyEl) bodyEl.innerHTML = bodyHtml;
+  if(btnsEl){
+    if(btnsHtml) btnsEl.innerHTML = btnsHtml;
+    else btnsEl.innerHTML = '<button class="bsm" onclick="closeCatModal()">Fechar</button>';
+  }
+  if(window.history && window.history.pushState){
+    window.history.pushState({modal:true, mode:'cat'}, '', '#modal=cat');
+  }
+  var bg = document.getElementById('catModalBg');
+  if(bg) bg.classList.add('on');
+}
+
+function closeCatModal(fromPopstate){
+  var bg = document.getElementById('catModalBg');
+  if(!bg) return;
+  var wasOpen = bg.classList.contains('on');
+  bg.classList.remove('on');
+  if(wasOpen && !fromPopstate && window.history && window.history.state && window.history.state.modal){
+    window.history.back();
+  }
+}
+
+function closeCatModalIfBg(e){
+  if(e.target === document.getElementById('catModalBg')) closeCatModal();
+}
+
+function openNewCategoryModal(){
+  var body = '<div class="fg">'
+    + '<div class="ff"><label>Nome da Categoria</label>'
+    + '<input type="text" id="newCatName" placeholder="Ex: Educação, Viagem, Hobbies…"/></div>'
+    + '<div><label>Ícone / Emoji</label>'
+    + '<input type="text" id="newCatIcon" placeholder="Ex: ✈️, 📚, 🎮" value="🏷️"/></div>'
+    + '<div><label>Cor Identificadora</label>'
+    + '<input type="color" id="newCatColor" value="#38bdf8" style="height:38px;padding:2px;cursor:pointer"/></div>'
+    + '</div>'
+    + '<div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px">'
+    + '<button class="bsm" onclick="closeCatModal()">Cancelar</button>'
+    + '<button class="bcalc" style="width:auto;margin:0;padding:8px 18px;font-size:12px" onclick="saveNewCategory()">Salvar Categoria</button>'
+    + '</div>';
+  openCatModal('➕ Criar Nova Categoria', body);
+}
+
+function saveNewCategory(){
+  var nameEl = document.getElementById('newCatName');
+  var iconEl = document.getElementById('newCatIcon');
+  var colEl = document.getElementById('newCatColor');
+  if(!nameEl || !nameEl.value.trim()){
+    showToast('Informe o nome da categoria');
+    return;
+  }
+  var name = nameEl.value.trim();
+  var icon = (iconEl && iconEl.value.trim()) ? iconEl.value.trim() : '🏷️';
+  var color = colEl ? colEl.value : '#38bdf8';
+  var id = 'cat_' + Date.now();
+
+  userCategories.push({ id: id, name: name, icon: icon, color: color });
+  saveLocal();
+  pushToSheets();
+  closeCatModal();
+  renderGastosView();
+  showToast('✓ Categoria "' + name + '" criada com sucesso!');
+}
+
+function openRulesModal(){
+  var allCats = getAllCategories();
+  var catOpts = '';
+  for(var i=0; i<allCats.length; i++){
+    catOpts += '<option value="' + allCats[i].id + '">' + allCats[i].icon + ' ' + esc(allCats[i].name) + '</option>';
+  }
+
+  var rulesListHtml = '';
+  if(!userCatRules.length){
+    rulesListHtml = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Nenhuma regra personalizada cadastrada ainda.</div>';
+  } else {
+    for(var i=0; i<userCatRules.length; i++){
+      var r = userCatRules[i];
+      var cat = getCategoryById(r.cat);
+      rulesListHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px">'
+        + '<span>Se contiver "<strong>' + esc(r.match) + '</strong>" &rarr; ' + cat.icon + ' ' + esc(cat.name) + '</span>'
+        + '<button class="bsm" style="padding:2px 8px;font-size:11px;color:var(--red)" onclick="deleteUserCatRule(' + i + ')">Excluir</button>'
+        + '</div>';
+    }
+  }
+
+  var userCatsHtml = '';
+  if(!userCategories.length){
+    userCatsHtml = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Nenhuma categoria personalizada criada.</div>';
+  } else {
+    for(var i=0; i<userCategories.length; i++){
+      var uc = userCategories[i];
+      userCatsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px">'
+        + '<span><span style="color:' + uc.color + '">' + uc.icon + '</span> <strong>' + esc(uc.name) + '</strong></span>'
+        + '<button class="bsm" style="padding:2px 8px;font-size:11px;color:var(--red)" onclick="deleteUserCategory(\'' + uc.id + '\')">Excluir</button>'
+        + '</div>';
+    }
+  }
+
+  var body = '<div>'
+    + '<h4 style="color:#fff;margin-bottom:8px;font-size:13px">➕ Adicionar Regra Automática</h4>'
+    + '<div class="fg" style="margin-bottom:12px">'
+    + '<div><label>Quando o nome contiver</label>'
+    + '<input type="text" id="newRuleTerm" placeholder="Ex: Uber, Drogaria, Padaria…"/></div>'
+    + '<div><label>Classificar como</label>'
+    + '<select id="newRuleCat">' + catOpts + '</select></div>'
+    + '<div class="ff" style="text-align:right">'
+    + '<button class="bsm accent" style="padding:6px 14px" onclick="saveNewRule()">➕ Adicionar Regra</button>'
+    + '</div>'
+    + '</div>'
+
+    + '<h4 style="color:#fff;margin:16px 0 6px;font-size:13px">📋 Regras Personalizadas Ativas</h4>'
+    + '<div style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 8px;margin-bottom:16px;background:rgba(15,23,42,0.4)">'
+    + rulesListHtml
+    + '</div>'
+
+    + '<h4 style="color:#fff;margin:16px 0 6px;font-size:13px">🏷️ Suas Categorias Personalizadas</h4>'
+    + '<div style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 8px;margin-bottom:16px;background:rgba(15,23,42,0.4)">'
+    + userCatsHtml
+    + '</div>'
+
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'
+    + '<button class="bsm" style="color:var(--red);font-size:11px" onclick="resetCategoriesToDefault()">🔄 Resetar Padrões</button>'
+    + '<button class="bsm" onclick="closeCatModal()">Fechar</button>'
+    + '</div>'
+    + '</div>';
+
+  openCatModal('⚙️ Gerenciar Regras e Categorias', body);
+}
+
+function saveNewRule(){
+  var termEl = document.getElementById('newRuleTerm');
+  var catEl = document.getElementById('newRuleCat');
+  if(!termEl || !termEl.value.trim()){
+    showToast('Informe o termo da regra');
+    return;
+  }
+  var term = termEl.value.trim();
+  var cat = catEl ? catEl.value : 'outros';
+  userCatRules.push({ match: term, cat: cat });
+  saveLocal();
+  pushToSheets();
+  openRulesModal();
+  renderGastosView();
+  showToast('✓ Regra salva: "' + term + '" -> ' + getCategoryById(cat).name);
+}
+
+function deleteUserCatRule(idx){
+  userCatRules.splice(idx, 1);
+  saveLocal();
+  pushToSheets();
+  openRulesModal();
+  renderGastosView();
+  showToast('🗑️ Regra removida');
+}
+
+function deleteUserCategory(catId){
+  if(!confirm('Excluir esta categoria? Os lançamentos vinculados voltarão para as regras padrão.')) return;
+  userCategories = userCategories.filter(function(c){ return c.id !== catId; });
+  saveLocal();
+  pushToSheets();
+  openRulesModal();
+  renderGastosView();
+  showToast('🗑️ Categoria removida');
+}
+
+function resetCategoriesToDefault(){
+  if(!confirm('Restaurar todas as categorias e regras para os padrões originais? Suas regras customizadas e categorias criadas serão apagadas.')) return;
+  userCategories = [];
+  userCatRules = [];
+  itemCatMap = {};
+  saveLocal();
+  pushToSheets();
+  closeCatModal();
+  renderGastosView();
+  showToast('🔄 Padrões restaurados com sucesso');
+}
+
+function setGastosMonthFilter(val){
+  gastosMonthFilter = val;
+  renderGastosView();
+}
+
+function setGastosCatFilter(val){
+  gastosCatFilter = val;
+  renderGastosView();
+}
+
+function setGastosSearch(val){
+  gastosSearchQuery = val;
+  var data = getGastosAnalysisData(gastosMonthFilter);
+  renderGastosItemsList(data);
 }
 
 /* ═══════════════════════════════════════════════

@@ -125,6 +125,9 @@ function doGet(e) {
     purchHist:  readKey(sh, 'purchHist')  || [],
     monthStatus: readKey(sh, 'monthStatus') || {},
     collapsedMonths: readKey(sh, 'collapsedMonths') || {},
+    userCategories: readKey(sh, 'userCategories') || [],
+    userCatRules: readKey(sh, 'userCatRules') || [],
+    itemCatMap:   readKey(sh, 'itemCatMap') || {},
     profile:    readKey(sh, 'profile')    || {}
   };
   return callback ? jsonpResponse(callback, result) : jsonResponse(result);
@@ -149,6 +152,9 @@ function doPost(e) {
     if (payload.purchHist  !== undefined) writeKey(sh, 'purchHist',  payload.purchHist);
     if (payload.monthStatus !== undefined) writeKey(sh, 'monthStatus', payload.monthStatus);
     if (payload.collapsedMonths !== undefined) writeKey(sh, 'collapsedMonths', payload.collapsedMonths);
+    if (payload.userCategories !== undefined) writeKey(sh, 'userCategories', payload.userCategories);
+    if (payload.userCatRules !== undefined) writeKey(sh, 'userCatRules', payload.userCatRules);
+    if (payload.itemCatMap !== undefined) writeKey(sh, 'itemCatMap', payload.itemCatMap);
     if (payload.profile    !== undefined) writeKey(sh, 'profile',    payload.profile);
 
     return jsonResponse({ ok: true, savedAt: new Date().toISOString() });
