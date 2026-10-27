@@ -1039,6 +1039,7 @@ function jsonpGet(url, params, onSuccess, onError){
   script.onerror=function(){
     clearTimeout(timer);
     delete window[cbName];
+    if(script && script.parentNode) script.parentNode.removeChild(script);
     if(onError) onError('script error');
   };
   document.head.appendChild(script);
@@ -1374,8 +1375,7 @@ function openHistToEdit(idx){
     document.getElementById('pMonth').value = x.mOff;
   }
   // Ir para a aba Calculadora
-  var calcBtn = document.querySelectorAll('.tbtn')[1]; // Botão da calculadora
-  showTab('calc', calcBtn);
+  showTab('calc');
   // Executar o cálculo automaticamente
   calculate();
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1435,7 +1435,7 @@ function fmtBRL(v){
 /* Versão sempre positiva (para quando o sinal já é tratado por texto/cor, ex.: "Ultrapassa: ...") */
 function fmtBRLabs(v){return 'R$\u00a0'+Math.abs(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtPct(v){return (v||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function overKey(desc,mIdx){return desc+'__'+mIdx;}
 
 /* Toast de feedback rápido (não bloqueante) */
@@ -1673,11 +1673,14 @@ function renderFaturas(){
     for(var i=0;i<gk.length;i++){
       html+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0">'
         +'<span style="color:var(--purple)">'+esc(groups[gk[i]])+'</span>'
-        +'<button class="bdel" onclick="clearSimGroup(\''+esc(gk[i])+'\')">Remover</button></div>';
+        +'<button class="bdel" data-gid="'+esc(gk[i])+'" onclick="clearSimGroup(this.getAttribute(\'data-gid\'))">Remover</button></div>';
     }
     html+='</div>';
   }
   el.innerHTML=html;
+  if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')){
+    renderGastosView();
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -2684,40 +2687,42 @@ function reclassifyItem(desc, mIdx, newCatId, applyToAll){
   showToast('✓ Categoria atualizada: ' + getCategoryById(newCatId).name);
 }
 
+var _reclassTarget = null;
+
 function promptReclassify(desc, mIdx, currentCatId){
+  _reclassTarget = { desc: desc, mIdx: mIdx };
   var cats = getAllCategories();
   var opts = '';
   for(var i=0; i<cats.length; i++){
-    opts += '<option value="' + cats[i].id + '"' + (cats[i].id === currentCatId ? ' selected' : '') + '>' + cats[i].icon + ' ' + esc(cats[i].name) + '</option>';
+    opts += '<option value="' + esc(cats[i].id) + '"' + (cats[i].id === currentCatId ? ' selected' : '') + '>' + cats[i].icon + ' ' + esc(cats[i].name) + '</option>';
   }
-  var safeDesc = esc(desc).replace(/'/g, "\\'");
-  openCatModal('🏷️ Categorizar Lançamento', 
-    '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">'
-    + 'Alterar categoria de: <strong style="color:#fff">' + esc(desc) + '</strong> (' + (MNS[mIdx] || 'Mês ' + mIdx) + ')'
+  var body = '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">'
+    + 'Alterar categoria de: <strong style="color:#fff">' + esc(desc) + '</strong> (' + esc(MNS[mIdx] || 'Mês ' + mIdx) + ')'
     + '</div>'
     + '<div class="fg" style="margin-bottom:14px">'
-    + '<div class="ff"><label>Nova Categoria</label>'
+    + '<div class="ff"><label for="reclassCatSelect">Nova Categoria</label>'
     + '<select id="reclassCatSelect" style="width:100%">' + opts + '</select></div>'
     + '<div class="ff" style="display:flex;align-items:center;gap:8px;margin-top:6px">'
     + '<input type="checkbox" id="reclassApplyAll" checked style="width:18px;height:18px;cursor:pointer"/>'
     + '<label for="reclassApplyAll" style="margin:0;cursor:pointer;font-size:12px;color:#fff">Aplicar para todos os lançamentos com este nome (regra geral)</label>'
     + '</div>'
-    + '</div>'
-    + '<div style="display:flex;justify-content:flex-end;gap:8px">'
-    + '<button class="bsm" onclick="closeCatModal()">Cancelar</button>'
-    + '<button class="bcalc" style="width:auto;margin:0;padding:8px 16px;font-size:12px" onclick="confirmReclassify(\'' + safeDesc + '\', ' + mIdx + ')">Salvar Categoria</button>'
-    + '</div>'
-  );
+    + '</div>';
+  var btns = '<button class="bsm" onclick="closeCatModal()">Cancelar</button>'
+    + '<button class="bcalc" style="width:auto;margin:0;padding:8px 16px;font-size:12px" onclick="confirmReclassify()">Salvar Categoria</button>';
+  openCatModal('🏷️ Categorizar Lançamento', body, btns);
 }
 
-function confirmReclassify(desc, mIdx){
+function confirmReclassify(){
+  if(!_reclassTarget) return;
   var sel = document.getElementById('reclassCatSelect');
   var chk = document.getElementById('reclassApplyAll');
   if(!sel) return;
   var newCatId = sel.value;
   var applyAll = chk ? chk.checked : false;
+  var target = _reclassTarget;
+  _reclassTarget = null;
   closeCatModal();
-  reclassifyItem(desc, mIdx, newCatId, applyAll);
+  reclassifyItem(target.desc, target.mIdx, newCatId, applyAll);
 }
 
 function getGastosAnalysisData(filterMonth){
@@ -3005,6 +3010,14 @@ function resetDonutCenter(){
   }
 }
 
+function hoverCategoryDonut(idx){
+  var data = getGastosAnalysisData(gastosMonthFilter);
+  if(data && data.catList && data.catList[idx]){
+    var c = data.catList[idx];
+    setDonutCenter(c.cat.icon + ' ' + c.cat.name, fmtBRL(c.total), c.pct.toFixed(1) + '% · ' + c.count + ' item(s)');
+  }
+}
+
 function renderCategoryViz(data){
   var svgEl = document.getElementById('donutSvg');
   var barsEl = document.getElementById('catBarsList');
@@ -3038,18 +3051,15 @@ function renderCategoryViz(data){
     var space = Math.max(0, circ - dash);
     var isSel = (gastosCatFilter === c.cat.id);
 
-    var hoverTitle = esc(c.cat.icon + ' ' + c.cat.name).replace(/'/g, "\\'");
-    var hoverVal = fmtBRL(c.total).replace(/'/g, "\\'");
-    var hoverSub = (c.pct.toFixed(1) + '% · ' + c.count + ' item(s)').replace(/'/g, "\\'");
-
     svgHtml += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none"'
       + ' stroke="' + c.cat.color + '"'
       + ' stroke-width="' + (isSel ? (sw + 6) : sw) + '"'
       + ' stroke-dasharray="' + dash.toFixed(2) + ' ' + space.toFixed(2) + '"'
       + ' stroke-dashoffset="' + (-offset).toFixed(2) + '"'
       + ' style="cursor:pointer;transition:stroke-width .2s ease,opacity .2s ease;' + (gastosCatFilter !== 'all' && !isSel ? 'opacity:0.35' : 'opacity:1') + '"'
-      + ' onclick="setGastosCatFilter(\'' + c.cat.id + '\')"'
-      + ' onmouseenter="setDonutCenter(\'' + hoverTitle + '\', \'' + hoverVal + '\', \'' + hoverSub + '\')"'
+      + ' data-catid="' + esc(c.cat.id) + '"'
+      + ' onclick="setGastosCatFilter(this.getAttribute(\'data-catid\'))"'
+      + ' onmouseenter="hoverCategoryDonut(' + i + ')"'
       + ' onmouseleave="resetDonutCenter()"'
       + '/>';
 
@@ -3083,6 +3093,8 @@ function renderCategoryViz(data){
   barsEl.innerHTML = barsHtml;
 }
 
+var _gastosCurrentItems = [];
+
 function renderGastosItemsList(data){
   var listEl = document.getElementById('gastosItemsList');
   var countEl = document.getElementById('gastosItemsCount');
@@ -3101,6 +3113,9 @@ function renderGastosItemsList(data){
     });
   }
 
+  items.sort(function(a,b){ return b.val - a.val; });
+  _gastosCurrentItems = items;
+
   if(countEl){
     countEl.textContent = items.length + ' lançamento(s) exibido(s)' + (gastosCatFilter !== 'all' ? ' em ' + getCategoryById(gastosCatFilter).name : '');
   }
@@ -3110,8 +3125,6 @@ function renderGastosItemsList(data){
     return;
   }
 
-  items.sort(function(a,b){ return b.val - a.val; });
-
   var allCats = getAllCategories();
 
   var html = '';
@@ -3120,24 +3133,23 @@ function renderGastosItemsList(data){
 
     var catOpts = '';
     for(var c=0; c<allCats.length; c++){
-      catOpts += '<option value="' + allCats[c].id + '"' + (allCats[c].id === it.cat.id ? ' selected' : '') + '>'
+      catOpts += '<option value="' + esc(allCats[c].id) + '"' + (allCats[c].id === it.cat.id ? ' selected' : '') + '>'
         + allCats[c].icon + ' ' + esc(allCats[c].name)
         + '</option>';
     }
 
     var tagBadge = it.isSimul ? ' <span class="badge bp" style="font-size:9px">📅 Simulada</span>' : (it.tag === 'parc' ? ' <span class="badge" style="background:rgba(255,255,255,0.06);color:var(--muted);font-size:9px">Parcela</span>' : '');
-    var safeDesc = esc(it.desc).replace(/'/g, "\\'");
 
     html += '<div class="gastos-item-row">'
       + '<div>'
-      + '<span class="cat-pill" style="background:' + it.cat.color + '22;color:' + it.cat.color + ';border:1px solid ' + it.cat.color + '44" onclick="promptReclassify(\'' + safeDesc + '\', ' + it.mIdx + ', \'' + it.cat.id + '\')" title="Clique para alterar categoria">'
+      + '<span class="cat-pill" style="background:' + it.cat.color + '22;color:' + it.cat.color + ';border:1px solid ' + it.cat.color + '44" onclick="openReclassByIndex(' + i + ')" title="Clique para alterar categoria">'
       + it.cat.icon + ' ' + esc(it.cat.name)
       + '</span>'
       + '</div>'
 
       + '<div>'
       + '<div style="font-size:13px;font-weight:600;color:#fff">' + esc(it.desc) + tagBadge + '</div>'
-      + '<div style="font-size:11px;color:var(--muted)">' + it.monthName + '</div>'
+      + '<div style="font-size:11px;color:var(--muted)">' + esc(it.monthName) + '</div>'
       + '</div>'
 
       + '<div style="text-align:right">'
@@ -3145,7 +3157,7 @@ function renderGastosItemsList(data){
       + '</div>'
 
       + '<div class="cat-actions-cell">'
-      + '<select class="cat-select-inline" onchange="handleItemCatChange(this, \'' + safeDesc + '\', ' + it.mIdx + ')">'
+      + '<select class="cat-select-inline" onchange="handleItemCatChangeByIndex(this, ' + i + ')">'
       + catOpts
       + '</select>'
       + '</div>'
@@ -3155,10 +3167,40 @@ function renderGastosItemsList(data){
   listEl.innerHTML = html;
 }
 
-function handleItemCatChange(selEl, desc, mIdx){
+function openReclassByIndex(idx){
+  var it = _gastosCurrentItems[idx];
+  if(!it) return;
+  promptReclassify(it.desc, it.mIdx, it.cat.id);
+}
+
+function handleItemCatChangeByIndex(selEl, idx){
+  var it = _gastosCurrentItems[idx];
+  if(!it) return;
   var newCat = selEl.value;
-  var applyAll = confirm('Deseja aplicar a categoria "' + getCategoryById(newCat).name + '" para TODOS os lançamentos com o nome "' + desc + '"? \n\nClique OK para regra geral, ou Cancelar para alterar apenas este mês.');
-  reclassifyItem(desc, mIdx, newCat, applyAll);
+  var applyAll = confirm('Deseja aplicar a categoria "' + getCategoryById(newCat).name + '" para TODOS os lançamentos com o nome "' + it.desc + '"?\n\nClique OK para regra geral, ou Cancelar para alterar apenas este mês.');
+  reclassifyItem(it.desc, it.mIdx, newCat, applyAll);
+}
+
+function goToFaturaMonth(mIdx){
+  showTab('fatura');
+  if(collapsedMonths[mIdx]){
+    collapsedMonths[mIdx] = false;
+    saveLocal();
+    renderFaturas();
+  }
+  setTimeout(function(){
+    var cards = document.querySelectorAll('#faturasList .mc');
+    for(var i=0; i<cards.length; i++){
+      var nameEl = cards[i].querySelector('.mname');
+      if(nameEl && nameEl.textContent.indexOf(MNS[mIdx]) !== -1){
+        cards[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cards[i].style.transition = 'box-shadow 0.4s ease';
+        cards[i].style.boxShadow = '0 0 0 2px var(--accent)';
+        setTimeout(function(){ cards[i].style.boxShadow = ''; }, 1800);
+        break;
+      }
+    }
+  }, 120);
 }
 
 function renderFaturasSummaryTable(data){
@@ -3190,13 +3232,14 @@ function renderFaturasSummaryTable(data){
     var valColor = m.status === 'paga' ? '#34d399' : m.status === 'fechada' ? '#fbbf24' : (m.total > profile.meta ? '#f87171' : '#38bdf8');
 
     html += '<tr>'
-      + '<td><strong>' + m.name + '</strong></td>'
+      + '<td><strong>' + esc(m.name) + '</strong></td>'
       + '<td>' + stBadge + '</td>'
       + '<td><strong style="color:' + valColor + '">' + fmtBRL(m.total) + '</strong></td>'
       + '<td><span style="color:' + (pct > 100 ? '#f87171' : 'var(--text-secondary)') + '">' + pct.toFixed(1) + '%</span></td>'
       + '<td><span style="color:#c084fc;font-weight:700">✈️ ' + m.milhas.toLocaleString('pt-BR') + ' mi</span></td>'
-      + '<td style="text-align:right">'
-      + '<button class="bsm" style="padding:4px 8px;font-size:11px" onclick="setGastosMonthFilter(\'' + m.mIdx + '\')">Filtrar</button>'
+      + '<td style="text-align:right;white-space:nowrap">'
+      + '<button class="bsm" style="padding:4px 8px;font-size:11px;margin-right:4px" onclick="setGastosMonthFilter(' + m.mIdx + ')">Filtrar</button>'
+      + '<button class="bsm" style="padding:4px 8px;font-size:11px" onclick="goToFaturaMonth(' + m.mIdx + ')">Ver Fatura</button>'
       + '</td>'
       + '</tr>';
   }
@@ -3283,18 +3326,16 @@ function closeCatModalIfBg(e){
 
 function openNewCategoryModal(){
   var body = '<div class="fg">'
-    + '<div class="ff"><label>Nome da Categoria</label>'
+    + '<div class="ff"><label for="newCatName">Nome da Categoria</label>'
     + '<input type="text" id="newCatName" placeholder="Ex: Educação, Viagem, Hobbies…"/></div>'
-    + '<div><label>Ícone / Emoji</label>'
+    + '<div><label for="newCatIcon">Ícone / Emoji</label>'
     + '<input type="text" id="newCatIcon" placeholder="Ex: ✈️, 📚, 🎮" value="🏷️"/></div>'
-    + '<div><label>Cor Identificadora</label>'
+    + '<div><label for="newCatColor">Cor Identificadora</label>'
     + '<input type="color" id="newCatColor" value="#38bdf8" style="height:38px;padding:2px;cursor:pointer"/></div>'
-    + '</div>'
-    + '<div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px">'
-    + '<button class="bsm" onclick="closeCatModal()">Cancelar</button>'
-    + '<button class="bcalc" style="width:auto;margin:0;padding:8px 18px;font-size:12px" onclick="saveNewCategory()">Salvar Categoria</button>'
     + '</div>';
-  openCatModal('➕ Criar Nova Categoria', body);
+  var btns = '<button class="bsm" onclick="closeCatModal()">Cancelar</button>'
+    + '<button class="bcalc" style="width:auto;margin:0;padding:8px 18px;font-size:12px" onclick="saveNewCategory()">Salvar Categoria</button>';
+  openCatModal('➕ Criar Nova Categoria', body, btns);
 }
 
 function saveNewCategory(){
@@ -3347,7 +3388,7 @@ function openRulesModal(){
       var uc = userCategories[i];
       userCatsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px">'
         + '<span><span style="color:' + uc.color + '">' + uc.icon + '</span> <strong>' + esc(uc.name) + '</strong></span>'
-        + '<button class="bsm" style="padding:2px 8px;font-size:11px;color:var(--red)" onclick="deleteUserCategory(\'' + uc.id + '\')">Excluir</button>'
+        + '<button class="bsm" style="padding:2px 8px;font-size:11px;color:var(--red)" data-catid="' + esc(uc.id) + '" onclick="deleteUserCategory(this.getAttribute(\'data-catid\'))">Excluir</button>'
         + '</div>';
     }
   }
@@ -3374,13 +3415,14 @@ function openRulesModal(){
     + userCatsHtml
     + '</div>'
 
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'
-    + '<button class="bsm" style="color:var(--red);font-size:11px" onclick="resetCategoriesToDefault()">🔄 Resetar Padrões</button>'
-    + '<button class="bsm" onclick="closeCatModal()">Fechar</button>'
-    + '</div>'
     + '</div>';
 
-  openCatModal('⚙️ Gerenciar Regras e Categorias', body);
+  var btns = '<div style="display:flex;justify-content:space-between;align-items:center;width:100%">'
+    + '<button class="bsm" style="color:var(--red);font-size:11px" onclick="resetCategoriesToDefault()">🔄 Resetar Padrões</button>'
+    + '<button class="bsm" onclick="closeCatModal()">Fechar</button>'
+    + '</div>';
+
+  openCatModal('⚙️ Gerenciar Regras e Categorias', body, btns);
 }
 
 function saveNewRule(){

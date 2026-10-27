@@ -100,7 +100,8 @@ function jsonResponse(data) {
 }
 
 function jsonpResponse(callback, data) {
-  var js = callback + '(' + JSON.stringify(data) + ')';
+  var cleanCallback = String(callback || 'callback').replace(/[^a-zA-Z0-9_$.]/g, '');
+  var js = cleanCallback + '(' + JSON.stringify(data) + ');';
   return ContentService
     .createTextOutput(js)
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -143,7 +144,15 @@ function doPost(e) {
   try {
     lock.waitLock(10000); // Aguarda ate 10s para evitar race conditions
     var body    = (e && e.postData) ? e.postData.contents : '{}';
-    var payload = JSON.parse(body);
+    var payload = {};
+    try {
+      payload = JSON.parse(body);
+    } catch(parseErr) {
+      return jsonResponse({ ok: false, error: 'JSON malformado no corpo da requisicao' });
+    }
+    if (!payload || typeof payload !== 'object') {
+      return jsonResponse({ ok: false, error: 'Payload invalido' });
+    }
     var sh      = getSheet();
 
     if (payload.extraItems !== undefined) writeKey(sh, 'extraItems', payload.extraItems);

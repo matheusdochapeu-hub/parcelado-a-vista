@@ -1,4 +1,4 @@
-const CACHE_NAME = 'faturas-pwa-v9';
+const CACHE_NAME = 'faturas-pwa-v10';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -73,7 +73,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Para ícones, manifest e assets estáticos: Cache-First
+  // Para ícones, manifest e assets estáticos: Cache-First com fallback seguro
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
@@ -87,6 +87,10 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
+      }).catch(() => {
+        return caches.match('./index.html').then((fallback) => {
+          return fallback || new Response('', { status: 408, statusText: 'Offline' });
+        });
       });
     })
   );
