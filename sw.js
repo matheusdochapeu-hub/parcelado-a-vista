@@ -1,4 +1,4 @@
-const CACHE_NAME = 'faturas-pwa-v10';
+const CACHE_NAME = 'faturas-pwa-v11';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -88,9 +88,12 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        return caches.match('./index.html').then((fallback) => {
-          return fallback || new Response('', { status: 408, statusText: 'Offline' });
-        });
+        if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
+          return caches.match('./index.html').then((fallback) => {
+            return fallback || new Response('', { status: 408, statusText: 'Offline' });
+          });
+        }
+        return new Response('', { status: 404, statusText: 'Asset not found in offline cache' });
       });
     })
   );

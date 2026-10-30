@@ -817,28 +817,48 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
    1 = Out/2026 (ciclo 10/Set–09/Out → paga 17/Out)  ← ciclo atual
    2 = Nov/2026, 3 = Dez/2026, 4 = Jan/2027 …
 ═══════════════════════════════════════════════ */
-var MNS=['Set/2026','Out/2026','Nov/2026','Dez/2026','Jan/2027','Fev/2027',
-         'Mar/2027','Abr/2027','Mai/2027','Jun/2027','Jul/2027','Ago/2027','Set/2027','Out/2027','Nov/2027+'];
+var MONTH_NAMES_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+var MNS_ANCHOR_YEAR=2026, MNS_ANCHOR_MONTH=9; // Set/2026 = índice 0 (mês 9 = setembro)
 var MONTHS_DEFAULT=7; // padrão inicial de meses se não houver parcelas posteriores
 
-/* Âncora do calendário: MNS[1] = Out/2026 (fatura).
-   Índice i de MNS ↔ (ano, mês-da-fatura), começando em Set/2026 no índice 0. */
-var MNS_ANCHOR_YEAR=2026, MNS_ANCHOR_MONTH=9; // Set/2026 = índice 0 (mês 9 = setembro)
+/* Gera o nome do mês dinamicamente a partir da âncora (sem teto artificial) */
+function getMonthName(mIdx){
+  if(mIdx == null || isNaN(mIdx)) return '';
+  var totalMonths = (MNS_ANCHOR_MONTH - 1) + mIdx;
+  var year = MNS_ANCHOR_YEAR + Math.floor(totalMonths / 12);
+  var monthIdx = totalMonths % 12;
+  if(monthIdx < 0){
+    monthIdx += 12;
+    year -= 1;
+  }
+  return MONTH_NAMES_PT[monthIdx] + '/' + year;
+}
+
+/* Cache reativo do array MNS para retrocompatibilidade direta com MNS[mIdx] */
+var MNS=[];
+function refreshMnsCache(maxCount){
+  var count = Math.max(48, (maxCount || 0) + 12);
+  MNS.length = 0;
+  for(var m=0; m<=count; m++){
+    MNS.push(getMonthName(m));
+  }
+}
+refreshMnsCache(48);
 
 /* Índice de MNS correspondente ao mês atual REAL (pela data de hoje).
    Faz o conceito de "mês atual" avançar sozinho com o tempo, sem precisar
-   marcar faturas manualmente. Fica limitado ao intervalo válido de MNS. */
+   marcar faturas manualmente. */
 function getCurrentMonthIndex(){
   var now=new Date();
   var idx=(now.getFullYear()-MNS_ANCHOR_YEAR)*12 + (now.getMonth()+1 - MNS_ANCHOR_MONTH);
   if(idx<1) idx=1;                 // antes da âncora: mantém Out/2026 (comportamento original)
-  if(idx>MNS.length-1) idx=MNS.length-1;
   return idx;
 }
 
 // Calcula até qual mês existem lançamentos ativos para montar todos os meses subsequentes
 function getMaxActiveMonth(){
-  var maxM = MONTHS_DEFAULT;
+  var curM = getCurrentMonthIndex();
+  var maxM = Math.max(curM + MONTHS_DEFAULT, MONTHS_DEFAULT);
   for(var i=0; i<BASE_ITEMS.length; i++){
     if(BASE_ITEMS[i].ate > maxM) maxM = BASE_ITEMS[i].ate;
   }
@@ -848,7 +868,8 @@ function getMaxActiveMonth(){
   for(var i=0; i<simItems.length; i++){
     if(simItems[i].ate > maxM) maxM = simItems[i].ate;
   }
-  return Math.min(maxM, MNS.length - 1);
+  refreshMnsCache(maxM);
+  return maxM;
 }
 
 /* ═══════════════════════════════════════════════
@@ -995,21 +1016,21 @@ function setSyncStatus(state,msg){
   // Box destacado na aba Perfil
   if(box){
     box.style.display='block';
+    var prefix = state === 'ok' ? '✅ ' : (state === 'err' ? '❌ ' : '⏳ ');
+    box.textContent = prefix + (msg || '');
+
     if(state==='ok'){
       box.style.background='rgba(74,222,128,.10)';
       box.style.border='1px solid rgba(74,222,128,.35)';
       box.style.color='var(--green)';
-      box.innerHTML='✅ '+msg;
     } else if(state==='err'){
       box.style.background='rgba(248,113,113,.10)';
       box.style.border='1px solid rgba(248,113,113,.35)';
       box.style.color='var(--red)';
-      box.innerHTML='❌ '+msg;
     } else {
       box.style.background='rgba(251,191,36,.08)';
       box.style.border='1px solid rgba(251,191,36,.3)';
       box.style.color='var(--yellow)';
-      box.innerHTML='⏳ '+msg;
     }
   }
 }
@@ -1104,7 +1125,7 @@ function pushToSheets(){
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify(payload)
     }).then(function(){
-      setSyncStatus('ok','Salvo ✓ '+new Date().toLocaleTimeString('pt-BR'));
+      setSyncStatus('ok','Enviado ao Sheets ✓ '+new Date().toLocaleTimeString('pt-BR'));
     }).catch(function(err){
       setSyncStatus('err','Erro ao salvar no Sheets: '+err);
     });
@@ -1225,11 +1246,20 @@ function pushModalHistory(mode){
   }
 }
 
+function resetModalSaveBtn(){
+  var btn=document.getElementById('modalSaveBtn');
+  if(btn){
+    btn.setAttribute('onclick','saveModal()');
+    btn.textContent='💾 Salvar';
+  }
+}
+
 function closeModal(fromPopstate){
   var bg=document.getElementById('modalBg');
   if(!bg) return;
   var wasOpen=bg.classList.contains('on');
   bg.classList.remove('on');
+  resetModalSaveBtn();
   if(wasOpen && !fromPopstate && window.history && window.history.state && window.history.state.modal){
     window.history.back();
   }
@@ -1376,8 +1406,8 @@ function openHistToEdit(idx){
   }
   // Ir para a aba Calculadora
   showTab('calc');
-  // Executar o cálculo automaticamente
-  calculate();
+  // Executar o cálculo automaticamente (sem duplicar entrada no histórico)
+  calculate(true);
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -1693,12 +1723,12 @@ function clearSimGroup(gid){
 function addSimulation(name,perInstall,startMonth,numInst){
   var group='sim_'+Date.now();
   var label=name+' ('+numInst+'x '+fmtBRL(perInstall)+')';
-  var maxM = MNS.length - 1;
   for(var i=0;i<numInst;i++){
-    var mIdx=startMonth+i;if(mIdx>maxM)mIdx=maxM;
+    var mIdx=startMonth+i;
     simItems.push({d:name+' '+(i+1)+'/'+numInst,v:perInstall,de:mIdx,ate:mIdx,
       tag:'sim',isSimul:true,group:group,simLabel:label});
   }
+  refreshMnsCache(startMonth+numInst);
   saveLocal();pushToSheets();renderFaturas();
   return group;
 }
@@ -1755,15 +1785,15 @@ function recalcSimParc(){
   if(!prev) return;
   var mStart=parseInt((document.getElementById('simMonth')||{}).value)||1;
   var lines='<strong style="color:var(--purple)">Distribuição prevista nas faturas:</strong><div style="margin-top:5px;display:grid;grid-template-columns:1fr 1fr;gap:2px 12px">';
-  var maxM = MNS.length - 1;
-  var show=Math.min(n, maxM);
+  refreshMnsCache(mStart + n);
+  var show=Math.min(n, 36);
   for(var i=0;i<show;i++){
-    var mIdx=mStart+i; if(mIdx>maxM) mIdx=maxM;
-    var mn=MNS[mIdx]||('Mês '+(mIdx+1));
+    var mIdx=mStart+i;
+    var mn=getMonthName(mIdx);
     lines+='<span style="color:rgba(255,255,255,.7)">'+mn+'</span><span style="color:var(--green);font-weight:600">'+fmtBRL(per)+'</span>';
   }
   lines+='</div>';
-  if(n>maxM) lines+='<div style="color:var(--muted);margin-top:4px;font-size:10px">...e mais '+(n-maxM)+' parcelas subsequentes</div>';
+  if(n>36) lines+='<div style="color:var(--muted);margin-top:4px;font-size:10px">...e mais '+(n-36)+' parcelas subsequentes</div>';
   prev.innerHTML=lines;
 }
 
@@ -1789,6 +1819,7 @@ function confirmSimAdd(){
    MODAL — EDITAR MÊS (todos os itens editáveis)
 ═══════════════════════════════════════════════ */
 function openEditMonthModal(mIdx){
+  resetModalSaveBtn();
   modalMode='edit-month'; modalMonthIdx=mIdx;
   var mn=MNS[mIdx]||('Mês '+(mIdx+1));
   document.getElementById('modalTitle').textContent='✏️ Editar fatura · '+mn;
@@ -1966,6 +1997,7 @@ function updateMonthSelects(){
 }
 
 function openAddModal(){
+  resetModalSaveBtn();
   modalMode='add'; 
   var firstOpen = getFirstOpenMonth();
   modalMonthIdx = firstOpen;
@@ -2027,12 +2059,30 @@ function markRowDeleted(rowIdx){
   recalcEditTotal();
 }
 
+function deleteOrSplitExtraItem(extraIdx, mIdx){
+  var item = extraItems[extraIdx];
+  if(!item) return;
+  if(item.de === item.ate && item.de === mIdx){
+    extraItems.splice(extraIdx, 1);
+    return;
+  }
+  if(mIdx === item.de){
+    item.de = mIdx + 1;
+  } else if(mIdx === item.ate){
+    item.ate = mIdx - 1;
+  } else if(item.de < mIdx && mIdx < item.ate){
+    var splitPart = { desc: item.desc, val: item.val, de: mIdx + 1, ate: item.ate, tag: item.tag, isExtra: true };
+    item.ate = mIdx - 1;
+    extraItems.splice(extraIdx + 1, 0, splitPart);
+  }
+}
+
 function saveModal(){
   if(modalMode==='edit-month'){
     var mIdx=modalMonthIdx;
     // Processar cada row
     var rows=document.querySelectorAll('[id^="mrow_"]');
-    var extraIdxToDelete=[]; // coletar índices e remover DEPOIS (evita deslocamento no splice)
+    var extraIdxToDelete=[]; // coletar índices e processar DEPOIS (evita deslocamento no splice)
     var changeCount=0;
     for(var i=0;i<rows.length;i++){
       var row=rows[i];
@@ -2062,8 +2112,8 @@ function saveModal(){
         }
       }
     }
-    // Remove extras marcados (do maior índice p/ o menor, para não deslocar)
-    extraIdxToDelete.sort(function(a,b){return b-a;}).forEach(function(ix){ if(!isNaN(ix)) extraItems.splice(ix,1); });
+    // Remove ou ajusta intervalo de extras marcados no mês (do maior índice p/ o menor)
+    extraIdxToDelete.sort(function(a,b){return b-a;}).forEach(function(ix){ if(!isNaN(ix)) deleteOrSplitExtraItem(ix, mIdx); });
     // Re-indexar extras
     for(var i=0;i<extraItems.length;i++) extraItems[i].extraIdx=i;
     // Novo item
@@ -2126,7 +2176,7 @@ function milesVal(m){return m*(profile.milhaVal!=null?profile.milhaVal:0.03);}
 /* ═══════════════════════════════════════════════
    CALCULATE
 ═══════════════════════════════════════════════ */
-function calculate(){
+function calculate(skipHist){
   var name   =document.getElementById('pName').value.trim()||'Produto';
   var cashRaw=parseNum(document.getElementById('pCash').value);
   var discPct=parseNum(document.getElementById('pDisc').value);
@@ -2186,23 +2236,25 @@ function calculate(){
     avail:avail,committed:committed};
 
   renderResults(lastCalc);
-  addHist({
-    name:name,
-    cashPrice:cashPrice,
-    cashRaw:cashRaw,
-    discPct:discPct,
-    cashMethod:cashMethod,
-    instRaw:instRaw,
-    instTotal:instTotal,
-    maxN:maxN,
-    mOff:mOff,
-    invest:(document.getElementById('pInvest')?document.getElementById('pInvest').value:'selic'),
-    date:new Date().toLocaleDateString('pt-BR'),
-    winner:vistaWins?'vista':'parc',
-    winN:best?best.n:1,
-    savings:savings,
-    miles:vistaWins?cMi:(best?best.iMi:0)
-  });
+  if(!skipHist){
+    addHist({
+      name:name,
+      cashPrice:cashPrice,
+      cashRaw:cashRaw,
+      discPct:discPct,
+      cashMethod:cashMethod,
+      instRaw:instRaw,
+      instTotal:instTotal,
+      maxN:maxN,
+      mOff:mOff,
+      invest:(document.getElementById('pInvest')?document.getElementById('pInvest').value:'selic'),
+      date:new Date().toLocaleDateString('pt-BR'),
+      winner:vistaWins?'vista':'parc',
+      winN:best?best.n:1,
+      savings:savings,
+      miles:vistaWins?cMi:(best?best.iMi:0)
+    });
+  }
 }
 
 function showErr(msg){
@@ -3483,10 +3535,14 @@ function setGastosCatFilter(val){
   renderGastosView();
 }
 
+var _gastosSearchTimer = null;
 function setGastosSearch(val){
   gastosSearchQuery = val;
-  var data = getGastosAnalysisData(gastosMonthFilter);
-  renderGastosItemsList(data);
+  if(_gastosSearchTimer) clearTimeout(_gastosSearchTimer);
+  _gastosSearchTimer = setTimeout(function(){
+    var data = getGastosAnalysisData(gastosMonthFilter);
+    renderGastosItemsList(data);
+  }, 150);
 }
 
 /* ═══════════════════════════════════════════════
