@@ -527,6 +527,16 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   .sg3{grid-template-columns:repeat(3,1fr)}
 }
 
+/* IMPORTADOR & RECONCILIAÇÃO DE FATURAS */
+.import-dropzone{border:2px dashed rgba(56,189,248,0.4);border-radius:var(--r-md);padding:26px 16px;text-align:center;background:rgba(56,189,248,0.04);cursor:pointer;transition:all .2s ease;margin-bottom:14px}
+.import-dropzone:hover,.import-dropzone.dragover{border-color:var(--accent);background:rgba(56,189,248,0.12);transform:scale(1.005)}
+.import-summary-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(15,23,42,0.8);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin-bottom:12px}
+.import-item-row{display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(15,23,42,0.45);border-radius:var(--r-sm);margin-bottom:6px;transition:background .15s ease}
+.import-item-row:hover{background:rgba(255,255,255,0.05)}
+.import-item-row.is-new{border-left:3px solid var(--green);background:rgba(52,211,153,0.04)}
+.import-item-row.is-dup{border-left:3px solid var(--yellow);background:rgba(251,191,36,0.06)}
+.import-item-row.is-pay{opacity:0.65;border-left:3px solid var(--border)}
+
 </style>
 </head>
 <body>
@@ -565,7 +575,8 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
           <div class="ctitle">💳 Faturas · 7 meses</div>
           <div class="csub" style="margin:0">Clique em ✏️ para editar qualquer item de qualquer mês</div>
         </div>
-        <div class="faturas-top-right">
+        <div class="faturas-top-right" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="bsm" onclick="openImportModal()" title="Importar arquivo CSV ou OFX da fatura do banco">📥 Importar Fatura</button>
           <button class="bsm accent" onclick="openAddModal()">➕ Novo item</button>
         </div>
       </div>
@@ -806,6 +817,21 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
     <div id="catModalBody"></div>
     <div class="mbtns" id="catModalBtns">
       <button class="bsm" onclick="closeCatModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR FATURA (CSV / OFX) -->
+<div class="modal-bg" id="importModalBg" onclick="closeImportModalIfBg(event)">
+  <div class="modal" id="importModalBox" style="max-width:760px;max-height:92vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-shrink:0">
+      <h3 id="importModalTitle" style="margin:0;font-size:18px">📥 Importar Fatura (CSV / OFX)</h3>
+      <button class="bsm" style="padding:4px 10px;font-size:13px" onclick="closeImportModal()">✕</button>
+    </div>
+    <div id="importModalBody" style="overflow-y:auto;flex:1 1 auto;padding-right:4px"></div>
+    <div class="mbtns" id="importModalBtns" style="flex-shrink:0;margin-top:12px">
+      <button class="bsm" onclick="closeImportModal()">Cancelar</button>
+      <button class="bcalc" id="btnConfirmImport" style="width:auto;margin:0;padding:8px 18px;font-size:13px;display:none" onclick="commitFaturaImport()">✅ Confirmar Importação</button>
     </div>
   </div>
 </div>
@@ -1271,6 +1297,11 @@ function closeModalIfBg(e){
 
 // Intercepta gesto/botão "Voltar" do smartphone para fechar modais ou voltar abas
 window.addEventListener('popstate', function(e){
+  var impBg=document.getElementById('importModalBg');
+  if(impBg && impBg.classList.contains('on')){
+    closeImportModal();
+    return;
+  }
   var catBg=document.getElementById('catModalBg');
   if(catBg && catBg.classList.contains('on')){
     closeCatModal(true);
@@ -2156,6 +2187,637 @@ function delExtra(idx){
 }
 
 /* ═══════════════════════════════════════════════
+   FATURA IMPORT & RECONCILIATION ENGINE
+═══════════════════════════════════════════════ */
+
+var currentImportItems = [];
+var currentImportFileName = '';
+var currentImportTargetMonth = 1;
+
+/* Extrai informação de parcelamento (ex: 'Loja XYZ 01/10' -> { isInstallment: true, current: 1, total: 10, cleanDesc: 'Loja XYZ' }) */
+function extractInstallmentInfo(desc){
+  if(!desc) return { isInstallment: false, current: 1, total: 1, cleanDesc: '' };
+  var str = String(desc).trim();
+  // Padrões como 01/10, 1/6, 1 de 5, Parcela 2/3, (01/10)
+  var m = str.match(/(?:(?:\(|\[|\b)parcela\s*)?(\d{1,2})\s*(?:\/|\s+de\s+)(\d{1,2})(?:\)|\]|\b)/i);
+  if(m){
+    var cur = parseInt(m[1], 10);
+    var tot = parseInt(m[2], 10);
+    if(tot > 1 && cur >= 1 && cur <= tot){
+      var clean = str.replace(m[0], '').replace(/\s+/g, ' ').trim();
+      return { isInstallment: true, current: cur, total: tot, cleanDesc: clean || str };
+    }
+  }
+  return { isInstallment: false, current: 1, total: 1, cleanDesc: str };
+}
+
+/* Normaliza descrição para comparação inteligente */
+function normalizeDesc(s){
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/\b\d{1,2}\s*(?:\/|de)\s*\d{1,2}\b/gi, '') // remove 1/10 etc
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/* Detecta correspondência ou duplicata com lançamentos já existentes no mês */
+function detectItemMatch(candidate, existingItems){
+  if(!candidate || !existingItems || !existingItems.length){
+    return { type: 'none', matchedItem: null, reason: '' };
+  }
+  var cVal = parseNum(candidate.val);
+  var cNorm = normalizeDesc(candidate.desc);
+  
+  // 1. Procurar duplicata exata ou quase certa (valor idêntico + descrição idêntica ou contida)
+  for(var i=0; i<existingItems.length; i++){
+    var ex = existingItems[i];
+    var exVal = parseNum(ex.val);
+    var exNorm = normalizeDesc(ex.desc);
+    var valMatch = Math.abs(cVal - exVal) <= 0.05;
+    
+    if(valMatch){
+      if(cNorm === exNorm || (cNorm.length >= 3 && exNorm.indexOf(cNorm) >= 0) || (exNorm.length >= 3 && cNorm.indexOf(exNorm) >= 0)){
+        return {
+          type: 'exact',
+          matchedItem: ex,
+          reason: 'Valor idêntico e descrição correspondente a "' + ex.desc + '"'
+        };
+      }
+    }
+  }
+
+  // 2. Procurar duplicata por valor exato (mesmo valor, descrições diferentes -> alerta de possível sobreposição)
+  for(var i=0; i<existingItems.length; i++){
+    var ex = existingItems[i];
+    var exVal = parseNum(ex.val);
+    var valMatch = Math.abs(cVal - exVal) <= 0.05;
+    if(valMatch){
+      return {
+        type: 'similar_val',
+        matchedItem: ex,
+        reason: 'Mesmo valor (' + fmtBRL(exVal) + ') do lançamento "' + ex.desc + '"'
+      };
+    }
+  }
+
+  // 3. Procurar por descrição muito próxima mas valor diferente
+  for(var i=0; i<existingItems.length; i++){
+    var ex = existingItems[i];
+    var exNorm = normalizeDesc(ex.desc);
+    if(cNorm && exNorm && (cNorm === exNorm || (cNorm.length >= 5 && exNorm.indexOf(cNorm) >= 0))){
+      return {
+        type: 'similar_desc',
+        matchedItem: ex,
+        reason: 'Descrição semelhante a "' + ex.desc + '", mas valor existente é ' + fmtBRL(ex.val)
+      };
+    }
+  }
+
+  return { type: 'none', matchedItem: null, reason: '' };
+}
+
+/* Parser universal de CSV e OFX */
+function parseFaturaData(content, format){
+  var str = String(content || '').trim();
+  if(!str) return [];
+
+  if(!format){
+    if(str.indexOf('<OFX>') >= 0 || str.indexOf('<STMTTRN>') >= 0) format = 'ofx';
+    else format = 'csv';
+  }
+
+  if(format === 'ofx'){
+    return parseFaturaOFX(str);
+  } else {
+    return parseFaturaCSV(str);
+  }
+}
+
+function parseFaturaOFX(ofxStr){
+  var items = [];
+  var trnRegex = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi;
+  var m;
+  while((m = trnRegex.exec(ofxStr)) !== null){
+    var block = m[1];
+    var memoMatch = block.match(/<(?:MEMO|NAME)>(.*)/i);
+    var amtMatch = block.match(/<TRNAMT>([^\r\n<]+)/i);
+    var dateMatch = block.match(/<DTPOSTED>([0-9]{8})/i);
+    var typeMatch = block.match(/<TRNTYPE>([A-Z]+)/i);
+
+    var rawDesc = memoMatch ? memoMatch[1].trim() : 'Compra';
+    var rawAmt = amtMatch ? amtMatch[1].trim() : '0';
+    var rawDate = dateMatch ? dateMatch[1] : '';
+    var dateFormatted = '';
+    if(rawDate && rawDate.length === 8){
+      dateFormatted = rawDate.substr(6,2) + '/' + rawDate.substr(4,2) + '/' + rawDate.substr(0,4);
+    }
+
+    var val = parseFloat(rawAmt.replace(',', '.'));
+    var isNeg = val < 0;
+    var absVal = Math.abs(val);
+
+    var isPay = false;
+    var normD = normalizeDesc(rawDesc);
+    if(normD.indexOf('pagamento') >= 0 || normD.indexOf('estorno') >= 0 || normD.indexOf('credito') >= 0 || (!isNeg && typeMatch && typeMatch[1] === 'CREDIT')){
+      isPay = true;
+    }
+
+    var inst = extractInstallmentInfo(rawDesc);
+
+    items.push({
+      date: dateFormatted,
+      desc: rawDesc,
+      val: absVal,
+      isPayment: isPay,
+      curInstallment: inst.current,
+      totalInstallments: inst.total,
+      isInstallment: inst.isInstallment
+    });
+  }
+  return items;
+}
+
+function parseFaturaCSV(csvStr){
+  var lines = csvStr.split(/\r?\n/).filter(function(l){ return l.trim().length > 0; });
+  if(!lines.length) return [];
+
+  var firstLine = lines[0];
+  var sep = ',';
+  var commaCount = (firstLine.match(/,/g) || []).length;
+  var semiCount = (firstLine.match(/;/g) || []).length;
+  var tabCount = (firstLine.match(/\t/g) || []).length;
+  if(semiCount > commaCount && semiCount > tabCount) sep = ';';
+  else if(tabCount > commaCount && tabCount > semiCount) sep = '\t';
+
+  function splitCSVRow(row, delimiter){
+    var pattern = new RegExp(
+      '(\\' + delimiter + '|\\r?\\n|\\r|^)' +
+      '(?:"([^"]*(?:""[^"]*)*)"|([^"\\' + delimiter + '\\r\\n]*))',
+      'gi'
+    );
+    var matches = [];
+    var m;
+    while((m = pattern.exec(row)) !== null){
+      if(m[1].length && m[1] !== delimiter) break;
+      var val = m[2] !== undefined ? m[2].replace(/""/g, '"') : m[3];
+      matches.push(val != null ? val.trim() : '');
+    }
+    return matches;
+  }
+
+  var header = splitCSVRow(lines[0], sep).map(function(h){ return normalizeDesc(h); });
+  var dateCol = -1, descCol = -1, valCol = -1;
+
+  for(var c=0; c<header.length; c++){
+    var h = header[c];
+    if(h === 'data' || h === 'date' || h === 'dt' || h === 'dia') dateCol = c;
+    else if(h === 'titulo' || h === 'title' || h === 'descricao' || h === 'estabelecimento' || h === 'historico' || h === 'memo' || h === 'description') descCol = c;
+    else if(h === 'valor' || h === 'amount' || h === 'val' || h === 'quantia') valCol = c;
+  }
+
+  if(dateCol === -1 && header.length >= 3) dateCol = 0;
+  if(descCol === -1 && header.length >= 3) descCol = 1;
+  if(valCol === -1 && header.length >= 3) valCol = 2;
+
+  var startIndex = 1;
+  if(lines[0].match(/^\d{4}-\d{2}-\d{2}/) || lines[0].match(/^\d{2}\/\d{2}\/\d{2,4}/)){
+    startIndex = 0;
+  }
+
+  var items = [];
+  for(var i=startIndex; i<lines.length; i++){
+    var cols = splitCSVRow(lines[i], sep);
+    if(cols.length <= 1) continue;
+
+    var rawDate = (dateCol >= 0 && cols[dateCol]) ? cols[dateCol].trim() : '';
+    var rawDesc = (descCol >= 0 && cols[descCol]) ? cols[descCol].trim() : 'Compra';
+    var rawVal = (valCol >= 0 && cols[valCol]) ? cols[valCol].trim() : '0';
+
+    var cleanValStr = rawVal.replace(/R\$\s*/i, '').replace(/\s+/g, '');
+    var isNegative = cleanValStr.indexOf('-') >= 0;
+    cleanValStr = cleanValStr.replace('-', '');
+    
+    if(cleanValStr.indexOf(',') >= 0 && cleanValStr.indexOf('.') >= 0){
+      if(cleanValStr.lastIndexOf(',') > cleanValStr.lastIndexOf('.')){
+        cleanValStr = cleanValStr.replace(/\./g, '').replace(',', '.');
+      } else {
+        cleanValStr = cleanValStr.replace(/,/g, '');
+      }
+    } else if(cleanValStr.indexOf(',') >= 0){
+      cleanValStr = cleanValStr.replace(',', '.');
+    }
+
+    var valNum = parseFloat(cleanValStr);
+    if(isNaN(valNum)) continue;
+
+    var normD = normalizeDesc(rawDesc);
+    var isPay = isNegative || normD.indexOf('pagamento') >= 0 || normD.indexOf('estorno') >= 0 || normD.indexOf('credito') >= 0;
+
+    var inst = extractInstallmentInfo(rawDesc);
+
+    items.push({
+      date: rawDate,
+      desc: rawDesc,
+      val: valNum,
+      isPayment: isPay,
+      curInstallment: inst.current,
+      totalInstallments: inst.total,
+      isInstallment: inst.isInstallment
+    });
+  }
+
+  return items;
+}
+
+function openImportModal(fileContent, fileName){
+  var bg = document.getElementById('importModalBg');
+  if(!bg) return;
+  bg.classList.add('on');
+  
+  currentImportTargetMonth = getFirstOpenMonth();
+
+  if(fileContent){
+    processFaturaFile(fileContent, fileName || 'fatura.csv');
+  } else {
+    renderImportUploadPrompt();
+  }
+}
+
+function closeImportModal(){
+  var bg = document.getElementById('importModalBg');
+  if(bg) bg.classList.remove('on');
+  currentImportItems = [];
+  currentImportFileName = '';
+}
+
+function closeImportModalIfBg(e){
+  if(e.target && e.target.id === 'importModalBg') closeImportModal();
+}
+
+function handleFaturaFile(e){
+  var file = e.target.files && e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(evt){
+    processFaturaFile(evt.target.result, file.name);
+  };
+  reader.readAsText(file);
+}
+
+function renderImportUploadPrompt(){
+  var body = document.getElementById('importModalBody');
+  var btnConfirm = document.getElementById('btnConfirmImport');
+  if(btnConfirm) btnConfirm.style.display = 'none';
+
+  var h = '<div class="import-dropzone" id="importDropzone" onclick="document.getElementById(\'faturaFileInput\').click()">'
+    + '<div style="font-size:36px;margin-bottom:10px">📄</div>'
+    + '<div style="font-weight:700;font-size:16px;color:#fff;margin-bottom:6px">Clique para selecionar ou arraste o arquivo da fatura</div>'
+    + '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Formatos suportados: <strong>CSV</strong> e <strong>OFX</strong></div>'
+    + '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);padding:6px 14px;border-radius:20px;font-size:11px;color:var(--accent)">'
+    + '<span>🔒 Processamento 100% local no seu navegador · Seguro e confidencial</span>'
+    + '</div>'
+    + '<input type="file" id="faturaFileInput" accept=".csv,.ofx,.txt" style="display:none" onchange="handleFaturaFile(event)"/>'
+    + '</div>'
+    + '<div class="infobox" style="background:rgba(15,23,42,0.6);border:1px solid var(--border)">'
+    + '<div class="it" style="color:var(--accent)">💡 Como exportar no seu banco:</div>'
+    + '<div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:4px">'
+    + '• <strong>Nubank:</strong> No app, acesse a fatura &gt; clique em "Enviar fatura por e-mail" ou acesse nubank.com.br &gt; Faturas &gt; Baixar CSV.<br/>'
+    + '• <strong>Itaú, Inter, C6, Bradesco:</strong> No Internet Banking, acesse Cartões &gt; Extrato da Fatura &gt; Exportar (CSV ou OFX).'
+    + '</div>'
+    + '</div>';
+
+  body.innerHTML = h;
+
+  var dropzone = document.getElementById('importDropzone');
+  if(dropzone){
+    dropzone.addEventListener('dragover', function(e){
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', function(){
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', function(e){
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        var f = e.dataTransfer.files[0];
+        var r = new FileReader();
+        r.onload = function(evt){ processFaturaFile(evt.target.result, f.name); };
+        r.readAsText(f);
+      }
+    });
+  }
+}
+
+function processFaturaFile(content, fileName){
+  currentImportFileName = fileName;
+  var items = parseFaturaData(content);
+  if(!items.length){
+    alert('Nenhum lançamento legível foi encontrado neste arquivo. Verifique se o arquivo é um CSV ou OFX válido.');
+    renderImportUploadPrompt();
+    return;
+  }
+  currentImportItems = items;
+  renderImportReview();
+}
+
+function renderImportReview(){
+  var body = document.getElementById('importModalBody');
+  var btnConfirm = document.getElementById('btnConfirmImport');
+  if(!body) return;
+
+  var maxMonths = getMaxActiveMonth();
+  var existing = getMonthItems(currentImportTargetMonth);
+
+  var newCount = 0;
+  var dupCount = 0;
+  var payCount = 0;
+
+  for(var i=0; i<currentImportItems.length; i++){
+    var it = currentImportItems[i];
+    var match = detectItemMatch(it, existing);
+    it.match = match;
+
+    if(it.isPayment){
+      payCount++;
+      if(it.checked === undefined) it.checked = false;
+    } else if(match.type === 'exact' || match.type === 'similar_val'){
+      dupCount++;
+      if(it.checked === undefined) it.checked = false;
+    } else {
+      newCount++;
+      if(it.checked === undefined) it.checked = true;
+    }
+
+    if(it.projectInstallments === undefined && it.isInstallment && it.totalInstallments > it.current){
+      it.projectInstallments = true;
+    }
+  }
+
+  var h = '';
+
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;background:rgba(15,23,42,0.8);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px">';
+  h += '  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+  h += '    <span style="font-size:12px;font-weight:700;color:var(--accent)">📅 Fatura de Destino:</span>';
+  h += '    <select id="importTargetMonth" class="cat-select-inline" style="padding:6px 10px;font-size:12px" onchange="onImportTargetMonthChange(this.value)">';
+  for(var m=1; m<=maxMonths; m++){
+    var sel = (m === currentImportTargetMonth) ? ' selected' : '';
+    h += '      <option value="' + m + '"' + sel + '>' + (MNS[m] || ('Mês ' + m)) + '</option>';
+  }
+  h += '    </select>';
+  h += '  </div>';
+  h += '  <div style="display:flex;align-items:center;gap:8px">';
+  h += '    <span style="font-size:11px;color:var(--muted)">📁 ' + esc(currentImportFileName) + '</span>';
+  h += '    <button class="bsm" style="padding:4px 8px;font-size:11px" onclick="renderImportUploadPrompt()">Trocar arquivo</button>';
+  h += '  </div>';
+  h += '</div>';
+
+  h += '<div class="import-summary-bar">';
+  h += '  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+  h += '    <span class="badge bg">🟢 ' + newCount + ' ' + (newCount === 1 ? 'Novo' : 'Novos') + '</span>';
+  if(dupCount > 0){
+    h += '    <span class="badge by" title="Itens com mesmo valor ou nome de lançamentos já existentes na fatura">🟡 ' + dupCount + ' ' + (dupCount === 1 ? 'Possível Duplicata' : 'Possíveis Duplicatas') + '</span>';
+  }
+  if(payCount > 0){
+    h += '    <span class="badge" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border)">⚪ ' + payCount + ' ' + (payCount === 1 ? 'Pagamento' : 'Pagamentos') + '</span>';
+  }
+  h += '  </div>';
+  h += '  <div style="display:flex;gap:6px;align-items:center">';
+  h += '    <button class="bsm" style="padding:4px 8px;font-size:11px" onclick="setAllImportChecked(\'new\')">Apenas novos</button>';
+  h += '    <button class="bsm" style="padding:4px 8px;font-size:11px" onclick="setAllImportChecked(\'all\')">Marcar todos</button>';
+  h += '    <button class="bsm" style="padding:4px 8px;font-size:11px" onclick="setAllImportChecked(\'none\')">Desmarcar todos</button>';
+  h += '  </div>';
+  h += '</div>';
+
+  h += '<div class="edit-list" style="max-height:50vh;margin-bottom:10px">';
+  for(var i=0; i<currentImportItems.length; i++){
+    var it = currentImportItems[i];
+    var m = it.match || { type: 'none' };
+    
+    var rowCls = 'import-item-row';
+    var badgeCls = 'bg';
+    var badgeLabel = 'NOVO';
+
+    if(it.isPayment){
+      rowCls += ' is-pay';
+      badgeCls = 'badge-muted';
+      badgeLabel = 'PAGTO / CRÉDITO';
+    } else if(m.type === 'exact'){
+      rowCls += ' is-dup';
+      badgeCls = 'by';
+      badgeLabel = 'DUPLICATA SUSPEITA';
+    } else if(m.type === 'similar_val'){
+      rowCls += ' is-dup';
+      badgeCls = 'by';
+      badgeLabel = 'VALOR IGUAL';
+    } else if(m.type === 'similar_desc'){
+      rowCls += ' is-dup';
+      badgeCls = 'bp';
+      badgeLabel = 'NOME SIMILAR';
+    } else {
+      rowCls += ' is-new';
+    }
+
+    var chkAttr = it.checked ? ' checked' : '';
+
+    h += '<div class="' + rowCls + '">';
+    h += '  <div><input type="checkbox" id="imp_chk_' + i + '"' + chkAttr + ' style="width:18px;height:18px;cursor:pointer" onchange="onImportRowCheck(' + i + ', this.checked)"/></div>';
+    
+    h += '  <div style="min-width:0">';
+    h += '    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">';
+    h += '      <span class="badge ' + badgeCls + '" style="font-size:9.5px">' + badgeLabel + '</span>';
+    if(it.date){
+      h += '      <span style="font-size:11px;color:var(--muted)">📅 ' + esc(it.date) + '</span>';
+    }
+    h += '    </div>';
+    h += '    <input type="text" class="medit-desc" id="imp_desc_' + i + '" value="' + esc(it.desc) + '" style="font-size:13px;padding:6px 10px;min-height:36px;width:100%" oninput="onImportDescChange(' + i + ', this.value)"/>';
+
+    if(m.type !== 'none' && m.matchedItem){
+      h += '    <div style="font-size:11px;color:var(--yellow);margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap">';
+      h += '      <span>⚠️ ' + esc(m.reason) + '</span>';
+      if(m.matchedItem.isBase){
+        h += '      <button class="bsm" style="padding:2px 6px;font-size:10px;margin-left:6px" onclick="setImportReplace(' + i + ', true)">Substituir original</button>';
+      }
+      h += '    </div>';
+    }
+
+    if(it.isInstallment && it.totalInstallments > it.current){
+      var remaining = it.totalInstallments - it.current;
+      var projChk = it.projectInstallments ? ' checked' : '';
+      h += '    <div style="font-size:11px;color:var(--accent);margin-top:4px;display:flex;align-items:center;gap:6px">';
+      h += '      <input type="checkbox" id="imp_proj_' + i + '"' + projChk + ' onchange="onImportProjCheck(' + i + ', this.checked)"/>';
+      h += '      <label for="imp_proj_' + i + '" style="margin:0;cursor:pointer;color:var(--accent)">Parcela ' + it.current + '/' + it.totalInstallments + ' · Projetar as próximas ' + remaining + ' parcelas nos meses seguintes</label>';
+      h += '    </div>';
+    }
+
+    h += '  </div>';
+
+    h += '  <div style="text-align:right">';
+    h += '    <div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Valor (R$)</div>';
+    h += '    <input type="text" class="medit-val" id="imp_val_' + i + '" value="' + it.val.toFixed(2) + '" style="width:95px;font-size:13px;padding:6px 8px;min-height:36px;text-align:right" oninput="onImportValChange(' + i + ', this.value)"/>';
+    h += '  </div>';
+
+    h += '</div>';
+  }
+  h += '</div>';
+
+  body.innerHTML = h;
+
+  if(btnConfirm) btnConfirm.style.display = 'inline-block';
+  recalcImportSummary();
+}
+
+function onImportTargetMonthChange(val){
+  currentImportTargetMonth = parseInt(val, 10) || 1;
+  for(var i=0; i<currentImportItems.length; i++){
+    delete currentImportItems[i].checked;
+  }
+  renderImportReview();
+}
+
+function onImportRowCheck(idx, checked){
+  if(currentImportItems[idx]){
+    currentImportItems[idx].checked = checked;
+    recalcImportSummary();
+  }
+}
+
+function onImportDescChange(idx, val){
+  if(currentImportItems[idx]){
+    currentImportItems[idx].desc = val;
+  }
+}
+
+function onImportValChange(idx, val){
+  if(currentImportItems[idx]){
+    currentImportItems[idx].val = parseNum(val);
+    recalcImportSummary();
+  }
+}
+
+function onImportProjCheck(idx, checked){
+  if(currentImportItems[idx]){
+    currentImportItems[idx].projectInstallments = checked;
+  }
+}
+
+function setImportReplace(idx, replace){
+  if(currentImportItems[idx]){
+    currentImportItems[idx].replaceMatched = replace;
+    currentImportItems[idx].checked = true;
+    var chk = document.getElementById('imp_chk_' + idx);
+    if(chk) chk.checked = true;
+    showToast('Configurado para substituir o lançamento existente');
+    recalcImportSummary();
+  }
+}
+
+function setAllImportChecked(mode){
+  for(var i=0; i<currentImportItems.length; i++){
+    var it = currentImportItems[i];
+    if(mode === 'all'){
+      it.checked = true;
+    } else if(mode === 'none'){
+      it.checked = false;
+    } else if(mode === 'new'){
+      var m = it.match || { type: 'none' };
+      it.checked = (!it.isPayment && m.type === 'none');
+    }
+    var chk = document.getElementById('imp_chk_' + i);
+    if(chk) chk.checked = it.checked;
+  }
+  recalcImportSummary();
+}
+
+function recalcImportSummary(){
+  var selectedCount = 0;
+  var selectedTotal = 0;
+  for(var i=0; i<currentImportItems.length; i++){
+    var it = currentImportItems[i];
+    if(it.checked){
+      selectedCount++;
+      selectedTotal += parseNum(it.val);
+    }
+  }
+
+  var btn = document.getElementById('btnConfirmImport');
+  if(btn){
+    btn.textContent = '✅ Importar Selecionados (' + selectedCount + ' ' + (selectedCount === 1 ? 'item' : 'itens') + ' · ' + fmtBRL(selectedTotal) + ')';
+    btn.disabled = (selectedCount === 0);
+  }
+}
+
+function commitFaturaImport(){
+  var toImport = [];
+  for(var i=0; i<currentImportItems.length; i++){
+    if(currentImportItems[i].checked){
+      toImport.push(currentImportItems[i]);
+    }
+  }
+
+  if(!toImport.length){
+    alert('Nenhum item foi selecionado para importação.');
+    return;
+  }
+
+  var mIdx = currentImportTargetMonth;
+  var addedCount = 0;
+
+  for(var i=0; i<toImport.length; i++){
+    var it = toImport[i];
+    var val = parseNum(it.val);
+    var desc = (it.desc || '').trim();
+    if(!desc || val <= 0) continue;
+
+    if(it.replaceMatched && it.match && it.match.matchedItem){
+      var match = it.match.matchedItem;
+      if(match.isBase && match.key){
+        overrides[match.key] = -1;
+      } else if(match.isExtra && match.extraIdx != null && extraItems[match.extraIdx]){
+        extraItems.splice(match.extraIdx, 1);
+      }
+    }
+
+    if(it.isInstallment && it.projectInstallments && it.totalInstallments > it.current){
+      var rem = it.totalInstallments - it.current;
+      var ateMonth = mIdx + rem;
+      extraItems.push({
+        desc: desc,
+        val: val,
+        de: mIdx,
+        ate: ateMonth,
+        tag: 'parc',
+        isExtra: true
+      });
+      refreshMnsCache(ateMonth);
+      addedCount++;
+    } else {
+      extraItems.push({
+        desc: desc,
+        val: val,
+        de: mIdx,
+        ate: mIdx,
+        tag: 'extra',
+        isExtra: true
+      });
+      addedCount++;
+    }
+  }
+
+  for(var j=0; j<extraItems.length; j++) extraItems[j].extraIdx = j;
+
+  saveLocal();
+  pushToSheets();
+  closeImportModal();
+  renderFaturas();
+
+  showToast('✅ Fatura importada: ' + addedCount + ' lançamentos adicionados');
+}
+
+/* ═══════════════════════════════════════════════
    MATH
 ═══════════════════════════════════════════════ */
 function getRate(){
@@ -2521,6 +3183,24 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// Drag & Drop global de arquivos de fatura (CSV/OFX)
+window.addEventListener('dragover', function(e){
+  e.preventDefault();
+});
+window.addEventListener('drop', function(e){
+  e.preventDefault();
+  if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+    var file = e.dataTransfer.files[0];
+    if(file.name.match(/\.(csv|ofx|txt)$/i)){
+      var reader = new FileReader();
+      reader.onload = function(evt){
+        openImportModal(evt.target.result, file.name);
+      };
+      reader.readAsText(file);
+    }
+  }
+});
 
 
 /* ═══════════════════════════════════════════════

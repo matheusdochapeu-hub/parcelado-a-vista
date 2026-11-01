@@ -48,7 +48,12 @@ function loadAppContext(customState = {}) {
   }
 
   const sandbox = {
-    window: {},
+    location: { hash: '' },
+    history: { pushState: () => {}, back: () => {}, state: null },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    scrollTo: () => {},
+    navigator: { serviceWorker: { register: () => Promise.resolve({ scope: '/' }) } },
     document: {
       getElementById: (id) => getOrCreateElement(id),
       querySelector: () => getOrCreateElement('mock-el'),
