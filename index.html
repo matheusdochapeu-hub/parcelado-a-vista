@@ -104,7 +104,9 @@ body{
   backdrop-filter:blur(10px);
 }
 .hdr-inner{position:relative;max-width:800px;margin:0 auto}
-.hdr-logo{font-size:34px;line-height:1;filter:drop-shadow(0 4px 10px rgba(56,189,248,0.35))}
+.hdr-logo{display:inline-flex;align-items:center;justify-content:center;margin-bottom:2px}
+.hdr-logo-img{width:64px;height:64px;border-radius:18px;object-fit:cover;box-shadow:0 6px 20px rgba(56,189,248,0.35), 0 0 0 2px rgba(255,255,255,0.2);transition:transform .2s ease}
+.hdr-logo-img:hover{transform:scale(1.05)}
 .hdr h1{font-size:22px;font-weight:800;margin:6px 0 3px;letter-spacing:-.4px;color:#fff}
 .hdr p{font-size:12.5px;color:var(--text-secondary);margin-bottom:13px}
 .hdr-badges{display:flex;justify-content:center;gap:7px;flex-wrap:wrap}
@@ -456,7 +458,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   .faturas-top-right .bsm{width:100%;min-height:44px}
   /* badges do header mais compactas no celular */
   .hdr{padding:16px 14px 14px}
-  .hdr-logo{font-size:30px}
+  .hdr-logo-img{width:48px;height:48px;border-radius:14px}
   .hdr h1{font-size:21px}
   .hdr-badges{gap:5px}
   .hdr-badges .badge{font-size:10px;padding:3px 8px}
@@ -543,7 +545,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 
 <div class="hdr">
   <div class="hdr-inner">
-    <div class="hdr-logo">💳</div>
+    <div class="hdr-logo"><img src="./icon-192.png?v=3.0.0" alt="Logo Faturas" class="hdr-logo-img"/></div>
     <h1>Faturas</h1>
     <p>Calculadora financeira · Nubank Black · Matheus &amp; Scarlet</p>
     <div class="hdr-badges">
