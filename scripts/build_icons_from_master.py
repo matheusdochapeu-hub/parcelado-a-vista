@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 
-src_path = r"C:\Users\matheus.ribeiro\.gemini\antigravity\brain\56a0f8c3-4b1f-4196-b62c-f1a7051090f1\faturas_dog_app_icon_1793906532408.jpg"
+src_path = r"C:\Users\matheus.ribeiro\.gemini\antigravity\brain\56a0f8c3-4b1f-4196-b62c-f1a7051090f1\faturas_dog_holding_card_1793907559140.jpg"
 repo_dir = r"c:\Users\matheus.ribeiro\Desktop\Matheus\5. IA\parcelado-a-vista"
 
 assert os.path.exists(src_path), f"Source image not found: {src_path}"
