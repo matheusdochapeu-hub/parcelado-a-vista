@@ -26,3 +26,32 @@ test('history: openHistToEdit não adiciona nova entrada no histórico', () => {
 
   assert.equal(ctx.purchHist.length, initialCount, 'Histórico não deve crescer ao reabrir uma simulação');
 });
+
+test('carousel: showTab aplica animação direcional de carrossel (slide-next e slide-prev)', () => {
+  const ctx = loadAppContext();
+
+  // Inicia na aba fatura (índice 0)
+  ctx.showTab('fatura');
+  const faturaTab = ctx.document.getElementById('tab-fatura');
+  assert.ok(faturaTab.classList.contains('on'));
+
+  // Avança para gastos (índice 1 > 0) -> slide-next
+  ctx.showTab('gastos');
+  const gastosTab = ctx.document.getElementById('tab-gastos');
+  assert.ok(gastosTab.classList.contains('on'));
+  assert.ok(gastosTab.classList.contains('slide-next'), 'Deve conter classe slide-next ao avançar de aba');
+
+  // Volta para fatura (índice 0 < 1) -> slide-prev
+  ctx.showTab('fatura');
+  assert.ok(faturaTab.classList.contains('on'));
+  assert.ok(faturaTab.classList.contains('slide-prev'), 'Deve conter classe slide-prev ao retroceder de aba');
+
+  // Funções de navegação do carrossel (nextTab e prevTab)
+  const canNext = ctx.nextTab();
+  assert.equal(canNext, true);
+  assert.equal(ctx._currentTabName, 'gastos');
+
+  const canPrev = ctx.prevTab();
+  assert.equal(canPrev, true);
+  assert.equal(ctx._currentTabName, 'fatura');
+});
