@@ -413,6 +413,21 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;
   transition:all .2s ease;
 }
+.hitem.is-editing{border-color:var(--accent);background:rgba(56,189,248,0.12);box-shadow:0 0 0 1px var(--accent), 0 4px 14px rgba(56,189,248,0.2)}
+.calc-edit-banner{
+  background:rgba(56,189,248,0.09);border:1px solid rgba(56,189,248,0.35);border-radius:var(--r-md);
+  padding:12px 14px;margin-bottom:14px;display:none;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;box-shadow:0 4px 14px rgba(56,189,248,0.12);
+}
+.calc-edit-banner .binfo{display:flex;align-items:center;gap:10px}
+.calc-edit-banner .btitle{font-size:12.5px;font-weight:700;color:var(--accent)}
+.calc-edit-banner .bsub{font-size:11.5px;color:var(--text-secondary);max-width:380px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bcalc-secondary{
+  width:100%;background:rgba(255,255,255,0.06);color:var(--text);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:12px;font-size:14px;font-weight:600;cursor:pointer;
+  transition:background .15s ease, border-color .15s ease;margin-top:6px;min-height:44px;touch-action:manipulation;
+}
+.bcalc-secondary:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.25)}
 .hitem:hover{
   background:rgba(30,41,59,0.85);border-color:var(--accent);
   transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.3);
@@ -713,8 +728,28 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   <!-- CALCULADORA -->
   <div id="tab-calc" class="tc">
     <div class="card">
-      <div class="ctitle">🛒 Simulação de Compra</div>
-      <div class="csub">Preencha os valores para comparar à vista com investimentos vs parcelamento</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
+        <div>
+          <div class="ctitle">🛒 Simulação de Compra</div>
+          <div class="csub" style="margin:0">Preencha os valores para comparar à vista com investimentos vs parcelamento</div>
+        </div>
+        <button class="bsm" type="button" onclick="startNewSim()" title="Limpar formulário e iniciar nova simulação">➕ Nova Simulação</button>
+      </div>
+
+      <!-- Banner de Modo Edição de Histórico -->
+      <div id="calcEditBanner" class="calc-edit-banner">
+        <div class="binfo">
+          <span style="font-size:18px">✏️</span>
+          <div>
+            <div class="btitle">Modo de Edição de Simulação</div>
+            <div class="bsub" id="calcEditName">Produto: ...</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="bsm" style="background:rgba(255,255,255,0.08);color:var(--text)" onclick="cancelHistEdit(false)">✕ Cancelar / Nova</button>
+        </div>
+      </div>
+
       <div class="fg">
         <div class="ff"><label for="pName">Nome do produto</label><input type="text" id="pName" placeholder="Ex: iPhone 16, Notebook, Geladeira…"/></div>
         <div><label for="pCash">Valor à vista (R$)</label><input type="text" id="pCash" placeholder="0,00" inputmode="decimal"/></div>
@@ -757,7 +792,10 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
         <div class="togrow" onclick="document.getElementById('tMiles').click()"><button class="tog on" id="tMiles" onclick="event.stopPropagation();togMiles(this)" aria-label="Considerar milhas acumuladas"></button><span style="font-size:13px;font-weight:600;color:var(--text-secondary)">Milhas Nubank Black (2,2 mi/$)</span></div>
         <div class="togrow" onclick="document.getElementById('tBudget').click()"><button class="tog on" id="tBudget" onclick="event.stopPropagation();togBudget(this)" aria-label="Checar impacto na fatura"></button><span style="font-size:13px;font-weight:600;color:var(--text-secondary)">Checar limite da fatura (Meta R$ 3.000)</span></div>
       </div>
-      <button class="bcalc" onclick="calculate()">⚡ Calcular Melhor Opção</button>
+      <div id="calcBtnGroup">
+        <button class="bcalc" id="btnMainCalc" onclick="calculate()">⚡ Calcular Melhor Opção</button>
+        <button class="bcalc-secondary" id="btnSaveNewCalc" style="display:none" onclick="saveAsNewCalc()">➕ Salvar como Nova Simulação</button>
+      </div>
     </div>
     <div id="resultArea"></div>
   </div>
@@ -767,7 +805,10 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
         <div><div class="ctitle">📋 Histórico de Cálculos</div><div class="csub" style="margin:0" id="histSub">Salvo no navegador · toque num item para reabrir ou no ✕ para excluir</div></div>
-        <button class="bsm" id="btnClearHist" onclick="clearHist()" style="display:none">🗑️ Limpar todos</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="bsm" style="background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid rgba(56,189,248,0.3)" onclick="startNewSim()">➕ Nova Simulação</button>
+          <button class="bsm" id="btnClearHist" onclick="clearHist()" style="display:none">🗑️ Limpar todos</button>
+        </div>
       </div>
       <div id="histList"></div>
     </div>
@@ -1525,14 +1566,19 @@ function fillProfileInputs(){
 /* ═══════════════════════════════════════════════
    HISTORY
 ═══════════════════════════════════════════════ */
+var editingHistIdx = null;
+
 function addHist(h){
   purchHist.unshift(h);if(purchHist.length>30)purchHist.pop();
   saveLocal();pushToSheets();renderHist();
+  showToast('✓ Simulação salva no histórico!');
 }
 function clearHist(){
   if(!purchHist.length){ showToast('Histórico já está vazio'); return; }
   if(!confirm('Apagar TODAS as '+purchHist.length+' simulações do histórico? Esta ação não pode ser desfeita.'))return;
-  purchHist=[];saveLocal();pushToSheets();renderHist();
+  purchHist=[];
+  cancelHistEdit(true);
+  saveLocal();pushToSheets();renderHist();
   showToast('🗑️ Histórico limpo');
 }
 
@@ -1542,13 +1588,65 @@ function delHist(idx){
   if(!x) return;
   if(!confirm('Excluir a simulação “'+(x.name||'Produto')+'”?')) return;
   purchHist.splice(idx,1);
+  if(editingHistIdx === idx){
+    cancelHistEdit(true);
+  } else if(editingHistIdx !== null && editingHistIdx > idx){
+    editingHistIdx--;
+    updateCalcEditUI();
+  }
   saveLocal();pushToSheets();renderHist();
   showToast('Simulação excluída');
+}
+
+function updateCalcEditUI(){
+  var banner=document.getElementById('calcEditBanner');
+  var editName=document.getElementById('calcEditName');
+  var btnMain=document.getElementById('btnMainCalc');
+  var btnNew=document.getElementById('btnSaveNewCalc');
+
+  if(editingHistIdx !== null && editingHistIdx >= 0 && editingHistIdx < purchHist.length){
+    var it = purchHist[editingHistIdx];
+    if(banner) banner.style.display = 'flex';
+    if(editName) editName.textContent = 'Produto: ' + (it.name || 'Sem nome') + (it.date ? ' (' + it.date + ')' : '');
+    if(btnMain) btnMain.innerHTML = '💾 Salvar Alterações na Simulação';
+    if(btnNew) btnNew.style.display = 'block';
+  } else {
+    if(banner) banner.style.display = 'none';
+    if(btnMain) btnMain.innerHTML = '⚡ Calcular Melhor Opção';
+    if(btnNew) btnNew.style.display = 'none';
+  }
+}
+
+function cancelHistEdit(keepValues){
+  editingHistIdx = null;
+  updateCalcEditUI();
+  if(!keepValues){
+    if(document.getElementById('pName')) document.getElementById('pName').value = '';
+    if(document.getElementById('pCash')) document.getElementById('pCash').value = '';
+    if(document.getElementById('pDisc')) document.getElementById('pDisc').value = '0';
+    if(document.getElementById('pInst')) document.getElementById('pInst').value = '';
+    if(document.getElementById('pMaxN')) document.getElementById('pMaxN').value = '6';
+    if(document.getElementById('resultArea')) document.getElementById('resultArea').innerHTML = '';
+  }
+}
+
+function saveAsNewCalc(){
+  cancelHistEdit(true);
+  calculate(false);
+}
+
+function startNewSim(){
+  cancelHistEdit(false);
+  showTab('calc');
+  var pName = document.getElementById('pName');
+  if(pName && pName.focus) pName.focus();
 }
 
 function openHistToEdit(idx){
   var x = purchHist[idx];
   if(!x) return;
+  editingHistIdx = idx;
+
   // Preencher formulário da calculadora
   if(document.getElementById('pName'))  document.getElementById('pName').value  = x.name || '';
   if(document.getElementById('pCash'))  document.getElementById('pCash').value  = (x.cashRaw != null ? x.cashRaw : x.cashPrice) || '';
@@ -1562,11 +1660,17 @@ function openHistToEdit(idx){
   if(document.getElementById('pMonth') && x.mOff) {
     document.getElementById('pMonth').value = x.mOff;
   }
+
+  // Atualizar visual de edição
+  updateCalcEditUI();
+
   // Ir para a aba Calculadora
   showTab('calc');
   // Executar o cálculo automaticamente (sem duplicar entrada no histórico)
   calculate(true);
-  window.scrollTo({top:0, behavior:'smooth'});
+  if(typeof window !== 'undefined' && window.scrollTo) {
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
 }
 
 function renderHist(){
@@ -1585,10 +1689,13 @@ function renderHist(){
   for(var i=0;i<purchHist.length;i++){
     var x=purchHist[i];var bc=x.winner==='vista'?'bg':'bp';
     var wl=x.winner==='vista'?'✅ À Vista':'✅ '+x.winN+'x';
-    h+='<div class="hitem" onclick="openHistToEdit('+i+')" title="Clique para abrir e editar na calculadora">'
+    var isEditing = (editingHistIdx === i);
+    h+='<div class="hitem'+(isEditing?' is-editing':'')+'" onclick="openHistToEdit('+i+')" title="Clique para abrir e editar na calculadora">'
       +'<div class="hhead">'
       +'<div>'
-      +'<div class="hname">'+esc(x.name)+' <span style="font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</span></div>'
+      +'<div class="hname">'+esc(x.name)+' <span style="font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</span>'
+      +(isEditing?' <span class="badge" style="background:rgba(56,189,248,0.18);color:var(--accent);border:1px solid rgba(56,189,248,0.35);font-size:10px;padding:2px 6px;margin-left:4px">✏️ Em edição</span>':'')
+      +'</div>'
       +'<div class="hdate">'+x.date+'</div>'
       +'</div>'
       +'<div class="hhead-right">'
@@ -3112,7 +3219,7 @@ function calculate(skipHist){
 
   renderResults(lastCalc);
   if(!skipHist){
-    addHist({
+    var histItem = {
       name:name,
       cashPrice:cashPrice,
       cashRaw:cashRaw,
@@ -3128,7 +3235,19 @@ function calculate(skipHist){
       winN:best?best.n:1,
       savings:savings,
       miles:vistaWins?cMi:(best?best.iMi:0)
-    });
+    };
+
+    if(editingHistIdx !== null && editingHistIdx >= 0 && editingHistIdx < purchHist.length){
+      // Preserva data original da simulação se existir
+      if(purchHist[editingHistIdx].date) histItem.date = purchHist[editingHistIdx].date;
+      purchHist[editingHistIdx] = histItem;
+      saveLocal();pushToSheets();renderHist();
+      updateCalcEditUI();
+      showToast('💾 Simulação atualizada no histórico!');
+    } else {
+      editingHistIdx = null;
+      addHist(histItem);
+    }
   }
 }
 
