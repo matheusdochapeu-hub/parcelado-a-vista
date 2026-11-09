@@ -511,6 +511,19 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .cat-select-inline{background:#0b1120;border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;outline:none}
 .cat-select-inline:focus{border-color:var(--accent)}
 
+/* PAINEL DE PARCELAS FINALIZANDO (ALÍVIO FUTURO) */
+.finishing-card{background:linear-gradient(135deg,rgba(16,36,44,0.92) 0%,rgba(15,23,42,0.94) 100%);border:1px solid rgba(52,211,153,0.35);border-radius:var(--r-md);padding:16px 18px;margin-bottom:16px;box-shadow:var(--sh-1);position:relative;overflow:hidden}
+.finishing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#34d399,#38bdf8,#a78bfa)}
+.finishing-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.finishing-stat-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;padding:12px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(52,211,153,0.22);border-radius:var(--r-sm);margin-bottom:12px}
+.finishing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.finishing-item{background:rgba(15,23,42,0.65);border:1px solid rgba(255,255,255,0.08);border-left:3px solid #34d399;border-radius:var(--r-sm);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:transform .15s ease,background .15s ease}
+.finishing-item:hover{background:rgba(255,255,255,0.05);transform:translateY(-1px)}
+.finishing-timeline-bar{display:flex;align-items:center;gap:8px;overflow-x:auto;padding-top:10px;margin-top:12px;border-top:1px solid rgba(255,255,255,0.07);-webkit-overflow-scrolling:touch}
+.finishing-pill-btn{background:rgba(15,23,42,0.7);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;transition:all .15s ease;display:inline-flex;align-items:center;gap:5px}
+.finishing-pill-btn:hover{border-color:#34d399;color:#fff}
+.finishing-pill-btn.active{background:rgba(52,211,153,0.18);border-color:#34d399;color:#34d399;font-weight:700}
+
 .faturas-summary-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
 .faturas-summary-table th{background:rgba(15,23,42,0.8);color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.05em;padding:9px 10px;text-align:left;border-bottom:1px solid var(--border)}
 .faturas-summary-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.06);font-variant-numeric:tabular-nums}
@@ -612,6 +625,9 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 
     <!-- CARDS DE RESUMO (KPIS: PAGAS, A VENCER, MILHAS, TOTAL) -->
     <div class="kpi-grid" id="gastosKpis"></div>
+
+    <!-- PAINEL EM EVIDÊNCIA: LANÇAMENTOS QUE IRÃO FINALIZAR NO MÊS -->
+    <div id="finishingItemsCard"></div>
 
     <!-- VISUALIZADOR ANUAL DE GASTOS (GRÁFICO DE BARRAS SVG) -->
     <div class="card">
@@ -1536,18 +1552,18 @@ function getMonthItems(mIdx){
       var key=overKey(it.d,mIdx);
       var val=overrides.hasOwnProperty(key)?overrides[key]:it.v;
       if(val<0) continue; // -1 = deletado
-      result.push({desc:it.d,val:val,tag:it.tag,isBase:true,key:key,origVal:it.v,baseIdx:i});
+      result.push({desc:it.d,val:val,tag:it.tag,isBase:true,key:key,origVal:it.v,baseIdx:i,de:it.de,ate:it.ate});
     }
   }
   for(var i=0;i<extraItems.length;i++){
     var it=extraItems[i];
     if(mIdx>=it.de&&mIdx<=it.ate)
-      result.push({desc:it.desc,val:it.val,tag:'extra',isExtra:true,extraIdx:i});
+      result.push({desc:it.desc,val:it.val,tag:'extra',isExtra:true,extraIdx:i,de:it.de,ate:it.ate});
   }
   for(var i=0;i<simItems.length;i++){
     var it=simItems[i];
     if(mIdx>=it.de&&mIdx<=it.ate)
-      result.push({desc:it.d,val:it.v,tag:'sim',isSimul:true,group:it.group,simLabel:it.simLabel});
+      result.push({desc:it.d,val:it.v,tag:'sim',isSimul:true,group:it.group,simLabel:it.simLabel,de:it.de,ate:it.ate});
   }
   return result;
 }
@@ -1559,6 +1575,84 @@ function getMonthTotal(mIdx){
 function getBudget(mIdx){
   var c=getMonthTotal(mIdx);
   return{committed:c,available:profile.meta-c};
+}
+
+/* ═══════════════════════════════════════════════
+   VERIFICAÇÃO DE LANÇAMENTOS FINALIZANDO (ÚLTIMA PARCELA)
+═══════════════════════════════════════════════ */
+function isItemFinishing(item, mIdx){
+  if(!item) return { finishing: false };
+  var desc = item.desc || item.d || '';
+  var info = extractInstallmentInfo(desc);
+
+  // 1. Caso com indicador explícito de parcelas (ex: "Tennis One 4/4", "5 de 5", "10/10")
+  if(info.isInstallment && info.total > 1 && info.current === info.total){
+    return {
+      finishing: true,
+      reason: 'installment',
+      current: info.current,
+      total: info.total,
+      cleanDesc: info.cleanDesc || desc,
+      label: info.current + '/' + info.total
+    };
+  }
+
+  // 2. Caso de item recorrente com período de/até onde este é o último mês
+  if(mIdx != null && item.ate != null && item.ate === mIdx && item.de != null && item.de < item.ate){
+    var totMonths = (item.ate - item.de + 1);
+    return {
+      finishing: true,
+      reason: 'recurring_end',
+      current: totMonths,
+      total: totMonths,
+      cleanDesc: desc,
+      label: totMonths + '/' + totMonths
+    };
+  }
+
+  return { finishing: false };
+}
+
+function getFinishingItems(mIdx){
+  if(mIdx == null || isNaN(mIdx)) return { mIdx: 0, monthName: '', items: [], count: 0, totalVal: 0 };
+  var items = getMonthItems(mIdx);
+  var finishing = [];
+  var totalVal = 0;
+
+  for(var i=0; i<items.length; i++){
+    var it = items[i];
+    var check = isItemFinishing(it, mIdx);
+    if(check.finishing){
+      var cat = it.cat || (typeof getItemCategory === 'function' ? getItemCategory(it.desc, mIdx) : { id: 'outros', name: 'Outros', icon: '🏷️', color: '#94a3b8' });
+      finishing.push({
+        desc: it.desc,
+        cleanDesc: check.cleanDesc,
+        val: it.val,
+        parcelLabel: check.label,
+        current: check.current,
+        total: check.total,
+        reason: check.reason,
+        cat: cat,
+        tag: it.tag,
+        isBase: it.isBase,
+        isExtra: it.isExtra,
+        isSimul: it.isSimul,
+        mIdx: mIdx
+      });
+      totalVal += it.val;
+    }
+  }
+
+  // Ordena do maior valor para o menor
+  finishing.sort(function(a, b){ return b.val - a.val; });
+
+  return {
+    mIdx: mIdx,
+    monthName: MNS[mIdx] || ('Mês ' + (mIdx + 1)),
+    items: finishing,
+    count: finishing.length,
+    totalVal: Math.round(totalVal * 100) / 100
+  };
 }
 
 /* ═══════════════════════════════════════════════
@@ -1664,6 +1758,11 @@ function renderFaturas(){
         : '<span class="badge" style="background:rgba(52,211,153,0.14);color:var(--green);border:1px solid rgba(52,211,153,0.35)">🟢 Em aberto</span>';
     }
 
+    var mFin = getFinishingItems(mi);
+    var finHeaderBadge = mFin.count > 0
+      ? '<span class="badge" style="background:rgba(52,211,153,0.14);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9.5px;padding:2px 7px" title="Parcelas finalizando neste mês: ' + fmtBRL(mFin.totalVal) + ' liberados a partir do próximo ciclo">🏁 ' + mFin.count + ' finalizando (' + fmtBRL(mFin.totalVal) + ')</span>'
+      : '';
+
     html+='<div class="'+cls+'">'
       +'<div class="mhead">'
       +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
@@ -1672,6 +1771,7 @@ function renderFaturas(){
       +'</button>'
       +'<span class="mname" style="font-size:16px">'+mn+'</span>'
       +statusBadge
+      +finHeaderBadge
       +'</div>'
       +'<div class="mhead-right-group">'
       +'<div class="mmonth-actions">'
@@ -1695,8 +1795,10 @@ function renderFaturas(){
       var nc=it.tag==='sim'?'color:var(--purple)':it.tag==='extra'?'color:var(--blue)':'color:rgba(255,255,255,.8)';
       var simTag=it.isSimul?' <span class="badge bp" style="font-size:9px">📅</span>':'';
       var edited=it.isBase&&it.val!==it.origVal?' <span style="color:var(--yellow);font-size:10px">(editado)</span>':'';
-      html+='<div class="mitem">'
-        +'<span style="'+nc+'">'+esc(it.desc)+simTag+edited+'</span>'
+      var itFin = isItemFinishing(it, mi);
+      var finishBadge = itFin.finishing ? ' <span class="badge" style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9px;padding:1px 5px" title="Última parcela!">🏁 ' + esc(itFin.label) + '</span>' : '';
+      html+='<div class="mitem"' + (itFin.finishing ? ' style="border-left:2px solid #34d399;padding-left:6px"' : '') + '>'
+        +'<span style="'+nc+'">'+esc(it.desc)+simTag+finishBadge+edited+'</span>'
         +'<span>'+fmtBRL(it.val)+'</span>'
         +'</div>';
     }
@@ -3627,6 +3729,109 @@ function renderGastosKpis(data){
   el.innerHTML = html;
 }
 
+function renderFinishingItemsCard(data){
+  var cardEl = document.getElementById('finishingItemsCard');
+  if(!cardEl) return;
+
+  var curM = getCurrentMonthIndex();
+  var isAll = (gastosMonthFilter === 'all' || gastosMonthFilter == null);
+  var targetM = isAll ? curM : parseInt(gastosMonthFilter, 10);
+  if(isNaN(targetM) || targetM < 1) targetM = curM;
+
+  var finishTarget = getFinishingItems(targetM);
+  var isCurrentMonth = (targetM === curM);
+  var nextMName = MNS[targetM + 1] || 'o próximo ciclo';
+  var targetMName = MNS[targetM] || ('Mês ' + (targetM + 1));
+
+  var html = '<div class="finishing-card">'
+    + '<div class="finishing-top">'
+    + '<div>'
+    + '<div class="ctitle" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    + '<span>🏁 Contas &amp; Parcelas Finalizando</span>'
+    + (isCurrentMonth ? '<span class="badge bg" style="font-size:10px;padding:3px 9px">🟢 Mês Vigente</span>' : '<span class="badge by" style="font-size:10px;padding:3px 9px">📅 Mês Selecionado</span>')
+    + (isAll ? '<span class="badge bp" style="font-size:10px;padding:3px 9px">Visão Consolidada</span>' : '')
+    + '</div>'
+    + '<div class="csub" style="margin:2px 0 0 0">'
+    + 'Mês de referência: <strong style="color:#fff">' + esc(targetMName) + '</strong> · '
+    + (finishTarget.count > 0 ? (finishTarget.count + ' lançamento(s) chegam ao fim') : 'Nenhuma conta encerra neste mês')
+    + '</div>'
+    + '</div>'
+    + '<div style="text-align:right">'
+    + '<span class="badge bp" style="font-size:11px;padding:4px 10px">🎉 Alívio Futuro</span>'
+    + '</div>'
+    + '</div>';
+
+  if(finishTarget.count > 0){
+    var mTot = getMonthTotal(targetM);
+    var pctRelief = mTot > 0 ? ((finishTarget.totalVal / mTot) * 100).toFixed(1) : '0';
+
+    html += '<div class="finishing-stat-row">'
+      + '<div>'
+      + '<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Somatória Liberada:</span>'
+      + '<div style="font-size:24px;font-weight:800;color:#34d399;font-variant-numeric:tabular-nums;line-height:1.2">' + fmtBRL(finishTarget.totalVal) + '</div>'
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--text-secondary);flex:1 1 200px">'
+      + 'Redução garantida de <strong style="color:#fff">' + fmtBRL(finishTarget.totalVal) + '</strong> (' + pctRelief + '% desta fatura) a partir de <strong style="color:#38bdf8">' + esc(nextMName) + '</strong>.'
+      + '<br/><span style="color:#cbd5e1">São <strong style="color:#fff">' + finishTarget.count + ' conta(s)</strong> que não serão mais cobradas no próximo ciclo.</span>'
+      + '</div>'
+      + '</div>';
+
+    html += '<div class="finishing-grid">';
+    for(var i=0; i<finishTarget.items.length; i++){
+      var item = finishTarget.items[i];
+      html += '<div class="finishing-item">'
+        + '<div style="min-width:0;flex:1 1 auto">'
+        + '<div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + esc(item.desc) + '">'
+        + esc(item.cleanDesc || item.desc)
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:3px">'
+        + '<span>' + item.cat.icon + ' ' + esc(item.cat.name) + '</span>'
+        + '<span class="badge bp" style="font-size:9px;padding:1px 6px">🏁 ' + esc(item.parcelLabel) + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0">'
+        + '<div style="font-size:14px;font-weight:800;color:#34d399;font-variant-numeric:tabular-nums">' + fmtBRL(item.val) + '</div>'
+        + '<div style="font-size:10px;color:#6ee7b7;font-weight:600">Última parcela</div>'
+        + '</div>'
+        + '</div>';
+    }
+    html += '</div>';
+  } else {
+    html += '<div style="padding:14px 16px;background:rgba(15,23,42,0.45);border-radius:var(--r-sm);border:1px dashed rgba(255,255,255,0.12);color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px">'
+      + '<span style="font-size:16px">ℹ️</span>'
+      + '<span>Nenhuma compra parcelada encerra em <strong>' + esc(targetMName) + '</strong>. Todos os lançamentos parcelados deste mês continuam para faturas posteriores.</span>'
+      + '</div>';
+  }
+
+  var maxShow = typeof getMaxActiveMonth === 'function' ? getMaxActiveMonth() : 12;
+  var upcomingPills = [];
+  var startM = isAll ? curM : Math.max(1, targetM - 1);
+  var endM = Math.min(maxShow, startM + 5);
+
+  for(var mi = startM; mi <= endM; mi++){
+    var fSub = getFinishingItems(mi);
+    if(fSub.count > 0 || mi === targetM){
+      var isSel = (mi === targetM);
+      var isVig = (mi === curM);
+      upcomingPills.push('<button class="finishing-pill-btn' + (isSel ? ' active' : '') + '" onclick="setGastosMonthFilter(' + mi + ')" title="' + esc(fSub.monthName) + ': ' + fSub.count + ' parcelas finalizando (' + fmtBRL(fSub.totalVal) + ')">'
+        + (isVig ? '🟢 ' : '📅 ') + (MNS[mi] || ('Mês ' + (mi+1)))
+        + ': <strong style="color:' + (isSel ? '#34d399' : '#fff') + '">' + fmtBRL(fSub.totalVal) + '</strong>'
+        + ' <span style="font-size:10px;opacity:0.8">(' + fSub.count + ')</span>'
+        + '</button>');
+    }
+  }
+
+  if(upcomingPills.length > 0){
+    html += '<div class="finishing-timeline-bar">'
+      + '<span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">🗓️ Ver outros meses:</span>'
+      + upcomingPills.join('')
+      + '</div>';
+  }
+
+  html += '</div>';
+  cardEl.innerHTML = html;
+}
+
 function renderAnualChart(data){
   var wrap = document.getElementById('anualChartWrap');
   if(!wrap) return;
@@ -3872,9 +4077,14 @@ function renderGastosItemsList(data){
         + '</option>';
     }
 
-    var tagBadge = it.isSimul ? ' <span class="badge bp" style="font-size:9px">📅 Simulada</span>' : (it.tag === 'parc' ? ' <span class="badge" style="background:rgba(255,255,255,0.06);color:var(--muted);font-size:9px">Parcela</span>' : '');
+    var finishInfo = isItemFinishing(it, it.mIdx);
+    var finishBadge = finishInfo.finishing
+      ? ' <span class="badge" style="background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.45);font-size:9.5px;padding:2px 7px" title="Última parcela desta conta!">🏁 Última (' + esc(finishInfo.label) + ')</span>'
+      : '';
+    var tagBadge = (it.isSimul ? ' <span class="badge bp" style="font-size:9px">📅 Simulada</span>' : (it.tag === 'parc' ? ' <span class="badge" style="background:rgba(255,255,255,0.06);color:var(--muted);font-size:9px">Parcela</span>' : '')) + finishBadge;
 
-    html += '<div class="gastos-item-row">'
+    var rowBorder = finishInfo.finishing ? 'border-left:3px solid #34d399;background:rgba(52,211,153,0.035);' : '';
+    html += '<div class="gastos-item-row"' + (rowBorder ? ' style="' + rowBorder + '"' : '') + '>'
       + '<div>'
       + '<span class="cat-pill" style="background:' + it.cat.color + '22;color:' + it.cat.color + ';border:1px solid ' + it.cat.color + '44" onclick="openReclassByIndex(' + i + ')" title="Clique para alterar categoria">'
       + it.cat.icon + ' ' + esc(it.cat.name)
@@ -3950,9 +4160,13 @@ function renderFaturasSummaryTable(data){
     + '<th>Status</th>'
     + '<th>Total (R$)</th>'
     + '<th>% Meta (' + fmtBRL(profile.meta) + ')</th>'
+    + '<th>🏁 Finalizam no Mês</th>'
     + '<th>Milhas Geradas</th>'
     + '<th style="text-align:right">Ações</th>'
     + '</tr></thead><tbody>';
+
+  var totalFinishingAll = 0;
+  var totalFinishingCountAll = 0;
 
   for(var i=0; i<months.length; i++){
     var m = months[i];
@@ -3965,11 +4179,24 @@ function renderFaturasSummaryTable(data){
 
     var valColor = m.status === 'paga' ? '#34d399' : m.status === 'fechada' ? '#fbbf24' : (m.total > profile.meta ? '#f87171' : '#38bdf8');
 
+    var mFinish = getFinishingItems(m.mIdx);
+    totalFinishingAll += mFinish.totalVal;
+    totalFinishingCountAll += mFinish.count;
+
+    var finishCell = '';
+    if(mFinish.count > 0){
+      finishCell = '<span style="color:#34d399;font-weight:700">🏁 ' + fmtBRL(mFinish.totalVal) + '</span>'
+        + '<span style="display:block;font-size:10px;color:var(--muted)">' + mFinish.count + ' conta(s)</span>';
+    } else {
+      finishCell = '<span style="color:var(--muted)">—</span>';
+    }
+
     html += '<tr>'
       + '<td><strong>' + esc(m.name) + '</strong></td>'
       + '<td>' + stBadge + '</td>'
       + '<td><strong style="color:' + valColor + '">' + fmtBRL(m.total) + '</strong></td>'
       + '<td><span style="color:' + (pct > 100 ? '#f87171' : 'var(--text-secondary)') + '">' + pct.toFixed(1) + '%</span></td>'
+      + '<td>' + finishCell + '</td>'
       + '<td><span style="color:#c084fc;font-weight:700">✈️ ' + m.milhas.toLocaleString('pt-BR') + ' mi</span></td>'
       + '<td style="text-align:right;white-space:nowrap">'
       + '<button class="bsm" style="padding:4px 8px;font-size:11px;margin-right:4px" onclick="setGastosMonthFilter(' + m.mIdx + ')">Filtrar</button>'
@@ -3983,6 +4210,7 @@ function renderFaturasSummaryTable(data){
     + '<td>' + data.countPagas + ' pagas / ' + data.countAVencer + ' a vencer</td>'
     + '<td><strong style="color:#fbbf24">' + fmtBRL(data.totalGeral) + '</strong></td>'
     + '<td>—</td>'
+    + '<td><span style="color:#34d399">🏁 ' + fmtBRL(totalFinishingAll) + '</span><span style="display:block;font-size:10px;color:var(--muted)">' + totalFinishingCountAll + ' contas no ano</span></td>'
     + '<td><span style="color:#c084fc">✈️ ' + data.milhasTotal.toLocaleString('pt-BR') + ' mi</span></td>'
     + '<td></td>'
     + '</tr>';
@@ -4020,6 +4248,7 @@ function renderGastosView(){
 
   var data = getGastosAnalysisData(gastosMonthFilter);
   renderGastosKpis(data);
+  renderFinishingItemsCard(data);
   renderAnualChart(data);
   renderMilhasSection(data);
   renderCategoryViz(data);

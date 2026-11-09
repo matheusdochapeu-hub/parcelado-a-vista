@@ -14,6 +14,12 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   - **Editor de fatura aprimorado:** total e sobra na meta recalculados **ao vivo** enquanto você edita, **busca** por nome do item, **contador** de itens/alterações, remoção com **desfazer** (↩) antes de salvar, selos de tipo (Planilha / Estimado / Manual / Simulada) e bloco recolhível para adicionar lançamentos.
 
 - **📊 Categorizador de Gastos & Análise Financeira Anual:**
+  - **🏁 Painel de Parcelas Finalizando (Alívio Futuro no Orçamento):**
+    - Identificação inteligente de lançamentos que encerram no mês de referência (ex: `Tennis One 4/4`, `5 de 5`, `10/10` ou fim de recorrência).
+    - Somatória do valor total liberado no orçamento a partir da fatura seguinte.
+    - Card em destaque na aba Gastos com o mês de referência (inclusive indicativo de **Mês Vigente**), badge de quitação e grade com as contas encerradas.
+    - Selo visual `🏁 Última (X/Y)` em destaque na lista de lançamentos e na aba Faturas.
+    - Coluna de acompanhamento no Extrato Geral consolidado mês a mês.
   - **Categorização Automática Inteligente:** Classificação instantânea de lançamentos reais e futuros em categorias (Alimentação, Vestuário & Moda, Saúde & Fitness, Casa, Assinaturas, Pets, Transporte, Compras).
   - **Personalização Total:** Crie novas categorias com emoji e cor própria, crie regras por palavras-chave e reclassifique qualquer item diretamente na lista com 1 clique.
   - **Gráfico Donut (Rosca) Interativo:** Gráfico vetorial SVG puro responsivo com cálculo exato de proporções e centro interativo.
