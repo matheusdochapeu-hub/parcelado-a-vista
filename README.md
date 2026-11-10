@@ -4,6 +4,51 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 
 ---
 
+## ✨ Novidades da versão 4.0 (2026-11-10)
+
+Modernização de front-end e back-end alinhada ao que já foi validado no **Matrix**
+(v113–v117) e no **Atendimentos** (v59–v63).
+
+**Interface**
+- App bar compacta e fixa (logo, status de sincronização e botão de privacidade).
+- **Hero de resumo**: fatura atual, gauge de uso da meta, próxima fatura, comprometido
+  de 6 meses e alívio das parcelas que estão terminando.
+- Cartões de mês redesenhados: status em *segmented control* (Em aberto / Fechada / Paga),
+  barra de meta, chips de "Atual" e "N finalizando", e lista de itens com cor da categoria.
+- Filtro **Todas / Abertas / Encerradas** e legenda recolhível.
+- **Modo privacidade** (olho): esconde todos os valores monetários na hora.
+- Modais em formato *bottom sheet* no celular, fechamento por `Esc` e navegação por
+  teclado nas abas (setas/Home/End) com ARIA correto.
+- Alvos de toque ≥ 40 px, zero truncamento por `ellipsis` e zero overflow horizontal em
+  1440, 768, 390 e 360 px.
+- Textos longos de select foram encurtados; o detalhe do ciclo da fatura aparece em uma
+  linha de apoio abaixo do campo.
+
+**Sincronização**
+- API v2 com **revisão** por gravação, leitura em passada única e escrita em lote.
+- Sync **incremental** (`since`) e cache de 30 s no servidor.
+- **Detecção de conflito**: se a planilha estiver mais nova que as alterações locais, o app
+  mostra um banner para escolher "Usar a nuvem" ou "Manter este aparelho" (antes a nuvem
+  sobrescrevia o local silenciosamente).
+- Reenvio automático com backoff, beacon ao sair da página, fila offline e confirmação
+  real por `ping` (a resposta do POST é opaca por CORS).
+- Banner **"Nova versão disponível"** com botão Atualizar (o Service Worker não troca mais
+  de versão sozinho no meio do uso).
+
+**Back-end (`apps_script.gs`)**
+- Leitura do snapshot inteiro com **um único** `getDataRange()` (antes eram 10 leituras).
+- Gravação de todas as chaves com **um único** `setValues()` (antes era uma por chave).
+- Validação de chaves/tipos, limite de 45 KB por célula e 900 KB por requisição.
+- Token comparado em tempo constante, rate limit de 120 req/min e log de escritas.
+- Ações `ping`, `schema` e `restore`/`load` (compatível com o conector do Matrix).
+- Menu **Faturas API** na planilha para diagnóstico e limpeza do log.
+
+> ⚠️ **Ação necessária uma vez:** depois de puxar esta versão, reimplante o
+> `apps_script.gs` (Extensões → Apps Script → Deploy → Gerenciar implantações → Nova versão).
+> A URL `/exec` não muda. Use **Perfil → Testar conexão** para conferir `API 2.x` e a revisão.
+
+---
+
 ## 🚀 Principais Funcionalidades
 
 - **💳 Controle Mensal de Faturas:**
@@ -74,17 +119,34 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 
 ```
 ├── index.html              # Aplicação completa (HTML, CSS e JS)
-├── manifest.json           # Manifesto PWA para instalação no celular
-├── sw.js                   # Service Worker (Network-First para HTML, Cache-First para estáticos)
+├── manifest.json           # Manifesto PWA (atalhos, cores e ícones)
+├── sw.js                   # Service Worker v18 (Network-First HTML, SWR nos estáticos)
+├── apps_script.gs          # API v2 do Google Sheets (lote, cache, revisão, validação)
 ├── favicon.ico             # Ícone do navegador (16x16, 32x32, 48x48)
 ├── robots.txt              # Diretrizes para indexadores de busca
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── apps_script.gs          # Script de integração Google Sheets (com LockService e Auth)
-└── scripts/
-    └── generate_pwa_icons.py # Script de geração de ícones PWA
+├── tests/                  # Suíte Node (57 testes): cálculos, API v2, sync, render
+├── scripts/                # Geração de ícones PWA
+└── plans/                  # Planos e auditorias técnicas
 ```
+
+---
+
+## 🧪 Testes
+
+```powershell
+# dentro desta pasta (Node >= 20)
+node --test tests/*.test.js
+```
+
+A suíte cobre: matemática financeira (VPL, CDP/Selic, milhas), ciclo e recorrência de
+parcelas, importação CSV/OFX, histórico sem duplicação, carrossel de abas, o contrato da
+**API v2** (leitura única, escrita em lote, validação, token, JSONP, rate limit, log) e o
+**motor de sincronização** (snapshot, incremental, conflito nuvem × aparelho, ping).
+
+A CI (`.github/workflows/test.yml`) roda a suíte em todo push/PR para `main`.
 
 ---
 
@@ -92,11 +154,14 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 
 Para conectar o app a uma planilha Google privada:
 
-1. Crie uma planilha no Google Sheets com as abas `Faturas` e `Config`.
-2. Acesse **Extensões → Apps Script** e cole o código de `apps_script.gs`.
-3. (Opcional, recomendado) Em **Configurações do Projeto (ícone de engrenagem) → Propriedades do script**, adicione:
+1. Crie uma planilha no Google Sheets. O script cria sozinho as abas **`Backup`** (dados) e
+   **`Log`** (auditoria das gravações) na primeira execução.
+2. Acesse **Extensões → Apps Script**, apague o conteúdo e cole o `apps_script.gs`.
+3. (Recomendado) Em **Configurações do Projeto (ícone de engrenagem) → Propriedades do script**, adicione:
    - **Propriedade:** `SHEETS_SECRET_TOKEN`
    - **Valor:** `uma-senha-ou-token-forte-aqui`
+   - Se preferir, ajuste a constante `SHARED_SECRET` no topo do arquivo (menos seguro,
+     porque o repositório é público).
 4. Clique em **Implantar → Nova implantação**:
    - Tipo: **App da Web**
    - Executar como: **Eu**
@@ -104,8 +169,11 @@ Para conectar o app a uma planilha Google privada:
 5. Copie a URL do App da Web gerada.
 6. No app **Faturas**, vá na aba **Perfil**:
    - Cole a URL do App da Web em **URL do Google Apps Script**.
-   - Digite o mesmo token no campo **Token de Segurança (opcional)**.
-   - Clique em **Salvar Dados do Perfil**.
+   - Digite o mesmo token no campo **Token Secreto de Acesso**.
+   - Clique em **📡 Testar conexão** — deve responder `API 2.x` + número da revisão.
+7. **Ao atualizar o `apps_script.gs` no futuro:** Extensões → Apps Script → cole a versão
+   nova → **Implantar → Gerenciar implantações → ✏️ → Versão: "Nova versão" → Implantar**.
+   A URL `/exec` não muda e o app continua funcionando sem reconfigurar.
 
 ---
 

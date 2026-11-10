@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<title>💳 Faturas</title>
+<title>Faturas — Matheus &amp; Scarlet</title>
 <!-- PWA & Mobile Web App Tags -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://script.google.com https://script.googleusercontent.com;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
-<meta name="theme-color" content="#0b1120"/>
+<meta name="description" content="Controle das faturas dos cartões, gastos por categoria e calculadora de decisão entre à vista e parcelado."/>
+<meta name="color-scheme" content="dark"/>
+<meta name="theme-color" content="#070b14"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.0.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -582,63 +584,539 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .import-item-row.is-dup{border-left:3px solid var(--yellow);background:rgba(251,191,36,0.06)}
 .import-item-row.is-pay{opacity:0.65;border-left:3px solid var(--border)}
 
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v4 — camada de modernização (sobrescreve a v3)
+   Mantém a identidade sapphire/esmeralda do app e adota os padrões
+   já validados no Matrix (v113/v114) e no Atendimentos (v59–v63):
+   appbar compacta, cards respiráveis, pills, zero truncamento e
+   alvos de toque ≥ 40px.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  color-scheme:dark;
+  --bg:#070b14;
+  --bg-soft:#0a1120;
+  --surface:#0e1626;
+  --surface-2:#121d31;
+  --card:rgba(15,23,42,0.72);
+  --border:rgba(148,163,184,0.16);
+  --border-strong:rgba(148,163,184,0.30);
+  --border-focus:#38bdf8;
+
+  --text:#f8fafc;
+  --text-secondary:#dbe4f0;
+  --muted:#9fb0c6;
+
+  --accent:#38bdf8;
+  --accent-2:#818cf8;
+  --accent-glow:rgba(56,189,248,0.22);
+  --primary:#0ea5e9;
+  --primary-hover:#0284c7;
+
+  --green:#34d399; --green-d:rgba(52,211,153,0.14);
+  --yellow:#fbbf24; --yellow-d:rgba(251,191,36,0.14);
+  --red:#fb7185;  --red-d:rgba(251,113,133,0.14);
+  --blue:#60a5fa; --blue-d:rgba(96,165,250,0.14);
+  --purple:#a78bfa; --purple-d:rgba(167,139,250,0.14);
+
+  --r-sm:10px; --r-md:14px; --r-lg:18px; --r-xl:24px; --r-full:999px;
+  --sh-1:0 1px 2px rgba(2,6,23,.45);
+  --sh-2:0 10px 30px rgba(2,6,23,.5);
+  --sh-3:0 24px 60px rgba(2,6,23,.62);
+
+  --fs-xs:11px; --fs-sm:12.5px; --fs-md:14px; --fs-lg:16px; --fs-xl:20px; --fs-2xl:26px;
+  --sp-1:6px; --sp-2:10px; --sp-3:14px; --sp-4:18px;
+  --appbar-h:56px;
+  --focus-ring:0 0 0 3px rgba(56,189,248,.32);
+}
+
+body{
+  background:var(--bg);
+  background-image:
+    radial-gradient(900px 420px at 12% -12%, rgba(56,189,248,.16), transparent 62%),
+    radial-gradient(720px 380px at 92% -6%, rgba(129,140,248,.13), transparent 58%);
+  background-attachment:fixed;
+  padding-top:0;
+  font-family:'Inter','Segoe UI Variable Text',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+  font-size:14.5px;
+  line-height:1.55;
+}
+h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
+
+.skip-link{
+  position:absolute;left:-9999px;top:0;z-index:300;background:var(--accent);color:#04121f;
+  padding:10px 16px;border-radius:0 0 12px 0;font-weight:700;font-size:13px;
+}
+.skip-link:focus{left:0}
+
+/* ── Appbar ─────────────────────────────────────────────────── */
+.appbar{
+  position:sticky;top:0;z-index:60;
+  background:rgba(7,11,20,.84);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  padding-top:env(safe-area-inset-top);
+}
+.appbar-inner{
+  max-width:980px;margin:0 auto;padding:8px 14px;min-height:var(--appbar-h);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-logo{
+  width:34px;height:34px;border-radius:11px;object-fit:cover;flex:0 0 auto;
+  box-shadow:0 0 0 1px rgba(255,255,255,.14), 0 4px 14px rgba(56,189,248,.22);
+}
+.brand-text{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.brand-text strong{font-size:15px;font-weight:750;color:#fff}
+.brand-text span{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.appbar-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+
+.icon-btn{
+  width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(148,163,184,.08);border:1px solid var(--border);color:var(--text-secondary);
+  font-size:16px;line-height:1;cursor:pointer;transition:background .16s ease,border-color .16s ease,transform .12s ease;
+}
+.icon-btn:hover{background:rgba(148,163,184,.16);border-color:var(--border-strong);color:#fff}
+.icon-btn:active{transform:scale(.96)}
+.icon-btn[hidden]{display:none!important}
+.icon-btn.on{background:rgba(56,189,248,.16);border-color:rgba(56,189,248,.45);color:var(--accent)}
+
+.sync-chip{
+  display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 11px;
+  border-radius:12px;background:rgba(148,163,184,.08);border:1px solid var(--border);
+  color:var(--text-secondary);font-size:11.5px;font-weight:650;font-family:inherit;
+  cursor:pointer;transition:background .16s ease,border-color .16s ease;
+}
+.sync-chip:hover{background:rgba(148,163,184,.16);border-color:var(--border-strong)}
+.sync-chip .sync-dot{margin:0}
+#syncTxt{white-space:nowrap}
+
+/* ── Navegação em segmented control ─────────────────────────── */
+.tabs{
+  display:flex;gap:3px;margin:12px 0 14px;padding:5px;
+  background:rgba(10,17,32,.78);border:1px solid var(--border);border-radius:var(--r-lg);
+  position:sticky;top:calc(var(--appbar-h) + env(safe-area-inset-top));z-index:50;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:var(--sh-1);overflow-x:auto;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tbtn{
+  flex:1 1 0;min-width:66px;min-height:44px;padding:8px 10px;border-radius:12px;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-family:inherit;font-size:13.5px;font-weight:650;color:var(--muted);
+  background:transparent;border:1px solid transparent;cursor:pointer;
+  white-space:nowrap;transition:background .16s ease,color .16s ease,border-color .16s ease;
+  touch-action:manipulation;
+}
+.tbtn .tbtn-ico{font-size:15px;line-height:1}
+.tbtn:hover{color:#fff;background:rgba(148,163,184,.08)}
+.tbtn.on{
+  background:linear-gradient(135deg,rgba(56,189,248,.24),rgba(37,99,235,.26));
+  border-color:rgba(56,189,248,.38);color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 4px 14px rgba(2,6,23,.35);
+}
+
+/* ── Cartões e seções ───────────────────────────────────────── */
+.card{
+  background:linear-gradient(180deg,rgba(15,23,42,.74),rgba(10,17,32,.80));
+  border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:16px;margin-bottom:14px;box-shadow:var(--sh-1);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:border-color .2s ease;
+}
+.card:hover{border-color:var(--border-strong);box-shadow:var(--sh-1)}
+.ctitle{font-size:15.5px;font-weight:750;color:#fff}
+.csub{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.section-head .ctitle{margin-bottom:2px}
+
+/* ── Botões ─────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:42px;padding:0 14px;border-radius:12px;
+  font-family:inherit;font-size:13.5px;font-weight:650;line-height:1.2;
+  border:1px solid var(--border);background:rgba(148,163,184,.09);color:var(--text);
+  cursor:pointer;white-space:nowrap;touch-action:manipulation;
+  transition:background .16s ease,border-color .16s ease,transform .12s ease,box-shadow .16s ease;
+}
+.btn:hover{background:rgba(148,163,184,.16);border-color:var(--border-strong);color:#fff}
+.btn:active{transform:scale(.98)}
+.btn-primary{
+  background:linear-gradient(135deg,#0ea5e9,#2563eb);border-color:transparent;color:#fff;
+  box-shadow:0 8px 22px rgba(14,165,233,.28);
+}
+.btn-primary:hover{background:linear-gradient(135deg,#38bdf8,#3b82f6);color:#04121f}
+.btn-ghost{background:rgba(148,163,184,.08)}
+.btn-sm{min-height:40px;padding:0 11px;font-size:12.5px;border-radius:10px}
+.btn[aria-pressed="true"]{background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.45);color:#e0f2fe}
+
+/* ── Chips ──────────────────────────────────────────────────── */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:650;line-height:1.25;padding:5px 10px;border-radius:var(--r-full);
+  background:rgba(148,163,184,.10);border:1px solid var(--border);color:var(--text-secondary);
+  white-space:nowrap;
+}
+.chip-accent{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.35);color:#bae6fd}
+.chip-green{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.35);color:#a7f3d0}
+.chip-amber{background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.38);color:#fde68a}
+.chip-rose{background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.35);color:#fecdd3}
+.chip-violet{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.35);color:#ddd6fe}
+
+/* ── Hero (resumo da fatura) ────────────────────────────────── */
+.hero{
+  position:relative;overflow:hidden;isolation:isolate;
+  border:1px solid rgba(56,189,248,.22);border-radius:var(--r-xl);
+  background:
+    radial-gradient(520px 220px at 88% -20%, rgba(56,189,248,.22), transparent 65%),
+    linear-gradient(150deg,rgba(14,165,233,.16),rgba(15,23,42,.92) 52%,rgba(167,139,250,.14));
+  padding:18px;margin-bottom:14px;box-shadow:var(--sh-2);
+}
+.hero-main{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.hero-info{min-width:0}
+.hero-eyebrow{
+  display:inline-block;font-size:11px;font-weight:750;letter-spacing:.11em;text-transform:uppercase;
+  color:#7dd3fc;
+}
+.hero-amount{
+  font-size:clamp(30px,7.4vw,42px);font-weight:800;line-height:1.08;
+  margin:4px 0 4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+}
+.hero-sub{font-size:12.5px;color:var(--text-secondary);line-height:1.45}
+.hero-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.hero-gauge{width:92px;height:92px;flex:0 0 auto;position:relative}
+.hero-gauge svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.hero-gauge-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  line-height:1.1;pointer-events:none;
+}
+.hero-gauge-pct{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.hero-gauge-lbl{font-size:8.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:2px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.hero-stat{
+  background:rgba(2,6,23,.38);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:10px 11px;min-width:0;
+}
+.hero-stat-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);line-height:1.3}
+.hero-stat-val{font-size:14.5px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.hero-stat-sub{font-size:10.5px;color:var(--muted);margin-top:1px;line-height:1.3}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* ── Cartão de mês v4 ───────────────────────────────────────── */
+.mc{
+  position:relative;border-radius:var(--r-lg);border:1px solid var(--border);border-left-width:1px;
+  background:linear-gradient(180deg,rgba(20,30,50,.72),rgba(12,19,33,.86));
+  padding:13px 15px;margin-bottom:11px;box-shadow:var(--sh-1);
+  transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.mc:hover{border-color:var(--border-strong);box-shadow:var(--sh-2)}
+.mc.cur{border-color:rgba(56,189,248,.42);box-shadow:0 0 0 1px rgba(56,189,248,.14),var(--sh-2)}
+.mc.over{border-color:rgba(251,113,133,.40)}
+.mc.ok{border-color:var(--border)}
+.mc.st-fechada{border-color:rgba(251,191,36,.42)}
+.mc.st-paga{border-color:rgba(52,211,153,.42)}
+.mc.past{opacity:.82}
+
+.mc-head{display:flex;align-items:flex-start;gap:10px}
+.mc-chev{
+  width:36px;height:36px;flex:0 0 auto;border-radius:10px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(148,163,184,.08);border:1px solid var(--border);color:var(--text-secondary);
+  font-size:12px;cursor:pointer;transition:transform .18s ease,background .16s ease;
+}
+.mc-chev:hover{background:rgba(148,163,184,.18);color:#fff}
+.mc-chev[aria-expanded="false"]{transform:rotate(-90deg)}
+.mc-title{flex:1 1 auto;min-width:0}
+.mc-month{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:16.5px;font-weight:750;color:#fff}
+.mc-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.mc-total{flex:0 0 auto;text-align:right;min-width:0}
+.mc-total-lbl{display:block;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mc-total strong{display:block;font-size:17.5px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:1px}
+.mc-progress{margin-top:11px}
+.mc-progress-meta{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-bottom:5px;flex-wrap:wrap}
+.mc-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:11px}
+.mc-body{margin-top:10px;padding-top:6px;border-top:1px solid var(--border)}
+.mc-body[hidden]{display:none}
+.mc-item{
+  display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:9px;align-items:center;
+  padding:7px 2px;font-size:13px;border-bottom:1px dashed rgba(148,163,184,.12);
+}
+.mc-item:last-child{border-bottom:none}
+.mc-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--muted)}
+.mc-item-name{min-width:0;overflow-wrap:anywhere;color:var(--text-secondary)}
+.mc-item-name .badge{vertical-align:middle}
+.mc-item-val{font-variant-numeric:tabular-nums;font-weight:650;white-space:nowrap;color:#fff}
+.mc-foot{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);
+}
+.mc-foot strong{font-variant-numeric:tabular-nums}
+.mc-group-title{
+  display:flex;align-items:center;gap:8px;margin:16px 0 8px;
+  font-size:11px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}
+.mc-group-title::after{content:'';flex:1 1 auto;height:1px;background:var(--border)}
+
+/* Segmented control (status / filtros) */
+.seg{
+  display:inline-flex;align-items:center;gap:2px;padding:3px;
+  background:rgba(2,6,23,.55);border:1px solid var(--border);border-radius:var(--r-full);
+}
+.seg button{
+  border:0;background:transparent;color:var(--muted);font-family:inherit;
+  font-size:11.5px;font-weight:650;padding:0 11px;min-height:32px;border-radius:var(--r-full);
+  cursor:pointer;white-space:nowrap;transition:background .16s ease,color .16s ease;
+  touch-action:manipulation;
+}
+.seg button:hover{color:#fff;background:rgba(148,163,184,.10)}
+.seg button[aria-pressed="true"]{background:rgba(148,163,184,.20);color:#fff}
+.seg button.seg-ok[aria-pressed="true"]{background:rgba(52,211,153,.22);color:#a7f3d0}
+.seg button.seg-warn[aria-pressed="true"]{background:rgba(251,191,36,.22);color:#fde68a}
+.seg button.seg-live[aria-pressed="true"]{background:rgba(56,189,248,.20);color:#bae6fd}
+
+/* ── Banners (sync, update, offline) ────────────────────────── */
+.banner{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--border);
+  margin-bottom:12px;font-size:12.5px;line-height:1.45;
+}
+.banner[hidden]{display:none!important}
+.banner-warn{background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.36);color:#fde68a}
+.banner-info{background:rgba(56,189,248,.10);border-color:rgba(56,189,248,.36);color:#bae6fd}
+.banner-err{background:rgba(251,113,133,.10);border-color:rgba(251,113,133,.36);color:#fecdd3}
+.banner b{color:#fff}
+.banner-actions{display:flex;gap:6px;flex:0 0 auto;flex-wrap:wrap}
+
+/* ── Legenda recolhível ─────────────────────────────────────── */
+.legend{
+  border:1px solid var(--border);border-radius:var(--r-md);
+  background:rgba(10,17,32,.6);padding:10px 14px;margin-bottom:14px;
+}
+.legend summary{
+  cursor:pointer;list-style:none;display:flex;align-items:center;gap:7px;
+  font-size:12.5px;font-weight:700;color:var(--text-secondary);min-height:28px;
+}
+.legend summary::-webkit-details-marker{display:none}
+.legend summary::after{content:'▾';margin-left:auto;color:var(--muted);transition:transform .18s ease}
+.legend[open] summary::after{transform:rotate(180deg)}
+.legend .legenda-list{margin-top:10px}
+
+/* ── Aba Perfil: status da API ──────────────────────────────── */
+.api-box{
+  margin-top:12px;padding:12px 14px;border-radius:var(--r-md);
+  border:1px solid var(--border);background:rgba(2,6,23,.4);
+  font-size:12px;line-height:1.6;color:var(--text-secondary);
+}
+.api-box code{font-size:11.5px;color:#bae6fd;background:rgba(56,189,248,.10);padding:1px 5px;border-radius:6px}
+.api-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:2px 0}
+.api-row span:last-child{font-variant-numeric:tabular-nums;color:#fff}
+
+/* ── Toasts com variantes ───────────────────────────────────── */
+.toast{display:flex;align-items:center;gap:8px;text-align:left}
+.toast.ok{border-color:rgba(52,211,153,.45)}
+.toast.err{border-color:rgba(251,113,133,.45)}
+
+/* ── Estados vazios ─────────────────────────────────────────── */
+.empty{border:1px dashed var(--border);border-radius:var(--r-lg);background:rgba(10,17,32,.45)}
+
+/* ── Controles herdados das abas Gastos/Histórico (alvos ≥ 40px) ── */
+.seg button{min-height:40px}
+.mc-chev{width:40px;height:40px}
+.cat-select-inline,.gastos-filter-group{max-width:100%}
+.gastos-filter-group{flex-wrap:wrap}
+.cat-select-inline{min-height:40px;padding:8px 10px}
+.finishing-pill-btn{min-height:40px;padding:8px 12px;font-size:11.5px}
+.hdel-btn{min-height:40px;min-width:40px;padding:6px 10px}
+.edit-search-clear{width:34px;height:34px}
+.finishing-timeline-bar{gap:6px}
+
+/* Botões legados (.bsm) alinhados ao padrão novo */
+.bsm{
+  min-height:42px;border-radius:12px;padding:9px 14px;font-size:13px;font-weight:650;
+  background:rgba(148,163,184,.09);border:1px solid var(--border);color:var(--text);
+}
+.bsm:hover{background:rgba(148,163,184,.16);border-color:var(--border-strong);color:#fff}
+.bsm.accent{background:rgba(56,189,248,.16);border-color:rgba(56,189,248,.4);color:#bae6fd}
+.bsm.accent:hover{background:var(--accent);color:#04121f;border-color:var(--accent)}
+
+/* Switch mais atual */
+.tog{width:46px;height:26px;border-radius:999px;flex-shrink:0}
+.tog::after{width:20px;height:20px;top:3px;left:3px}
+.tog.on{background:var(--primary)}
+.tog.on::after{left:23px}
+
+/* KPIs em 2 colunas no celular (em vez de 4 cards empilhados) */
+@media(max-width:560px){
+  .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .kpi-card{padding:12px}
+  .kpi-val{font-size:18px}
+  .kpi-icon{font-size:18px}
+  .kpi-sub{font-size:11px;line-height:1.35}
+}
+
+/* ── Modais: bottom sheet no celular ────────────────────────── */
+@media(max-width:580px){
+  .modal-bg{align-items:flex-end;padding:0}
+  .modal{
+    max-width:100%;border-radius:22px 22px 0 0;
+    max-height:92vh;overflow-y:auto;
+    padding:18px 16px calc(16px + env(safe-area-inset-bottom));
+    animation:sheetUp .26s cubic-bezier(.2,.9,.25,1);
+  }
+  .modal::before{
+    content:'';display:block;width:40px;height:4px;border-radius:99px;
+    background:rgba(148,163,184,.35);margin:-6px auto 12px;
+  }
+  @keyframes sheetUp{from{transform:translateY(48px);opacity:.6}to{transform:translateY(0);opacity:1}}
+}
+
+/* ── Responsivo ─────────────────────────────────────────────── */
+@media(max-width:640px){
+  .appbar-inner{padding:7px 12px}
+  .brand-text span{display:none}
+  .wrap{padding:12px}
+  .hero{padding:16px;border-radius:20px}
+  .hero-gauge{width:78px;height:78px}
+  .hero-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .hero-stat{padding:9px}
+  .hero-stat-val{font-size:13px}
+  .hero-actions .btn{flex:1 1 auto}
+  .mc{padding:12px}
+  .mc-total strong{font-size:16px}
+  .section-head{align-items:flex-start}
+  .seg button{min-height:42px;padding:0 12px}
+  .mc-chev{width:40px;height:40px}
+  .btn-sm{min-height:42px}
+  .mc-actions .seg{order:1}
+  .mc-actions .btn{order:2}
+}
+@media(max-width:480px){
+  body{font-size:14px}
+  .tabs{overflow:visible}
+  .tbtn{
+    flex-direction:column;gap:2px;min-width:0;min-height:52px;padding:6px 2px;
+    font-size:10px;color:var(--muted)!important;
+  }
+  .tbtn .tbtn-ico{font-size:17px}
+  .tbtn.on{color:#fff!important}
+  /* neutraliza o hack antigo de data-short da v3 */
+  .tbtn::after{content:none!important;display:none!important}
+  .hero-main{gap:10px}
+  .hero-gauge{width:72px;height:72px}
+  .hero-gauge-pct{font-size:13px}
+  .hero-gauge-lbl{font-size:7.5px}
+  .hero-stats{grid-template-columns:1fr 1fr;gap:6px}
+  .hero-stat:first-child{grid-column:1/-1}
+  .mc-total strong{font-size:15.5px}
+  .mc-month{font-size:15.5px}
+  .mc-actions{flex-direction:column;align-items:stretch}
+  .mc-actions .seg{justify-content:space-between;width:100%}
+  .mc-actions .seg button{flex:1 1 0}
+  .mc-actions .btn{width:100%}
+  .sync-chip{padding:0 9px;font-size:11px}
+}
+@media(max-width:360px){
+  .brand-text strong{font-size:14px}
+  .icon-btn,.sync-chip{height:40px}
+  .icon-btn{width:40px}
+  .hero{padding:14px}
+  .hero-amount{font-size:28px}
+  .chip{font-size:10px;padding:4px 8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mc,.hero,.btn,.icon-btn,.tbtn{transition:none!important}
+}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#mainContent">Ir para o conteúdo</a>
 
-<div class="hdr">
-  <div class="hdr-inner">
-    <div class="hdr-logo"><img src="./icon-192.png?v=3.1.0" alt="Logo Faturas" class="hdr-logo-img"/></div>
-    <h1>Faturas</h1>
-    <p>Calculadora financeira · Nubank Black · Matheus &amp; Scarlet</p>
-    <div class="hdr-badges">
-      <span class="badge bp" id="badgeMilhas">✈️ 2,2 mi/dólar</span>
-      <span class="badge by" id="badgeSelic">📈 Selic 13,75%</span>
-      <span class="badge bb" id="badgeMeta">🎯 Meta R$&nbsp;3.000/mês</span>
-      <span id="syncBadge" class="badge" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border);cursor:pointer" onclick="syncAll()" title="Sincronizar com Google Sheets">
-        <span class="sync-dot sync-ing" id="syncDot"></span><span id="syncTxt">Sincronizando…</span>
-      </span>
-      <button id="btnHdrInstall" class="badge" style="display:none;background:rgba(56,189,248,0.22);color:var(--accent);border:1px solid rgba(56,189,248,0.45);cursor:pointer;font-weight:700" onclick="triggerPwaInstall()">📲 Instalar App</button>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <img src="./icon-192.png?v=4.0.0" alt="" class="brand-logo"/>
+      <div class="brand-text">
+        <strong>Faturas</strong>
+        <span>Matheus &amp; Scarlet</span>
+      </div>
+    </div>
+    <div class="appbar-actions">
+      <button id="btnHdrInstall" class="icon-btn" style="display:none" aria-label="Instalar aplicativo" title="Instalar aplicativo" onclick="triggerPwaInstall()">📲</button>
+      <button id="privacyBtn" class="icon-btn" aria-pressed="false" aria-label="Ocultar valores" title="Ocultar valores" onclick="togglePrivacy()">👁️</button>
+      <button id="syncBadge" class="sync-chip" onclick="syncAll()" title="Sincronizar com a planilha" aria-live="polite">
+        <span class="sync-dot sync-ing" id="syncDot"></span><span id="syncTxt">Local</span>
+      </button>
     </div>
   </div>
-</div>
+</header>
 
-<div class="wrap">
-  <div class="tabs" role="tablist">
-    <button id="tabFatura" class="tbtn on" data-short="💳 Faturas" onclick="showTab('fatura',this)">💳 Faturas</button>
-    <button id="tabGastos" class="tbtn" data-short="📊 Gastos" onclick="showTab('gastos',this)">📊 Gastos</button>
-    <button id="tabCalc" class="tbtn" data-short="🧮 Calc" onclick="showTab('calc',this)">🧮 Calculadora</button>
-    <button id="tabHist" class="tbtn" data-short="📋 Hist" onclick="showTab('hist',this)">📋 Histórico</button>
-    <button id="tabCfg" class="tbtn" data-short="⚙️ Perfil" onclick="showTab('cfg',this)">⚙️ Perfil</button>
+<div class="wrap" id="mainContent" role="main">
+  <div id="updateBanner" class="banner banner-info" hidden>
+    <div>✨ <b>Nova versão disponível.</b> Atualize para carregar as melhorias mais recentes.</div>
+    <div class="banner-actions"><button type="button" class="btn btn-primary btn-sm" onclick="applyUpdate()">Atualizar</button></div>
   </div>
+  <div id="syncBanner" class="banner banner-warn" hidden></div>
+
+  <nav class="tabs" role="tablist" aria-label="Seções do app">
+    <button id="tabFatura" class="tbtn on" role="tab" aria-selected="true" aria-controls="tab-fatura" data-tab="fatura" onclick="showTab('fatura',this)"><span class="tbtn-ico" aria-hidden="true">💳</span><span class="tbtn-lbl">Faturas</span></button>
+    <button id="tabGastos" class="tbtn" role="tab" aria-selected="false" aria-controls="tab-gastos" data-tab="gastos" onclick="showTab('gastos',this)"><span class="tbtn-ico" aria-hidden="true">📊</span><span class="tbtn-lbl">Gastos</span></button>
+    <button id="tabCalc" class="tbtn" role="tab" aria-selected="false" aria-controls="tab-calc" data-tab="calc" onclick="showTab('calc',this)"><span class="tbtn-ico" aria-hidden="true">🧮</span><span class="tbtn-lbl">Calculadora</span></button>
+    <button id="tabHist" class="tbtn" role="tab" aria-selected="false" aria-controls="tab-hist" data-tab="hist" onclick="showTab('hist',this)"><span class="tbtn-ico" aria-hidden="true">📋</span><span class="tbtn-lbl">Histórico</span></button>
+    <button id="tabCfg" class="tbtn" role="tab" aria-selected="false" aria-controls="tab-cfg" data-tab="cfg" onclick="showTab('cfg',this)"><span class="tbtn-ico" aria-hidden="true">⚙️</span><span class="tbtn-lbl">Perfil</span></button>
+  </nav>
 
   <!-- FATURAS -->
-  <div id="tab-fatura" class="tc on">
-    <div class="card">
-      <div class="faturas-top-bar">
-        <div class="faturas-top-left">
-          <div class="ctitle">💳 Faturas · 7 meses</div>
-          <div class="csub" style="margin:0">Clique em ✏️ para editar qualquer item de qualquer mês</div>
+  <div id="tab-fatura" class="tc on" role="tabpanel" aria-labelledby="tabFatura">
+    <section class="hero" id="faturasHero" aria-label="Resumo das faturas">
+      <div class="hero-main">
+        <div class="hero-info">
+          <span class="hero-eyebrow" id="heroMonthLabel">Fatura atual</span>
+          <div class="hero-amount" id="heroTotal">—</div>
+          <div class="hero-sub" id="heroSub">Carregando resumo…</div>
+          <div class="hero-chips">
+            <span class="chip chip-accent" id="badgeSelic">📈 Selic</span>
+            <span class="chip" id="badgeMilhas">✈️ Milhas</span>
+            <span class="chip" id="badgeMeta">🎯 Meta</span>
+          </div>
         </div>
-        <div class="faturas-top-right" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="bsm" onclick="openImportModal()" title="Importar arquivo CSV ou OFX da fatura do banco">📥 Importar Fatura</button>
-          <button class="bsm accent" onclick="openAddModal()">➕ Novo item</button>
+        <div class="hero-gauge" id="heroGauge" role="img" aria-label="Uso da meta mensal"></div>
+      </div>
+      <div class="hero-stats" id="heroStats"></div>
+      <div class="hero-actions">
+        <button type="button" class="btn btn-primary" onclick="openAddModal()">➕ Novo item</button>
+        <button type="button" class="btn btn-ghost" onclick="openImportModal()" title="Importar arquivo CSV ou OFX da fatura do banco">📥 Importar fatura</button>
+        <button type="button" class="btn btn-ghost" onclick="openEditMonthModal(getFirstOpenMonth())">✏️ Editar mês atual</button>
+      </div>
+    </section>
+
+    <div class="card">
+      <div class="section-head">
+        <div>
+          <div class="ctitle">Faturas</div>
+          <div class="csub" id="faturasSub">Carregando meses…</div>
+        </div>
+        <div class="seg" role="group" aria-label="Filtrar faturas">
+          <button type="button" id="filterTodas" data-filter="todas" aria-pressed="true" onclick="setFaturasFilter('todas')">Todas</button>
+          <button type="button" id="filterAbertas" data-filter="abertas" aria-pressed="false" onclick="setFaturasFilter('abertas')">Abertas</button>
+          <button type="button" id="filterEncerradas" data-filter="encerradas" aria-pressed="false" onclick="setFaturasFilter('encerradas')">Encerradas</button>
         </div>
       </div>
       <div id="faturasList"></div>
     </div>
-    <div class="infobox" style="background:var(--yellow-d);border:1px solid rgba(251,191,36,.2)">
-      <div class="it" style="color:var(--yellow)">ℹ️ Legenda</div>
+
+    <details class="legend">
+      <summary>ℹ️ Como ler esta tela</summary>
       <div class="legenda-list">
         <div class="legenda-item"><span class="badge bb">Planilha</span><span>Dado importado da fatura real</span></div>
         <div class="legenda-item"><span class="badge" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)">Estimado</span><span>Projeção das parcelas ativas</span></div>
         <div class="legenda-item"><span class="badge bp">📅 Simulada</span><span>Parcela adicionada manualmente</span></div>
+        <div class="legenda-item"><span class="badge bg">✓ Paga</span><span>Fatura quitada · não entra no saldo em aberto</span></div>
       </div>
-    </div>
+    </details>
   </div>
 
   <!-- GASTOS & ANÁLISE -->
-  <div id="tab-gastos" class="tc">
+  <div id="tab-gastos" class="tc" role="tabpanel" aria-labelledby="tabGastos">
     <!-- FILTRO DE PERÍODO & AÇÕES RÁPIDAS -->
     <div class="gastos-filter-bar">
       <div class="gastos-filter-group">
@@ -726,7 +1204,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   </div>
 
   <!-- CALCULADORA -->
-  <div id="tab-calc" class="tc">
+  <div id="tab-calc" class="tc" role="tabpanel" aria-labelledby="tabCalc">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
         <div>
@@ -755,10 +1233,11 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
         <div><label for="pCash">Valor à vista (R$)</label><input type="text" id="pCash" placeholder="0,00" inputmode="decimal"/></div>
         <div><label for="pDisc">Desconto à vista (%)</label><input type="text" id="pDisc" placeholder="0" value="0" inputmode="decimal"/></div>
         <div><label for="pCashMethod">Forma do à vista</label>
-          <select id="pCashMethod">
-            <option value="cartao" selected>💳 Cartão 1x (fatura · com float e milhas)</option>
-            <option value="pix">⚡ PIX / Dinheiro (imediato · sem float nem milhas)</option>
+          <select id="pCashMethod" onchange="updateCashMethodHint()">
+            <option value="cartao" selected>💳 Cartão 1x (float + milhas)</option>
+            <option value="pix">⚡ PIX / Dinheiro (sem float)</option>
           </select>
+          <div class="csub" id="pCashMethodHint" style="margin-top:6px;font-size:11px"></div>
         </div>
         <div><label for="pInst">Valor total parcelado (R$) <small style="color:var(--muted)">(vazio = sem juros)</small></label><input type="text" id="pInst" placeholder="Igual ao à vista" inputmode="decimal"/></div>
         <div><label for="pMaxN">Máximo de parcelas</label>
@@ -780,12 +1259,13 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
         </div>
         <div class="ff">
           <label for="pMonth">📅 Quando você vai comprar? (Ciclo de faturamento)</label>
-          <select id="pMonth">
+          <select id="pMonth" onchange="updateMonthHint(this.value)">
             <!-- As opções abertas são preenchidas dinamicamente via updateMonthSelects -->
-            <option value="1">Compro agora (10/Set–09/Out) → fatura Out/2026, paga 17/Out</option>
-            <option value="2">Compro em Out (10/Out–09/Nov) → fatura Nov/2026, paga 17/Nov</option>
-            <option value="3">Compro em Nov (10/Nov–09/Dez) → fatura Dez/2026, paga 17/Dez</option>
+            <option value="1">Compro agora → fatura Out/2026</option>
+            <option value="2">Compro em Out → fatura Nov/2026</option>
+            <option value="3">Compro em Nov → fatura Dez/2026</option>
           </select>
+          <div class="csub" id="pMonthHint" style="margin-top:6px;font-size:11px"></div>
         </div>
       </div>
       <div class="togsrow">
@@ -801,7 +1281,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   </div>
 
   <!-- HISTÓRICO -->
-  <div id="tab-hist" class="tc">
+  <div id="tab-hist" class="tc" role="tabpanel" aria-labelledby="tabHist">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
         <div><div class="ctitle">📋 Histórico de Cálculos</div><div class="csub" style="margin:0" id="histSub">Salvo no navegador · toque num item para reabrir ou no ✕ para excluir</div></div>
@@ -815,7 +1295,7 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   </div>
 
   <!-- PERFIL -->
-  <div id="tab-cfg" class="tc">
+  <div id="tab-cfg" class="tc" role="tabpanel" aria-labelledby="tabCfg">
     <div class="card">
       <div class="ctitle">⚙️ Configurações &amp; Parâmetros</div>
       <div class="csub">Os dados são salvos automaticamente no navegador e na sua planilha de backup</div>
@@ -831,17 +1311,28 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
         </div>
         <div class="ff">
           <label for="cGasToken">Token Secreto de Acesso (SHARED_SECRET do Apps Script)</label>
-          <input type="password" id="cGasToken" placeholder="Defina a mesma chave configurada no Apps Script" oninput="saveProfile()"/>
+          <input type="password" id="cGasToken" placeholder="Token configurado no Apps Script" oninput="saveProfile()"/>
         </div>
       </div>
-      <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <button class="bsm" onclick="syncAll()">🔄 Sincronizar agora</button>
-        <button class="bsm" onclick="exportBackup()">⬇️ Exportar backup (JSON)</button>
-        <button class="bsm" onclick="document.getElementById('importFile').click()">⬆️ Importar backup</button>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="syncAll()">🔄 Sincronizar agora</button>
+        <button class="btn btn-ghost" onclick="exportBackup()">⬇️ Exportar backup</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">⬆️ Importar backup</button>
         <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importBackup(event)"/>
-        <div id="syncStatus" style="font-size:12px;font-weight:600;color:var(--muted)"></div>
       </div>
       <div id="syncStatusBox" style="display:none;margin-top:10px;border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600"></div>
+    </div>
+
+    <!-- CONEXÃO COM A API v2 -->
+    <div class="card">
+      <div class="ctitle">🔌 Conexão com a planilha</div>
+      <div class="csub">A API v2 lê o snapshot uma única vez, grava em lote e devolve revisão + data. Use “Testar conexão” depois de reimplantar o <code>apps_script.gs</code>.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn btn-primary btn-sm" onclick="pingApi()">📡 Testar conexão</button>
+        <button class="btn btn-ghost btn-sm" onclick="syncAll({incremental:true})">⏱️ Sync incremental</button>
+        <button class="btn btn-ghost btn-sm" onclick="checkForUpdate()">✨ Procurar atualização</button>
+      </div>
+      <div class="api-box" id="apiStatusBox">Nenhum teste executado nesta sessão.</div>
     </div>
 
     <!-- CARD INSTALAÇÃO DO APP -->
@@ -863,6 +1354,17 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
       <button class="bcalc" id="btnPwaPrompt" style="display:none;margin-top:0;width:auto;padding:10px 20px;font-size:14px" onclick="triggerPwaInstall()">
         📲 Instalar Aplicativo Agora
       </button>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">ℹ️ Sobre este app</div>
+      <div class="api-box" style="margin-top:8px">
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.0.0</span></div>
+        <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
+        <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
+        <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
+      </div>
+      <div class="csub" style="margin-top:10px">Fonte da verdade das faturas do casal. O Matrix consome estes valores pelos satélites.</div>
     </div>
   </div>
 
@@ -1092,6 +1594,18 @@ var selectedPlan=null; // {n, per} escolhido ao clicar numa linha do comparativo
 var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
+/* ── Estado da modernização v4 ── */
+var APP_VERSION='4.0.0';
+var SW_CACHE_NAME='faturas-pwa-v18'; // manter em sincronia com o CACHE_NAME do sw.js
+var privacyOn=false;
+var faturasFilter='todas';
+var _applyingRemote=false;
+var _lastLocalChangeAt=0;
+var _syncing=false;
+var _syncRetries=0;
+var _syncTimer=null;
+var SYNC={lastOkAt:0, revision:0, savedAt:'', dirty:false, lastError:''};
+
 /* Utilitário de conversão de decimais (suporte a vírgula em teclados PT-BR - Corrige M4) */
 function parseNum(val){
   if(typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -1105,16 +1619,15 @@ function parseNum(val){
    GOOGLE APPS SCRIPT SYNC
    Usa JSONP para leitura e POST autenticado para gravação
 ═══════════════════════════════════════════════ */
-function setSyncStatus(state,msg){
+function setSyncStatus(state,msg,quiet){
   var dot=document.getElementById('syncDot');
-  var txt=document.getElementById('syncTxt');
   var st=document.getElementById('syncStatus');
   var box=document.getElementById('syncStatusBox');
-  dot.className='sync-dot sync-'+state;
-  txt.textContent=msg;
+  if(dot) dot.className='sync-dot sync-'+state;
+  // O chip do topo é controlado por renderSyncChip() com rótulos curtos
   if(st) st.textContent=msg;
   // Box destacado na aba Perfil
-  if(box){
+  if(box && !quiet){
     box.style.display='block';
     var prefix = state === 'ok' ? '✅ ' : (state === 'err' ? '❌ ' : '⏳ ');
     box.textContent = prefix + (msg || '');
@@ -1166,42 +1679,102 @@ function jsonpGet(url, params, onSuccess, onError){
   document.head.appendChild(script);
 }
 
-function syncAll(){
-  var url=profile.gasUrl;
-  if(!url){setSyncStatus('err','Sem URL — configure em Perfil');return;}
-  setSyncStatus('ing','Sincronizando…');
-  var params={action:'load'};
-  if(profile.gasToken) params.token=profile.gasToken;
-  jsonpGet(url,params,
-    function(data){
-      if(!data){setSyncStatus('err','Resposta vazia do servidor');return;}
-      if(data.ok === false){setSyncStatus('err','Acesso negado: '+(data.error||'Verifique o token'));return;}
-      // Aplica o estado remoto como fonte de verdade do backup.
-      // Usa "!== undefined" (não "&& .length") para que EXCLUSÕES feitas em
-      // outro dispositivo também se propaguem (lista/objeto vazio zera o local).
-      if(Array.isArray(data.extraItems))  extraItems=data.extraItems;
-      if(Array.isArray(data.simItems))    simItems=data.simItems;
-      if(data.overrides&&typeof data.overrides==='object') overrides=data.overrides;
-      if(Array.isArray(data.purchHist))   purchHist=data.purchHist;
-      if(data.monthStatus&&typeof data.monthStatus==='object') monthStatus=data.monthStatus;
-      if(data.collapsedMonths&&typeof data.collapsedMonths==='object') collapsedMonths=data.collapsedMonths;
-      if(Array.isArray(data.userCategories)) userCategories=data.userCategories;
-      if(Array.isArray(data.userCatRules))   userCatRules=data.userCatRules;
-      if(data.itemCatMap&&typeof data.itemCatMap==='object') itemCatMap=data.itemCatMap;
-      if(data.profile&&Object.keys(data.profile).length) applyRemoteProfile(data.profile);
-      saveLocal();renderHist();renderFaturas();
-      if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')) renderGastosView();
-      setSyncStatus('ok','Sincronizado ✓ '+new Date().toLocaleTimeString('pt-BR'));
-    },
-    function(err){setSyncStatus('err','Erro: '+err);}
-  );
+/* ═══════════════════════════════════════════════
+   SINCRONIZAÇÃO v2 — estado, envio em lote, retry e conflito
+   ═══════════════════════════════════════════════ */
+
+/* Tempo relativo curto para o chip de sincronização (sem truncar texto) */
+function timeAgo(ts){
+  if(!ts) return '—';
+  var diff=Math.max(0, Date.now()-Number(ts));
+  var s=Math.floor(diff/1000);
+  if(s<45) return 'agora';
+  var m=Math.floor(s/60);
+  if(m<60) return 'há '+m+' min';
+  var h=Math.floor(m/60);
+  if(h<24) return 'há '+h+' h';
+  var d=Math.floor(h/24);
+  if(d<7) return 'há '+d+' d';
+  return new Date(Number(ts)).toLocaleDateString('pt-BR');
 }
 
-function pushToSheets(){
-  var url=profile.gasUrl;
-  if(!url) return;
-  var payload={
+function loadSyncMeta(){
+  try{
+    var raw=localStorage.getItem('pv4_sync');
+    if(!raw) return;
+    var v=JSON.parse(raw)||{};
+    SYNC.lastOkAt=Number(v.lastOkAt)||0;
+    SYNC.revision=Number(v.revision)||0;
+    SYNC.savedAt=v.savedAt||'';
+    SYNC.dirty=!!v.dirty;
+    SYNC.lastError=v.lastError||'';
+    _lastLocalChangeAt=Number(v.lastLocalChangeAt)||0;
+  }catch(e){}
+}
+
+function persistSyncMeta(){
+  try{
+    localStorage.setItem('pv4_sync', JSON.stringify({
+      lastOkAt:SYNC.lastOkAt,
+      revision:SYNC.revision,
+      savedAt:SYNC.savedAt,
+      dirty:!!SYNC.dirty,
+      lastLocalChangeAt:_lastLocalChangeAt,
+      lastError:SYNC.lastError||''
+    }));
+  }catch(e){}
+}
+
+/* Marca que este aparelho tem alterações ainda não confirmadas na planilha */
+function markDirty(){
+  if(_applyingRemote) return;
+  SYNC.dirty=true;
+  _lastLocalChangeAt=Date.now();
+  persistSyncMeta();
+  renderSyncChip();
+}
+
+/* Chip do topo: status curto, legível e sem ellipsis */
+function renderSyncChip(){
+  var dot=document.getElementById('syncDot');
+  var txt=document.getElementById('syncTxt');
+  var btn=document.getElementById('syncBadge');
+  var label='Local', state='ok';
+
+  if(_syncing){ label='Sincronizando…'; state='ing'; }
+  else if(SYNC.lastError){ label='Erro'; state='err'; }
+  else if(profile.gasUrl){
+    if(SYNC.dirty){ label='Pendente'; state='ing'; }
+    else if(SYNC.lastOkAt){ label=timeAgo(SYNC.lastOkAt); state='ok'; }
+    else { label='Conectar'; state='ing'; }
+  }
+  if(typeof navigator!=='undefined' && navigator && navigator.onLine===false){ label='Offline'; state='err'; }
+
+  if(dot) dot.className='sync-dot sync-'+state;
+  if(txt) txt.textContent=label;
+  if(btn){
+    btn.title='Sincronização: '+label+(SYNC.dirty?' · alterações pendentes':'')+(SYNC.revision?' · revisão '+SYNC.revision:'');
+    btn.setAttribute('aria-label','Sincronização: '+label+'. Toque para sincronizar.');
+  }
+  var about=document.getElementById('aboutLastSync');
+  if(about) about.textContent = SYNC.lastOkAt ? new Date(SYNC.lastOkAt).toLocaleString('pt-BR') : 'nunca';
+}
+
+function updateAboutBox(){
+  var v=document.getElementById('aboutVersion');
+  if(v) v.textContent=APP_VERSION;
+  var c=document.getElementById('aboutCache');
+  if(c) c.textContent=SW_CACHE_NAME;
+  var a=document.getElementById('aboutApi');
+  if(a) a.textContent = _apiInfo ? ('API '+_apiInfo.api+' · rev '+(_apiInfo.revision||0)) : 'não verificada';
+}
+
+/* Payload do backup: mesmo contrato da v1 + revisão conhecida para auditoria */
+function buildSyncPayload(){
+  return {
     token: profile.gasToken || '',
+    client: 'pv4/'+APP_VERSION,
+    revision: SYNC.revision || 0,
     extraItems: extraItems,
     simItems: simItems,
     overrides: overrides,
@@ -1213,24 +1786,383 @@ function pushToSheets(){
     itemCatMap: itemCatMap,
     profile: profile
   };
+}
 
-  // Em conformidade estrita com a LGPD e privacidade (Corrige C1 e C2),
-  // grava exclusivamente via POST com corpo JSON, nunca transmitindo
-  // compras ou dados de faturas na query string GET.
-  if(typeof fetch==='function'){
-    setSyncStatus('ing','Salvando…');
-    fetch(url,{
-      method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify(payload)
-    }).then(function(){
-      setSyncStatus('ok','Enviado ao Sheets ✓ '+new Date().toLocaleTimeString('pt-BR'));
-    }).catch(function(err){
-      setSyncStatus('err','Erro ao salvar no Sheets: '+err);
-    });
+function schedulePush(delay){
+  if(_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(function(){ _syncTimer=null; flushPush(); }, delay||1200);
+}
+
+function pushToSheets(delay){
+  if(!profile.gasUrl) return;
+  if(delay===0){ flushPush(); return; }
+  schedulePush(delay||1200);
+}
+
+/* Envia o backup em uma única requisição e reenvia com backoff em caso de falha */
+function flushPush(){
+  var url=profile.gasUrl;
+  if(!url) return;
+  if(_syncing){ schedulePush(1500); return; }
+  if(!SYNC.dirty){ renderSyncChip(); return; }
+  if(typeof fetch!=='function'){ setSyncStatus('err','Navegador não suporta requisição POST'); return; }
+
+  var body='';
+  try{ body=JSON.stringify(buildSyncPayload()); }catch(e){ setSyncStatus('err','Falha ao montar o backup'); return; }
+
+  setSyncStatus('ing','Salvando na planilha…');
+  renderSyncChip();
+
+  fetch(url,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:body,
+    keepalive:body.length<60000
+  }).then(function(){
+    SYNC.dirty=false;
+    SYNC.lastOkAt=Date.now();
+    SYNC.lastError='';
+    _syncRetries=0;
+    persistSyncMeta(); renderSyncChip(); updateAboutBox();
+    setSyncStatus('ok','Salvo na planilha ✓ '+new Date().toLocaleTimeString('pt-BR'));
+    verifyPush();
+  }).catch(function(err){
+    _syncRetries++;
+    SYNC.lastError=String((err&&err.message)||err);
+    persistSyncMeta(); renderSyncChip();
+    if(_syncRetries<=2){
+      setSyncStatus('ing','Reenviando…');
+      schedulePush(_syncRetries===1?4000:10000);
+    } else {
+      setSyncStatus('err','Sem conexão com a planilha — os dados continuam salvos neste aparelho');
+    }
+  });
+}
+
+/* Confirma a gravação lendo só o ping (a resposta do POST é opaca por CORS) */
+function verifyPush(){
+  if(!profile.gasUrl) return;
+  var params={action:'ping'};
+  if(profile.gasToken) params.token=profile.gasToken;
+  jsonpGet(profile.gasUrl, params, function(d){
+    if(!d || d.ok===false) return;
+    _apiInfo={ api:d.api||'1.x', revision:Number(d.revision)||SYNC.revision, keys:d.keys||[] };
+    if(d.revision){ SYNC.revision=d.revision; SYNC.savedAt=d.savedAt||SYNC.savedAt; persistSyncMeta(); }
+    renderSyncChip(); updateAboutBox();
+  }, function(){ /* silencioso: o envio já foi confirmado pelo fetch */ });
+}
+
+/* Aplica o payload remoto (total ou incremental) sem marcar alteração local */
+function applyRemotePayload(data){
+  var setters={
+    extraItems:function(v){ extraItems=v; },
+    simItems:function(v){ simItems=v; },
+    purchHist:function(v){ purchHist=v; },
+    userCategories:function(v){ userCategories=v; },
+    userCatRules:function(v){ userCatRules=v; },
+    overrides:function(v){ overrides=v; },
+    monthStatus:function(v){ monthStatus=v; },
+    collapsedMonths:function(v){ collapsedMonths=v; },
+    itemCatMap:function(v){ itemCatMap=v; },
+    profile:function(v){ if(Object.keys(v).length) applyRemoteProfile(v); }
+  };
+  _applyingRemote=true;
+  try{
+    for(var key in setters){
+      if(!setters.hasOwnProperty(key) || data[key]===undefined) continue;
+      var value=data[key];
+      if(key==='profile'){
+        if(value && typeof value==='object' && !Array.isArray(value)) setters[key](value);
+      } else if(Array.isArray(value)){
+        setters[key](value);
+      } else if(value && typeof value==='object'){
+        setters[key](value);
+      }
+    }
+    saveLocal();
+  } finally {
+    _applyingRemote=false;
+  }
+  renderAll();
+}
+
+function renderAll(){
+  renderBadges();
+  renderHist();
+  renderFaturas();
+  if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')) renderGastosView();
+  if(lastCalc) renderResults(lastCalc);
+}
+
+/* ── Conflito nuvem × aparelho ─────────────────────────────── */
+function showSyncConflict(remoteSavedAtMs){
+  var el=document.getElementById('syncBanner');
+  if(!el) return;
+  el.className='banner banner-warn';
+  el.innerHTML='<div>⚠️ <b>A planilha está mais nova que este aparelho.</b><br>'
+    + 'Existem alterações locais não enviadas e a nuvem foi atualizada '+esc(timeAgo(remoteSavedAtMs))+'. Escolha qual versão manter.</div>'
+    + '<div class="banner-actions">'
+    + '<button type="button" class="btn btn-sm btn-ghost" onclick="resolveSync(\'remote\')">Usar a nuvem</button>'
+    + '<button type="button" class="btn btn-sm btn-primary" onclick="resolveSync(\'local\')">Manter este aparelho</button>'
+    + '</div>';
+  el.hidden=false;
+}
+
+function hideSyncBanner(){
+  var el=document.getElementById('syncBanner');
+  if(el){ el.hidden=true; el.innerHTML=''; }
+}
+
+function resolveSync(side){
+  hideSyncBanner();
+  if(side==='remote'){
+    SYNC.dirty=false;
+    persistSyncMeta();
+    syncAll({force:true});
   } else {
-    setSyncStatus('err','Navegador não suporta requisição POST');
+    SYNC.dirty=true;
+    _lastLocalChangeAt=Date.now();
+    persistSyncMeta();
+    pushToSheets(0);
+  }
+}
+
+function syncAll(opts){
+  opts=opts||{};
+  if(!profile.gasUrl){ setSyncStatus('err','Sem URL — configure em Perfil'); renderSyncChip(); return; }
+  if(_syncing) return;
+
+  _syncing=true;
+  SYNC.lastError='';
+  setSyncStatus('ing','Sincronizando…');
+  renderSyncChip();
+
+  var params={action:'restore'};
+  if(profile.gasToken) params.token=profile.gasToken;
+  if(opts.incremental && SYNC.savedAt) params.since=SYNC.savedAt;
+
+  var attempt=0;
+
+  function fail(err){
+    _syncing=false;
+    SYNC.lastError=String(err||'falha de rede');
+    persistSyncMeta(); renderSyncChip();
+    setSyncStatus('err','Erro: '+SYNC.lastError);
+  }
+
+  function handle(data){
+    if(!data){ fail('resposta vazia'); return; }
+    if(data.ok===false){
+      _syncing=false;
+      SYNC.lastError=data.error||'acesso negado';
+      persistSyncMeta(); renderSyncChip();
+      setSyncStatus('err',data.error||'Acesso negado');
+      showToast('⚠️ '+(data.error||'Falha na sincronização'), 'err');
+      return;
+    }
+
+    var meta=data.meta||{};
+    var remoteMs=meta.savedAt?Date.parse(meta.savedAt)||0:0;
+    var remoteIsNewer = remoteMs && _lastLocalChangeAt && remoteMs > (_lastLocalChangeAt + 1500);
+
+    if(SYNC.dirty && remoteIsNewer && !opts.force){
+      _syncing=false;
+      showSyncConflict(remoteMs);
+      setSyncStatus('ing','Conflito: a nuvem está mais nova');
+      renderSyncChip();
+      return;
+    }
+
+    applyRemotePayload(data);
+    SYNC.dirty=false;
+    SYNC.lastOkAt=Date.now();
+    SYNC.lastError='';
+    SYNC.revision=Number(meta.revision)||SYNC.revision;
+    SYNC.savedAt=meta.savedAt||SYNC.savedAt;
+    _apiInfo={api:data.api||'1.x', revision:SYNC.revision, keys:meta.keys};
+    persistSyncMeta(); hideSyncBanner(); renderSyncChip(); updateAboutBox();
+    setSyncStatus('ok','Sincronizado ✓ '+new Date().toLocaleTimeString('pt-BR'));
+    _syncing=false;
+  }
+
+  function request(){
+    jsonpGet(profile.gasUrl, params, handle, function(err){
+      attempt++;
+      if(attempt<2){ setTimeout(request, 1800); return; }
+      fail(err);
+    });
+  }
+  request();
+}
+
+/* Diagnóstico da API (aba Perfil) */
+var _apiInfo=null;
+function pingApi(){
+  var box=document.getElementById('apiStatusBox');
+  var url=profile.gasUrl;
+  if(!url){
+    if(box) box.textContent='Configure a URL do Google Apps Script acima para testar.';
+    showToast('Configure a URL do Apps Script primeiro','err');
+    return;
+  }
+  if(box) box.textContent='Testando conexão…';
+  var params={action:'ping'};
+  if(profile.gasToken) params.token=profile.gasToken;
+  jsonpGet(url, params, function(d){
+    if(!d || d.ok===false){
+      var msg=(d&&d.error)||'sem resposta';
+      if(box) box.textContent='❌ Falha: '+msg;
+      showToast('📡 Sem conexão com a API','err');
+      return;
+    }
+    var api=d.api||'1.x (reimplante o apps_script.gs)';
+    _apiInfo={api:api, revision:d.revision||0, keys:d.keys||[]};
+    if(box){
+      box.innerHTML='<div class="api-row"><span>Status</span><span>✅ conectado</span></div>'
+        +'<div class="api-row"><span>API</span><span>'+esc(String(api))+'</span></div>'
+        +'<div class="api-row"><span>Revisão</span><span>'+esc(String(d.revision||0))+'</span></div>'
+        +'<div class="api-row"><span>Salvo em</span><span>'+esc(d.savedAt?new Date(d.savedAt).toLocaleString('pt-BR'):'—')+'</span></div>'
+        +'<div class="api-row"><span>Token</span><span>'+(d.authConfigured?'configurado':'padrão (defina SHEETS_SECRET_TOKEN)')+'</span></div>';
+    }
+    updateAboutBox();
+    showToast('📡 API '+api+' respondeu ✓','ok');
+  }, function(err){
+    if(box) box.textContent='❌ Falha de rede: '+err;
+    showToast('📡 Falha de rede ao testar a API','err');
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   PRIVACIDADE (olho) — esconde valores monetários
+   ═══════════════════════════════════════════════ */
+function loadPrivacy(){
+  try{ privacyOn = localStorage.getItem('pv4_privacy')==='1'; }catch(e){ privacyOn=false; }
+  applyPrivacy(false, true);
+}
+
+function togglePrivacy(){
+  privacyOn=!privacyOn;
+  try{ localStorage.setItem('pv4_privacy', privacyOn?'1':'0'); }catch(e){}
+  applyPrivacy(true);
+}
+
+function applyPrivacy(showMessage, skipRender){
+  var btn=document.getElementById('privacyBtn');
+  if(btn){
+    btn.setAttribute('aria-pressed', privacyOn?'true':'false');
+    btn.setAttribute('aria-label', privacyOn?'Mostrar valores':'Ocultar valores');
+    btn.title = privacyOn?'Mostrar valores':'Ocultar valores';
+    btn.textContent = privacyOn?'🙈':'👁️';
+    if(btn.classList) btn.classList.toggle('on', privacyOn);
+  }
+  if(document.body && document.body.classList) document.body.classList.toggle('privacy', privacyOn);
+  if(!skipRender){
+    renderBadges();
+    renderFaturas();
+    renderHist();
+    if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')) renderGastosView();
+    if(lastCalc) renderResults(lastCalc);
+  }
+  if(showMessage) showToast(privacyOn?'🙈 Valores ocultos':'👁️ Valores visíveis', 'ok');
+}
+
+/* ═══════════════════════════════════════════════
+   CICLO DE VIDA, MODAIS E ACESSIBILIDADE
+   ═══════════════════════════════════════════════ */
+function closeTopModal(){
+  var imp=document.getElementById('importModalBg');
+  if(imp && imp.classList.contains('on')){ closeImportModal(); return true; }
+  var cat=document.getElementById('catModalBg');
+  if(cat && cat.classList.contains('on')){ closeCatModal(); return true; }
+  var bg=document.getElementById('modalBg');
+  if(bg && bg.classList.contains('on')){ closeModal(); return true; }
+  return false;
+}
+
+function initTabsKeyboard(){
+  var nav=document.querySelector?document.querySelector('.tabs'):null;
+  if(!nav || !nav.addEventListener) return;
+  nav.addEventListener('keydown', function(e){
+    var tabs=['fatura','gastos','calc','hist','cfg'];
+    var currentIndex=tabs.indexOf(_currentTabName);
+    var next=-1;
+    if(e.key==='ArrowRight') next=(currentIndex+1)%tabs.length;
+    else if(e.key==='ArrowLeft') next=(currentIndex-1+tabs.length)%tabs.length;
+    else if(e.key==='Home') next=0;
+    else if(e.key==='End') next=tabs.length-1;
+    if(next<0) return;
+    e.preventDefault();
+    showTab(tabs[next], null, false, next>currentIndex?'next':'prev');
+    var btn=document.getElementById('tab'+tabs[next].charAt(0).toUpperCase()+tabs[next].slice(1));
+    if(btn && btn.focus) btn.focus();
+  });
+}
+
+function initLifecycle(){
+  if(typeof window!=='undefined' && window.addEventListener){
+    window.addEventListener('online', function(){
+      renderSyncChip();
+      if(SYNC.dirty) schedulePush(800);
+      showToast('🌐 Conexão restaurada','ok');
+    });
+    window.addEventListener('offline', function(){
+      renderSyncChip();
+      setSyncStatus('ing','Offline — alterações salvas neste aparelho');
+    });
+    window.addEventListener('keydown', function(e){
+      if(e && e.key==='Escape') closeTopModal();
+    });
+    window.addEventListener('pagehide', function(){
+      if(!SYNC.dirty || !profile.gasUrl) return;
+      try{
+        if(navigator && typeof navigator.sendBeacon==='function'){
+          navigator.sendBeacon(profile.gasUrl, JSON.stringify(buildSyncPayload()));
+        }
+      }catch(e){}
+    });
+  }
+  if(typeof document!=='undefined' && document.addEventListener){
+    document.addEventListener('visibilitychange', function(){
+      if(!document.hidden) renderSyncChip();
+    });
+  }
+  // requestAnimationFrame existe no navegador e não no sandbox dos testes
+  if(typeof setInterval==='function' && typeof requestAnimationFrame==='function'){
+    setInterval(function(){ renderSyncChip(); }, 30000);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   SERVICE WORKER — banner de nova versão
+   ═══════════════════════════════════════════════ */
+var _swReg=null, _waitingWorker=null, _reloadingForUpdate=false;
+
+function showUpdateBanner(worker){
+  _waitingWorker=worker||_waitingWorker;
+  var el=document.getElementById('updateBanner');
+  if(el) el.hidden=false;
+}
+
+function applyUpdate(){
+  var el=document.getElementById('updateBanner');
+  if(el) el.hidden=true;
+  if(_waitingWorker && typeof _waitingWorker.postMessage==='function'){
+    try{ _waitingWorker.postMessage({type:'SKIP_WAITING'}); }catch(e){}
+    _reloadingForUpdate=true;
+    setTimeout(function(){ if(typeof location!=='undefined' && location.reload) location.reload(); }, 450);
+  } else if(typeof location!=='undefined' && location.reload){
+    location.reload();
+  }
+}
+
+function checkForUpdate(){
+  if(_swReg && typeof _swReg.update==='function'){
+    _swReg.update().then(function(){
+      showToast('✨ Procurando atualização…','ok');
+    }).catch(function(){ showToast('Não foi possível verificar agora','err'); });
+  } else {
+    showToast('Service Worker ainda não registrado','err');
   }
 }
 
@@ -1302,19 +2234,33 @@ function importBackup(ev){
 ═══════════════════════════════════════════════ */
 function init(){
   loadLocal();
+  loadSyncMeta();
+  loadPrivacy();
   renderBadges();
-  renderHist();renderFaturas();
+  renderHist();
+  renderFaturas();
   renderGastosView();
-  setSyncStatus('ok','Local');
-  if(profile.gasUrl) syncAll();
+  renderSyncChip();
+  updateAboutBox();
+  updateCashMethodHint();
+  setSyncStatus('ok','Dados locais carregados', true);
+  initTabsKeyboard();
+  initLifecycle();
 
-  // Sincroniza a aba ativa com o hash da URL (ou padrão: fatura)
+  // Mantém a aba ativa em sincronia com o hash da URL (ou padrão: fatura)
   var h=(window.location.hash||'').replace('#','');
   if(h.indexOf('tab=')===0) h=h.slice(4);
   if(h && document.getElementById('tab-'+h)){
     showTab(h, null, true);
   }
   initTabsSwipeCarousel();
+
+  // Primeira sincronização em segundo plano (incremental quando já existe revisão)
+  if(profile.gasUrl){
+    setTimeout(function(){ syncAll({incremental:!!SYNC.savedAt}); }, 500);
+  } else if(SYNC.dirty){
+    setSyncStatus('ing','Alterações pendentes — configure a URL em Perfil');
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -1330,11 +2276,18 @@ function showTab(n, b, fromPopstate, forcedDirection){
 
   document.querySelectorAll('.tc').forEach(function(e){
     e.classList.remove('on', 'slide-next', 'slide-prev');
+    e.setAttribute('aria-hidden', 'true');
   });
-  document.querySelectorAll('.tbtn').forEach(function(e){e.classList.remove('on');});
+  document.querySelectorAll('.tbtn').forEach(function(e){
+    e.classList.remove('on');
+    e.setAttribute('aria-selected', 'false');
+    e.setAttribute('tabindex', '-1');
+  });
+
   var tabEl=document.getElementById('tab-'+n);
   if(!tabEl) return;
   tabEl.classList.add('on');
+  tabEl.setAttribute('aria-hidden', 'false');
   if(dir === 'next') tabEl.classList.add('slide-next');
   else if(dir === 'prev') tabEl.classList.add('slide-prev');
 
@@ -1344,7 +2297,11 @@ function showTab(n, b, fromPopstate, forcedDirection){
     var btnMap={fatura:'tabFatura',gastos:'tabGastos',calc:'tabCalc',hist:'tabHist',cfg:'tabCfg'};
     b=document.getElementById(btnMap[n]);
   }
-  if(b) b.classList.add('on');
+  if(b){
+    b.classList.add('on');
+    b.setAttribute('aria-selected', 'true');
+    b.setAttribute('tabindex', '0');
+  }
   if(n === 'gastos') renderGastosView();
 
   if(!fromPopstate && window.history && window.history.pushState){
@@ -1352,6 +2309,9 @@ function showTab(n, b, fromPopstate, forcedDirection){
     if(currentHash!=='tab='+n && currentHash!==n){
       window.history.pushState({tab:n},'','#tab='+n);
     }
+  }
+  if(typeof window.scrollTo==='function'){
+    try{ window.scrollTo(0,0); }catch(scrollErr){}
   }
 }
 
@@ -1522,7 +2482,9 @@ function saveLocal(){
   try{localStorage.setItem('pv4_custom_categories', JSON.stringify(userCategories));}catch(e){}
   try{localStorage.setItem('pv4_cat_rules',         JSON.stringify(userCatRules));}catch(e){}
   try{localStorage.setItem('pv4_item_categories',   JSON.stringify(itemCatMap));}catch(e){}
+  markDirty();
 }
+
 var _profilePushTimer=null;
 function saveProfile(){
   profile.meta    =parseNum(document.getElementById('cMeta').value)||3000;
@@ -1533,6 +2495,7 @@ function saveProfile(){
   profile.gasUrl  =(document.getElementById('cGasUrl').value||'').trim();
   profile.gasToken=(document.getElementById('cGasToken').value||'').trim();
   try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
+  markDirty();
   renderFaturas();
   renderBadges();
   // Debounce do backup remoto para não disparar a cada tecla digitada
@@ -1722,23 +2685,36 @@ function togBudget(b){useBudget=!useBudget;useBudget?b.classList.add('on'):b.cla
 /* ═══════════════════════════════════════════════
    FORMAT
 ═══════════════════════════════════════════════ */
+var _rawMoney=false;
 function fmtBRL(v){
+  if(privacyOn && !_rawMoney) return 'R$\u00a0••••';
   var n=v||0;
   var sign=n<0?'-':'';
   return sign+'R$\u00a0'+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
+/* Formata "de verdade" mesmo em modo privacidade (para textos que são persistidos) */
+function fmtBRLraw(v){
+  var prev=_rawMoney; _rawMoney=true;
+  try{ return fmtBRL(v); } finally { _rawMoney=prev; }
+}
 /* Versão sempre positiva (para quando o sinal já é tratado por texto/cor, ex.: "Ultrapassa: ...") */
-function fmtBRLabs(v){return 'R$\u00a0'+Math.abs(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtBRLabs(v){
+  if(privacyOn && !_rawMoney) return 'R$\u00a0••••';
+  return 'R$\u00a0'+Math.abs(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
 function fmtPct(v){return (v||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function overKey(desc,mIdx){return desc+'__'+mIdx;}
 
 /* Toast de feedback rápido (não bloqueante) */
-function showToast(msg,ms){
+function showToast(msg,ms,variant){
+  // Aceita showToast(msg, 'ok') e showToast(msg, 3000, 'ok')
+  if(typeof ms==='string'){ variant=ms; ms=2200; }
   var wrap=document.getElementById('toastWrap');
   if(!wrap){ return; }
   var t=document.createElement('div');
-  t.className='toast';
+  t.className='toast'+(variant?' '+variant:'');
   t.textContent=msg;
   wrap.appendChild(t);
   setTimeout(function(){
@@ -1875,8 +2851,8 @@ function getFinishingItems(mIdx){
    RENDER FATURAS
 ═══════════════════════════════════════════════ */
 function setInvoiceStatus(mIdx, newStatus){
-  // Se clicar no status que já está ativo, volta para 'aberta' (toggle)
-  if(monthStatus[mIdx] === newStatus){
+  // 'aberta' limpa o status; clicar no status já ativo também volta para aberta
+  if(newStatus==='aberta' || monthStatus[mIdx]===newStatus){
     delete monthStatus[mIdx];
   } else {
     monthStatus[mIdx] = newStatus;
@@ -1884,6 +2860,12 @@ function setInvoiceStatus(mIdx, newStatus){
   saveLocal();
   pushToSheets();
   renderFaturas();
+  showToast(
+    newStatus==='paga' ? '✓ Fatura marcada como paga'
+      : newStatus==='fechada' ? '🔒 Fatura fechada'
+      : '🟢 Fatura em aberto',
+    'ok'
+  );
 }
 
 function toggleMonthCollapse(mIdx){
@@ -1909,159 +2891,288 @@ function getFirstOpenMonth(){
   return floor;
 }
 
+/* ═══════════════════════════════════════════════
+   FATURAS — resumo (hero) + lista de meses v4
+   ═══════════════════════════════════════════════ */
+
+function monthRelativeLabel(mIdx){
+  var cur=getCurrentMonthIndex();
+  var d=mIdx-cur;
+  if(d===0) return 'Este mês';
+  if(d===1) return 'Mês que vem';
+  if(d>1) return 'Em '+d+' meses';
+  if(d===-1) return 'Mês passado';
+  return Math.abs(d)+' meses atrás';
+}
+
+/* Resumo do topo: fatura atual, próxima, comprometido e alívio de parcelas */
+function getFaturasSummary(){
+  var cur=getFirstOpenMonth();
+  var maxShow=getMaxActiveMonth();
+  var currentTotal=getMonthTotal(cur);
+
+  var nextIdx=null;
+  for(var m=cur+1; m<=maxShow; m++){
+    if(!isMonthClosed(m)){ nextIdx=m; break; }
+  }
+
+  var committed=0, months=0;
+  for(var k=cur; k<=maxShow && k<cur+6; k++){
+    if(!isMonthClosed(k)){ committed+=getMonthTotal(k); months++; }
+  }
+
+  var fin=getFinishingItems(cur);
+  var meta=Number(profile.meta)||0;
+  var openCount=0;
+  for(var o=cur; o<=maxShow; o++){
+    if(!isMonthClosed(o) && getMonthTotal(o)>0) openCount++;
+  }
+
+  return {
+    currentIdx:cur,
+    currentName:MNS[cur]||('Mês '+(cur+1)),
+    currentTotal:Math.round(currentTotal*100)/100,
+    nextIdx:nextIdx,
+    nextName:nextIdx!=null?(MNS[nextIdx]||('Mês '+(nextIdx+1))):'',
+    nextTotal:nextIdx!=null?Math.round(getMonthTotal(nextIdx)*100)/100:0,
+    committed:Math.round(committed*100)/100,
+    committedMonths:months,
+    relief:Math.round((fin.totalVal||0)*100)/100,
+    reliefCount:fin.count||0,
+    meta:meta,
+    available:Math.round((meta-currentTotal)*100)/100,
+    pct:meta>0?Math.round(currentTotal/meta*1000)/10:0,
+    openCount:openCount
+  };
+}
+
+function heroStatTile(label, value, sub){
+  return '<div class="hero-stat">'
+    +'<div class="hero-stat-lbl">'+esc(label)+'</div>'
+    +'<div class="hero-stat-val">'+value+'</div>'
+    +'<div class="hero-stat-sub">'+esc(sub)+'</div>'
+    +'</div>';
+}
+
+function renderHero(){
+  var s=getFaturasSummary();
+
+  var labelEl=document.getElementById('heroMonthLabel');
+  if(labelEl) labelEl.textContent='Fatura de '+s.currentName;
+
+  var totalEl=document.getElementById('heroTotal');
+  if(totalEl) totalEl.textContent=fmtBRL(s.currentTotal);
+
+  var subEl=document.getElementById('heroSub');
+  if(subEl){
+    subEl.textContent = s.available>=0
+      ? fmtBRL(s.available)+' disponíveis na meta de '+fmtBRL(s.meta)
+      : fmtBRL(Math.abs(s.available))+' acima da meta de '+fmtBRL(s.meta);
+  }
+
+  var gauge=document.getElementById('heroGauge');
+  if(gauge){
+    var pct=Math.max(0, Math.min(100, s.pct));
+    var color = s.available<0 ? 'var(--red)' : (pct>80 ? 'var(--yellow)' : 'var(--green)');
+    var C=2*Math.PI*34;
+    var dash=(pct/100)*C;
+    gauge.setAttribute('aria-label','Uso da meta: '+fmtPct(s.pct)+' da fatura de '+s.currentName);
+    gauge.innerHTML='<svg viewBox="0 0 84 84" aria-hidden="true">'
+      +'<circle cx="42" cy="42" r="34" fill="none" stroke="rgba(148,163,184,.18)" stroke-width="8"/>'
+      +'<circle cx="42" cy="42" r="34" fill="none" stroke="'+color+'" stroke-width="8" stroke-linecap="round" '
+      +'stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C-dash).toFixed(1)+'"/>'
+      +'</svg>'
+      +'<div class="hero-gauge-center">'
+      +'<span class="hero-gauge-pct">'+fmtPct(s.pct)+'</span>'
+      +'<span class="hero-gauge-lbl">da meta</span>'
+      +'</div>';
+  }
+
+  var stats=document.getElementById('heroStats');
+  if(stats){
+    stats.innerHTML=
+      heroStatTile('Próxima fatura', s.nextIdx!=null?fmtBRL(s.nextTotal):fmtBRL(0), s.nextIdx!=null?s.nextName:'nenhuma em aberto')
+      +heroStatTile('Comprometido', fmtBRL(s.committed), s.committedMonths+' meses à frente')
+      +heroStatTile('Alívio de parcelas', fmtBRL(s.relief), s.reliefCount+' finalizando agora');
+  }
+}
+
+function buildMonthCard(mi, firstOpen){
+  var items=getMonthItems(mi);
+  var total=0;
+  for(var i=0;i<items.length;i++) total+=items[i].val;
+
+  var meta=Number(profile.meta)||0;
+  var avail=meta-total;
+  var pct=meta>0?(total/meta)*100:0;
+  var st=monthStatus[mi]||'aberta';
+  var isClosed=(st==='fechada'||st==='paga');
+  var isCurrent=(mi===firstOpen);
+  var isOver=(avail<0 && !isClosed);
+  var isCollapsed=!!collapsedMonths[mi];
+  var mn=MNS[mi]||('Mês '+(mi+1));
+
+  var cls='mc';
+  if(st==='fechada') cls+=' st-fechada';
+  else if(st==='paga') cls+=' st-paga';
+  else if(isCurrent) cls+=' cur';
+  else if(isOver) cls+=' over';
+  if(mi<getCurrentMonthIndex()) cls+=' past';
+
+  var totalColor = st==='paga' ? 'var(--green)'
+    : st==='fechada' ? 'var(--yellow)'
+    : isOver ? 'var(--red)'
+    : '#fff';
+  var barC = isOver ? 'var(--red)' : (pct>80 ? 'var(--yellow)' : 'var(--green)');
+
+  var chips='';
+  if(isCurrent) chips+='<span class="chip chip-accent">Atual</span>';
+  if(st==='paga') chips+='<span class="chip chip-green">✓ Paga</span>';
+  else if(st==='fechada') chips+='<span class="chip chip-amber">🔒 Fechada</span>';
+  else if(!isCurrent) chips+='<span class="chip">'+esc(monthRelativeLabel(mi))+'</span>';
+
+  var fin=getFinishingItems(mi);
+  if(fin.count>0){
+    chips+='<span class="chip chip-green" title="Parcelas que terminam neste mês: '+esc(fmtBRL(fin.totalVal))+'">🏁 '
+      +fin.count+' finalizando</span>';
+  }
+
+  var html='<article class="'+cls+'" aria-label="Fatura de '+esc(mn)+'">';
+  html+='<div class="mc-head">'
+    +'<button type="button" class="mc-chev" aria-expanded="'+(isCollapsed?'false':'true')+'" aria-controls="mcbody-'+mi+'" '
+    +'aria-label="'+(isCollapsed?'Mostrar':'Recolher')+' lançamentos de '+esc(mn)+'" onclick="toggleMonthCollapse('+mi+')">▼</button>'
+    +'<div class="mc-title">'
+    +'<div class="mc-month">'+esc(mn)+chips+'</div>'
+    +'<div class="mc-sub">'+items.length+' lançamento'+(items.length===1?'':'s')+'</div>'
+    +'</div>'
+    +'<div class="mc-total"><span class="mc-total-lbl">Total</span><strong style="color:'+totalColor+'">'+fmtBRL(total)+'</strong></div>'
+    +'</div>';
+
+  html+='<div class="mc-progress">'
+    +'<div class="mc-progress-meta"><span>'+fmtBRL(total)+' de '+fmtBRL(meta)+'</span><span>'+fmtPct(pct)+' da meta</span></div>'
+    +'<div class="prog"><div class="progf" style="width:'+Math.min(100,Math.max(0,pct))+'%;background:'+barC+'"></div></div>'
+    +'</div>';
+
+  html+='<div class="mc-actions">'
+    +'<div class="seg" role="group" aria-label="Status da fatura de '+esc(mn)+'">'
+    +'<button type="button" class="seg-live" aria-pressed="'+(st==='aberta'?'true':'false')+'" onclick="setInvoiceStatus('+mi+',\'aberta\')">Em aberto</button>'
+    +'<button type="button" class="seg-warn" aria-pressed="'+(st==='fechada'?'true':'false')+'" onclick="setInvoiceStatus('+mi+',\'fechada\')">Fechada</button>'
+    +'<button type="button" class="seg-ok" aria-pressed="'+(st==='paga'?'true':'false')+'" onclick="setInvoiceStatus('+mi+',\'paga\')">Paga</button>'
+    +'</div>'
+    +'<button type="button" class="btn btn-sm btn-ghost" onclick="openEditMonthModal('+mi+')">✏️ Editar</button>'
+    +'</div>';
+
+  html+='<div class="mc-body" id="mcbody-'+mi+'"'+(isCollapsed?' hidden':'')+'>';
+  for(var j=0;j<items.length;j++){
+    var it=items[j];
+    var catColor='#94a3b8';
+    try{
+      var cat=getItemCategory(it.desc, mi);
+      if(cat && cat.color) catColor=cat.color;
+    }catch(e){}
+    var badges='';
+    if(it.isSimul) badges+=' <span class="badge bp" style="font-size:9px;padding:1px 5px">📅</span>';
+    var itFin=isItemFinishing(it, mi);
+    if(itFin.finishing) badges+=' <span class="chip chip-green" style="font-size:9px;padding:1px 6px">🏁 '+esc(itFin.label)+'</span>';
+    if(it.isBase && it.val!==it.origVal) badges+=' <span style="color:var(--yellow);font-size:10px">(editado)</span>';
+
+    html+='<div class="mc-item">'
+      +'<span class="mc-dot" style="background:'+catColor+'"></span>'
+      +'<span class="mc-item-name">'+esc(it.desc)+badges+'</span>'
+      +'<span class="mc-item-val">'+fmtBRL(it.val)+'</span>'
+      +'</div>';
+  }
+
+  html+='<div class="mc-foot">'
+    +'<span>Disponível na meta: <strong style="color:'+(avail>=0?'var(--green)':'var(--red)')+'">'+fmtBRL(avail)+'</strong></span>'
+    +'<span>'+fmtPct(pct)+' da meta</span>'
+    +'</div>';
+
+  html+='</div>'; // mc-body
+  html+='</article>';
+  return html;
+}
+
 function renderFaturas(){
   var el=document.getElementById('faturasList');
-  var html='';
+  var maxShow=getMaxActiveMonth();
+  renderHero();
 
-  // Calcula dinamicamente até a última parcela ativa para cobrir todos os meses necessários
-  var maxShow = getMaxActiveMonth();
-
-  // Atualiza título do card com a quantidade real de meses renderizados
-  var ctitleEl = document.querySelector('#tab-fatura .ctitle');
-  if(ctitleEl){
-    ctitleEl.textContent = '💳 Faturas · ' + maxShow + ' meses';
-  }
-
-  // Separar meses: em aberto (em evidência) vs. encerrados (fechados/pagos OU já
-  // passados pela data atual) — estes vão para o final da lista.
   var curIdx=getCurrentMonthIndex();
-  var openMonths=[];
-  var closedMonths=[];
-  for(var mi=1;mi<=maxShow;mi++){
-    if(isMonthClosed(mi) || mi<curIdx){
-      closedMonths.push(mi);
+  var openMonths=[], closedMonths=[];
+  for(var mi=1; mi<=maxShow; mi++){
+    if(isMonthClosed(mi) || mi<curIdx) closedMonths.push(mi);
+    else openMonths.push(mi);
+  }
+
+  var firstOpen=getFirstOpenMonth();
+  var sub=document.getElementById('faturasSub');
+  if(sub){
+    sub.textContent=openMonths.length+' em aberto · '+closedMonths.length+' encerrada'+(closedMonths.length===1?'':'s')
+      +' · meta de '+fmtBRL(profile.meta);
+  }
+
+  var filterBtns={ todas:'filterTodas', abertas:'filterAbertas', encerradas:'filterEncerradas' };
+  for(var f in filterBtns){
+    if(!filterBtns.hasOwnProperty(f)) continue;
+    var b=document.getElementById(filterBtns[f]);
+    if(b) b.setAttribute('aria-pressed', faturasFilter===f?'true':'false');
+  }
+
+  var html='';
+  var showOpen = faturasFilter!=='encerradas';
+  var showClosed = faturasFilter!=='abertas';
+
+  if(showOpen){
+    if(openMonths.length){
+      for(var i=0;i<openMonths.length;i++) html+=buildMonthCard(openMonths[i], firstOpen);
     } else {
-      openMonths.push(mi);
+      html+='<div class="empty"><div class="eico">🎉</div><div>Nenhuma fatura em aberto nos próximos meses.</div></div>';
     }
   }
 
-  // Primeiro as faturas abertas, depois as encerradas no final
-  var orderedMonths = openMonths.concat(closedMonths);
-  var firstOpen = getFirstOpenMonth();
+  if(showClosed && closedMonths.length){
+    html+='<div class="mc-group-title">Encerradas</div>';
+    for(var c=closedMonths.length-1;c>=0;c--) html+=buildMonthCard(closedMonths[c], firstOpen);
+  }
 
-  for(var idx=0; idx<orderedMonths.length; idx++){
-    var mi = orderedMonths[idx];
-    var items=getMonthItems(mi);
-    var total=0;for(var i=0;i<items.length;i++) total+=items[i].val;
-    var avail=profile.meta-total;
-    var pct=total/Math.max(1,profile.meta)*100;
-    var barC=total>profile.meta?'var(--red)':pct>80?'var(--yellow)':'var(--green)';
-    var st=monthStatus[mi]||'aberta'; // 'aberta' | 'fechada' | 'paga'
-    var isClosed = (st==='fechada'||st==='paga');
-    var isCur=(mi === firstOpen);
-    var isOver=(avail<0 && !isClosed);
-    var isCollapsed=!!collapsedMonths[mi];
-
-    // Classe do card baseada no status: 'st-fechada' (amarelo) ou 'st-paga' (verde) ou status orçamentário
-    var cls='mc';
-    if(st==='fechada') cls += ' st-fechada';
-    else if(st==='paga') cls += ' st-paga';
-    else cls += (isCur?' cur':isOver?' over':' ok');
-
-    var totalColor=st==='paga'?'var(--green)':st==='fechada'?'var(--yellow)':(isOver?'var(--red)':isCur?'var(--purple)':'var(--green)');
-    var mn=MNS[mi]||('Mês '+(mi+1));
-
-    // Status indicativo explícito
-    var statusBadge = '';
-    if(st==='paga'){
-      statusBadge = '<span class="badge bg">✓ Paga</span>';
-    } else if(st==='fechada'){
-      statusBadge = '<span class="badge by">🔒 Fechada</span>';
-    } else {
-      // Fatura em aberto!
-      statusBadge = isCur 
-        ? '<span class="badge" style="background:rgba(56,189,248,0.18);color:var(--accent);border:1px solid rgba(56,189,248,0.4)">🟢 Em aberto · Atual</span>'
-        : '<span class="badge" style="background:rgba(52,211,153,0.14);color:var(--green);border:1px solid rgba(52,211,153,0.35)">🟢 Em aberto</span>';
-    }
-
-    var mFin = getFinishingItems(mi);
-    var finHeaderBadge = mFin.count > 0
-      ? '<span class="badge" style="background:rgba(52,211,153,0.14);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9.5px;padding:2px 7px" title="Parcelas finalizando neste mês: ' + fmtBRL(mFin.totalVal) + ' liberados a partir do próximo ciclo">🏁 ' + mFin.count + ' finalizando (' + fmtBRL(mFin.totalVal) + ')</span>'
-      : '';
-
-    html+='<div class="'+cls+'">'
-      +'<div class="mhead">'
-      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-      +'<button class="btn-arrow'+(isCollapsed?' collapsed':'')+'" onclick="toggleMonthCollapse('+mi+')" title="'+(isCollapsed?'Mostrar lançamentos':'Recolher lançamentos')+'">'
-      +'▼'
-      +'</button>'
-      +'<span class="mname" style="font-size:16px">'+mn+'</span>'
-      +statusBadge
-      +finHeaderBadge
-      +'</div>'
-      +'<div class="mhead-right-group">'
-      +'<div class="mmonth-actions">'
-      +'<div class="mmonth-status-row">'
-      +'<button class="bstatus bstatus-fechada'+(st==='fechada'?' active':'')+'" onclick="setInvoiceStatus('+mi+',\'fechada\')" title="Marcar fatura como fechada">🔒 Fechada</button>'
-      +'<button class="bstatus bstatus-paga'+(st==='paga'?' active':'')+'" onclick="setInvoiceStatus('+mi+',\'paga\')" title="Marcar fatura como paga">✓ Paga</button>'
-      +'</div>'
-      +'<button class="bedit" style="width:100%;text-align:center" onclick="openEditMonthModal('+mi+')">✏️ Editar</button>'
-      +'</div>'
-      +'<div style="text-align:right;min-width:85px">'
-      +'<div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:1px">Fatura atual</div>'
-      +'<span class="mtot" style="color:'+totalColor+'">'+fmtBRL(total)+'</span>'
-      +'</div>'
-      +'</div>'
+  if(!html){
+    html='<div class="empty"><div class="eico">🗂️</div>'
+      +'<div>Nenhuma fatura neste filtro.</div>'
+      +'<div style="margin-top:12px"><button type="button" class="btn btn-sm btn-ghost" onclick="setFaturasFilter(\'todas\')">Ver todas</button></div>'
       +'</div>';
-
-    // Corpo colapsável com os itens
-    html+='<div class="mbody-collapsible'+(isCollapsed?' collapsed':'')+'" style="font-size:12px">';
-    for(var i=0;i<items.length;i++){
-      var it=items[i];
-      var nc=it.tag==='sim'?'color:var(--purple)':it.tag==='extra'?'color:var(--blue)':'color:rgba(255,255,255,.8)';
-      var simTag=it.isSimul?' <span class="badge bp" style="font-size:9px">📅</span>':'';
-      var edited=it.isBase&&it.val!==it.origVal?' <span style="color:var(--yellow);font-size:10px">(editado)</span>':'';
-      var itFin = isItemFinishing(it, mi);
-      var finishBadge = itFin.finishing ? ' <span class="badge" style="background:rgba(52,211,153,0.18);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-size:9px;padding:1px 5px" title="Última parcela!">🏁 ' + esc(itFin.label) + '</span>' : '';
-      html+='<div class="mitem"' + (itFin.finishing ? ' style="border-left:2px solid #34d399;padding-left:6px"' : '') + '>'
-        +'<span style="'+nc+'">'+esc(it.desc)+simTag+finishBadge+edited+'</span>'
-        +'<span>'+fmtBRL(it.val)+'</span>'
-        +'</div>';
-    }
-
-    html+='<div class="mitem" style="margin-top:5px;border-top:1px solid rgba(255,255,255,.08);padding-top:5px">'
-      +'<span style="color:var(--muted)">Disponível na meta</span>'
-      +'<span style="color:'+(avail>=0?'var(--green)':'var(--red)')+'"><strong>'+fmtBRL(avail)+'</strong></span>'
-      +'</div>'
-      +'<div style="margin-top:8px">'
-      +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px">'
-      +'<span>'+fmtBRL(total)+' / '+fmtBRL(profile.meta)+'</span><span>'+fmtPct(pct)+'</span></div>'
-      +'<div class="prog"><div class="progf" style="width:'+Math.min(100,pct)+'%;background:'+barC+'"></div></div>'
-      +'</div>'
-      +'</div>'; // mbody-collapsible
-
-    // Se estiver colapsado, exibe um mini indicador de meta/progresso discreto
-    if(isCollapsed){
-      html+='<div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)">'
-        +'<span>Disponível: <strong style="color:'+(avail>=0?'var(--green)':'var(--red)')+'">'+fmtBRL(avail)+'</strong></span>'
-        +'<span>'+fmtPct(pct)+' da meta</span>'
-        +'</div>';
-    }
-
-    html+='</div>'; // mc
   }
-
-  // Atualiza automaticamente as opções dos selects para remover meses fechados
-  updateMonthSelects();
 
   // Simulações ativas
   var groups={};
-  for(var i=0;i<simItems.length;i++){var si=simItems[i];if(si.group&&!groups[si.group])groups[si.group]=si.simLabel||si.group;}
+  for(var s=0;s<simItems.length;s++){
+    var si=simItems[s];
+    if(si.group && !groups[si.group]) groups[si.group]=si.simLabel||si.group;
+  }
   var gk=Object.keys(groups);
   if(gk.length){
-    html+='<div class="infobox" style="background:var(--purple-d);border:1px solid rgba(192,132,252,.22)">'
+    html+='<div class="infobox" style="background:var(--purple-d);border:1px solid rgba(167,139,250,.25);margin-top:14px">'
       +'<div class="it" style="color:var(--purple)">📅 Simulações ativas nas faturas</div>';
-    for(var i=0;i<gk.length;i++){
-      html+='<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:3px 0">'
-        +'<span style="color:var(--purple)">'+esc(groups[gk[i]])+'</span>'
-        +'<button class="bdel" data-gid="'+esc(gk[i])+'" onclick="clearSimGroup(this.getAttribute(\'data-gid\'))">Remover</button></div>';
+    for(var g=0;g<gk.length;g++){
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;padding:5px 0;flex-wrap:wrap">'
+        +'<span style="color:var(--purple);min-width:0">'+esc(groups[gk[g]])+'</span>'
+        +'<button type="button" class="btn btn-sm btn-ghost" data-gid="'+esc(gk[g])+'" onclick="clearSimGroup(this.getAttribute(\'data-gid\'))">Remover</button>'
+        +'</div>';
     }
     html+='</div>';
   }
-  el.innerHTML=html;
+
+  if(el) el.innerHTML=html;
+
+  updateMonthSelects();
   if(document.getElementById('tab-gastos') && document.getElementById('tab-gastos').classList.contains('on')){
     renderGastosView();
   }
+}
+
+function setFaturasFilter(filter){
+  faturasFilter = (filter==='abertas'||filter==='encerradas') ? filter : 'todas';
+  renderFaturas();
 }
 
 /* ═══════════════════════════════════════════════
@@ -2073,7 +3184,7 @@ function clearSimGroup(gid){
 }
 function addSimulation(name,perInstall,startMonth,numInst){
   var group='sim_'+Date.now();
-  var label=name+' ('+numInst+'x '+fmtBRL(perInstall)+')';
+  var label=name+' ('+numInst+'x '+fmtBRLraw(perInstall)+')';
   for(var i=0;i<numInst;i++){
     var mIdx=startMonth+i;
     simItems.push({d:name+' '+(i+1)+'/'+numInst,v:perInstall,de:mIdx,ate:mIdx,
@@ -2317,22 +3428,38 @@ function updateMonthSelects(){
   var curVal = parseInt(sel.value) || 1;
   var firstOpen = getFirstOpenMonth();
   var opts = '';
-  // Ciclos Nubank baseados no mês
+  // Rótulo curto no select (o detalhe do ciclo aparece no hint abaixo)
   var cycleLabels = [
     '', // 0
-    'Compro agora (10/Set–09/Out) → fatura Out/2026, paga 17/Out',
-    'Compro em Out (10/Out–09/Nov) → fatura Nov/2026, paga 17/Nov',
-    'Compro em Nov (10/Nov–09/Dez) → fatura Dez/2026, paga 17/Dez',
-    'Compro em Dez (10/Dez–09/Jan) → fatura Jan/2027, paga 17/Jan',
-    'Compro em Jan/27 (10/Jan–09/Fev) → fatura Fev/2027, paga 17/Fev',
-    'Compro em Fev/27 (10/Fev–09/Mar) → fatura Mar/2027, paga 17/Mar',
-    'Compro em Mar/27 (10/Mar–09/Abr) → fatura Abr/2027, paga 17/Abr',
-    'Compro em Abr/27 (10/Abr–09/Mai) → fatura Mai/2027, paga 17/Mai',
-    'Compro em Mai/27 (10/Mai–09/Jun) → fatura Jun/2027, paga 17/Jun',
-    'Compro em Jun/27 (10/Jun–09/Jul) → fatura Jul/2027, paga 17/Jul',
-    'Compro em Jul/27 (10/Jul–09/Ago) → fatura Ago/2027, paga 17/Ago',
+    'Compro agora → fatura Out/2026',
+    'Compro em Out → fatura Nov/2026',
+    'Compro em Nov → fatura Dez/2026',
+    'Compro em Dez → fatura Jan/2027',
+    'Compro em Jan/27 → fatura Fev/2027',
+    'Compro em Fev/27 → fatura Mar/2027',
+    'Compro em Mar/27 → fatura Abr/2027',
+    'Compro em Abr/27 → fatura Mai/2027',
+    'Compro em Mai/27 → fatura Jun/2027',
+    'Compro em Jun/27 → fatura Jul/2027',
+    'Compro em Jul/27 → fatura Ago/2027',
     'Compro em Ago/27+ → fatura Set/2027+'
   ];
+  var cycleDetails = [
+    '',
+    'Ciclo 10/Set–09/Out · pagamento em 17/Out/2026',
+    'Ciclo 10/Out–09/Nov · pagamento em 17/Nov/2026',
+    'Ciclo 10/Nov–09/Dez · pagamento em 17/Dez/2026',
+    'Ciclo 10/Dez–09/Jan · pagamento em 17/Jan/2027',
+    'Ciclo 10/Jan–09/Fev · pagamento em 17/Fev/2027',
+    'Ciclo 10/Fev–09/Mar · pagamento em 17/Mar/2027',
+    'Ciclo 10/Mar–09/Abr · pagamento em 17/Abr/2027',
+    'Ciclo 10/Abr–09/Mai · pagamento em 17/Mai/2027',
+    'Ciclo 10/Mai–09/Jun · pagamento em 17/Jun/2027',
+    'Ciclo 10/Jun–09/Jul · pagamento em 17/Jul/2027',
+    'Ciclo 10/Jul–09/Ago · pagamento em 17/Ago/2027',
+    'Ciclo a partir de 10/Ago · pagamento em 17/Set/2027+'
+  ];
+  window._cycleDetails = cycleDetails;
 
   var hasCur = false;
   for(var m=1; m<MNS.length; m++){
@@ -2345,6 +3472,24 @@ function updateMonthSelects(){
   if(!hasCur && sel.options.length > 0){
     sel.selectedIndex = 0; // Se o selecionado estava fechado, muda para a primeira fatura aberta!
   }
+  updateMonthHint(sel.value);
+}
+
+function updateMonthHint(value){
+  var el = document.getElementById('pMonthHint');
+  if(!el) return;
+  var idx = parseInt(value) || 1;
+  var details = window._cycleDetails || [];
+  el.textContent = details[idx] || '';
+}
+
+function updateCashMethodHint(){
+  var sel = document.getElementById('pCashMethod');
+  var el = document.getElementById('pCashMethodHint');
+  if(!sel || !el) return;
+  el.textContent = sel.value === 'pix'
+    ? 'Sai do caixa agora: sem rendimento no mês e sem milhas.'
+    : 'Entra na fatura do ciclo: rende ~1 mês e acumula milhas.';
 }
 
 function openAddModal(){
@@ -3506,14 +4651,34 @@ function triggerPwaInstall(){
   }
 }
 
+/* Service Worker: registro + banner de nova versão */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('./sw.js').then(function(reg){
-      console.log('SW registrado com sucesso:', reg.scope);
+      _swReg = reg;
+      if(reg.waiting) showUpdateBanner(reg.waiting);
+      if(typeof reg.addEventListener==='function'){
+        reg.addEventListener('updatefound', function(){
+          var installing = reg.installing;
+          if(!installing || typeof installing.addEventListener!=='function') return;
+          installing.addEventListener('statechange', function(){
+            if(installing.state==='installed' && navigator.serviceWorker.controller){
+              showUpdateBanner(installing);
+            }
+          });
+        });
+      }
     }).catch(function(err){
       console.log('SW falhou ao registrar:', err);
     });
   });
+  if(navigator.serviceWorker.addEventListener){
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if(_reloadingForUpdate) return;
+      _reloadingForUpdate = true;
+      if(typeof location!=='undefined' && location.reload) location.reload();
+    });
+  }
 }
 
 // Drag & Drop global de arquivos de fatura (CSV/OFX)

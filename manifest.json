@@ -1,14 +1,24 @@
 {
-  "name": "Faturas",
+  "id": "./",
+  "name": "Faturas — Matheus & Scarlet",
   "short_name": "Faturas",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0b1120",
-  "theme_color": "#0b1120",
-  "description": "Controle de faturas e simulador de compras parceladas ou à vista.",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "description": "Controle das faturas dos cartões, gastos por categoria e calculadora entre à vista e parcelado.",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "icon-192.png",
@@ -23,16 +33,48 @@
       "purpose": "any"
     },
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icon-512.png",
+      "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Novo item na fatura",
+      "short_name": "Novo item",
+      "url": "./index.html#tab=fatura",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Gastos por categoria",
+      "short_name": "Gastos",
+      "url": "./index.html#tab=gastos",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Calculadora à vista × parcelado",
+      "short_name": "Calculadora",
+      "url": "./index.html#tab=calc",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

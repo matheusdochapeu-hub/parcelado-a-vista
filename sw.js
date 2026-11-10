@@ -1,4 +1,11 @@
-const CACHE_NAME = 'faturas-pwa-v17';
+/* Faturas · Service Worker v18
+   Estratégias:
+   - Navegação/HTML: Network-First (sempre pega a versão publicada)
+   - Assets estáticos: Stale-While-Revalidate (abre rápido e atualiza em segundo plano)
+   - Google Apps Script: Network-Only (nunca cacheia dados financeiros)
+   A ativação NÃO é automática: o app mostra o banner "Nova versão disponível" e
+   envia SKIP_WAITING quando o usuário toca em Atualizar. */
+const CACHE_NAME = 'faturas-pwa-v18';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -9,92 +16,72 @@ const STATIC_ASSETS = [
   './apple-touch-icon.png'
 ];
 
-// Instalação do Service Worker e pré-cache dos arquivos essenciais
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .catch(() => {})
   );
-  self.skipWaiting();
 });
 
-// Ativação e limpeza de caches antigos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Estratégia de requisições:
-// - Para o Google Apps Script (sincronização): sempre via rede (network only)
-// - Para navegação HTML (index.html): Network-First com fallback para cache offline
-// - Para ícones e assets estáticos: Cache-First com fallback para rede
+// O app pede a troca quando o usuário aceita atualizar
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = request.url;
 
-  // Ignorar chamadas ao Google Apps Script ou extensões para não interferir na sincronização
+  // Chamadas à API (Sheets) e extensões nunca passam pelo cache
   if (url.includes('script.google.com') || url.includes('googleusercontent.com') || url.startsWith('chrome-extension')) {
     return;
   }
+  if (request.method !== 'GET') return;
 
-  // Apenas requisições GET podem ser cacheadas
-  if (request.method !== 'GET') {
-    return;
-  }
+  const isHtml = request.mode === 'navigate'
+    || url.endsWith('index.html')
+    || (request.headers.get('accept') || '').includes('text/html');
 
-  // Navegações de página HTML sempre tentam a rede primeiro para garantir código atualizado
-  if (request.mode === 'navigate' || url.endsWith('index.html') || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
+  if (isHtml) {
     event.respondWith(
-      fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        return caches.match(request).then((cachedResponse) => {
-          return cachedResponse || caches.match('./index.html');
-        });
-      })
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
     );
     return;
   }
 
-  // Para ícones, manifest e assets estáticos: Cache-First com fallback seguro
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-      return fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
-          return caches.match('./index.html').then((fallback) => {
-            return fallback || new Response('', { status: 408, statusText: 'Offline' });
-          });
-        }
-        return new Response('', { status: 404, statusText: 'Asset not found in offline cache' });
-      });
+      const network = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+          }
+          return networkResponse;
+        })
+        .catch(() => cached || new Response('', { status: 504, statusText: 'Offline' }));
+
+      return cached || network;
     })
   );
 });
