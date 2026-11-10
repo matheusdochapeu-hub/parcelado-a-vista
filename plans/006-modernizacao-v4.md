@@ -76,8 +76,31 @@ de resposta:
 
 ## 6. Pendências / próximos passos
 
-1. **Reimplantar o `apps_script.gs`** na planilha (a URL `/exec` não muda).
+1. **Reimplantar o `apps_script.gs`** na planilha (a URL `/exec` não muda). — **feito em 2026-11-10.**
 2. Conferir o token do Casa Maracaju/Matrix continua igual ao `SHEETS_SECRET_TOKEN` — o
    Matrix usa `matrix_faturas_token`.
 3. Eventual: substituir `BASE_ITEMS` por importação real e explorar um proxy CORS para
    uma API realmente bidirecional.
+
+---
+
+## 7. Verificação da conexão com o Matrix (2026-11-10, pós-implantação)
+
+Executada contra a API publicada (`.../exec`), lendo pelo mesmo caminho do conector do
+Matrix (`action=restore` via JSONP) e rodando o `processFaturasData` real de
+`../matrix/js/satellite-connectors.js`.
+
+- **API:** `ok: true`, `api: 2.1`, `revision: 3`, `savedAt: 2026-11-10T19:26:54Z`.
+  10 chaves devolvidas — `extraItems` (70), `overrides` (4), `simItems` (0),
+  `purchHist`, `profile` (`meta: 3000`), `monthStatus`, `collapsedMonths`,
+  `userCategories`, `userCatRules`, `itemCatMap`. Contrato validado item a item.
+- **Parser do Matrix:** 15 meses. Comparação com o motor do app Faturas:
+  **diferença 0,00 em todos os meses**; Nov/2026 = **R$ 4.883,05** com os mesmos
+  **75 itens** nos dois lados; Dez/2026 = **R$ 1.568,05**; comprometido 6m = R$ 9.704,36.
+- **UI publicada com os dados reais** (390 px): hero R$ 4.883,05 (162,8% da meta),
+  14 cartões, 75 lançamentos no mês, **0 overflow, 0 texto cortado, 0 exceção**.
+- **⚠️ Autenticação:** `authConfigured: false` — a API está aberta com o token padrão.
+  Para fechar: definir `SHEETS_SECRET_TOKEN` no Apps Script e o mesmo valor em
+  **Faturas → Perfil** e em **Matrix → Backup & Conexões** (campo de token das faturas).
+  Sem o token no Matrix, o satélite para de sincronizar no momento em que a auth for ligada.
+
