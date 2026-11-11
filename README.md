@@ -106,6 +106,12 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 - **📋 Histórico de Simulações:**
   - Reabrir qualquer simulação com um toque para editar na calculadora.
   - **Excluir simulações individualmente** (✕ em cada item) ou **limpar todas** de uma vez.
+  - **Arquivar (v4.2):** ao confirmar “Adicionar às faturas”, a simulação ganha o selo
+    **✅ Aplicada às faturas** (Nx, valor e mês inicial) e é **arquivada automaticamente**
+    (desmarque a opção no modal se quiser mantê-la ativa). O botão **📦** arquiva a qualquer
+    momento; a seção **“Arquivadas”** permite **restaurar**, **ver a fatura** ou
+    **limpar arquivadas**. Arquivar não apaga: o histórico ativo fica limpo sem perder o
+    registro do que já virou compra real.
 
 - **🧮 Calculadora de Inteligência Financeira:**
   - Simulações comparativas: À Vista com Desconto vs. Parcelado Sem Juros.
@@ -158,7 +164,7 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── tests/                  # Suíte Node (97 testes): cálculos, API v2, sync, conexão
+├── tests/                  # Suíte Node (104 testes): cálculos, API v2, sync, conexão
 ├── scripts/                # Geração de ícones PWA
 └── plans/                  # Planos e auditorias técnicas
 ```

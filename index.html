@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.4"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.2.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -957,6 +957,50 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 .ok-text{color:var(--green)!important}
 .err-text{color:var(--red)!important}
 
+/* ── Histórico: arquivamento e vínculo com as faturas ───────── */
+.harch-btn{
+  min-height:40px;min-width:40px;padding:6px 10px;border-radius:10px;
+  background:rgba(148,163,184,.10);border:1px solid var(--border);color:var(--text-secondary);
+  font-size:14px;cursor:pointer;line-height:1;transition:background .16s ease,border-color .16s ease;
+}
+.harch-btn:hover{background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.45);color:#fff}
+.hist-applied{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;
+  margin:6px 0 8px;padding:7px 10px;border-radius:10px;
+  background:rgba(52,211,153,.10);border:1px solid rgba(52,211,153,.32);
+  font-size:11.5px;font-weight:600;color:#a7f3d0;
+}
+.hist-applied-link{
+  background:transparent;border:0;color:#6ee7b7;font-size:11.5px;font-weight:700;
+  cursor:pointer;text-decoration:underline;padding:4px 2px;min-height:32px;
+}
+.hist-applied-link:hover{color:#fff}
+.hist-archived{margin-top:16px;border-top:1px solid var(--border);padding-top:8px}
+.hist-archived>summary{
+  display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;
+  min-height:44px;font-size:12.5px;font-weight:750;color:var(--text-secondary);
+}
+.hist-archived>summary::-webkit-details-marker{display:none}
+.hist-archived>summary::after{content:'▾';margin-left:auto;color:var(--muted);transition:transform .18s ease}
+.hist-archived[open]>summary::after{transform:rotate(180deg)}
+.hist-archived-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.hitem.archived{opacity:.78;background:rgba(15,23,42,.38);border-style:dashed;cursor:default}
+.hitem.archived:hover{transform:none;box-shadow:none;border-color:var(--border)}
+.hist-archived-date{font-size:11px;color:var(--muted)}
+.hrestore-btn{min-height:40px}
+.sim-archive-row{
+  display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;
+  font-size:12.5px;color:var(--text-secondary);line-height:1.35;
+}
+.sim-archive-row input{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
+.toast.has-action{pointer-events:auto;gap:12px;max-width:min(92vw,420px)}
+.toast-action{
+  background:rgba(56,189,248,.18);border:1px solid rgba(56,189,248,.45);color:#bae6fd;
+  border-radius:999px;padding:7px 12px;font-size:12px;font-weight:750;cursor:pointer;
+  white-space:nowrap;flex:0 0 auto;font-family:inherit;min-height:36px;
+}
+.toast-action:hover{background:var(--accent);color:#04121f}
+
 /* ── Estados vazios ─────────────────────────────────────────── */
 .empty{border:1px dashed var(--border);border-radius:var(--r-lg);background:rgba(10,17,32,.45)}
 
@@ -1075,7 +1119,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.1.4" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.2.0" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1412,7 +1456,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.4</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.2.0</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1648,8 +1692,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.1.4';
-var SW_CACHE_NAME='faturas-pwa-v23'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.2.0';
+var SW_CACHE_NAME='faturas-pwa-v24'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -2965,54 +3009,182 @@ function openHistToEdit(idx){
   }
 }
 
+/* ═══════════════════════════════════════════════
+   HISTÓRICO — ativos, arquivados e "aplicado às faturas"
+   ═══════════════════════════════════════════════ */
+
+function histItemHtml(x, i, archived){
+  var bc=x.winner==='vista'?'bg':'bp';
+  var wl=x.winner==='vista'?'✅ À Vista':'✅ '+x.winN+'x';
+  var isEditing=(!archived && editingHistIdx===i);
+  var isSelected=(!archived && !!histSel[i]);
+  var applied=!!x.appliedAt;
+  var appliedHtml='';
+
+  if(applied){
+    var mnA=(x.appliedStart!=null && MNS[x.appliedStart])?MNS[x.appliedStart]:'';
+    appliedHtml='<div class="hist-applied" title="Esta simulação já foi lançada nas faturas">'
+      +'<span>✅ Aplicada às faturas'
+      +(x.appliedN?(' · '+x.appliedN+'x de '+fmtBRL(x.appliedPer)):'')
+      +(mnA?(' · início '+esc(mnA)):'')+'</span>'
+      +(mnA?'<button type="button" class="hist-applied-link" onclick="event.stopPropagation();goToFaturaMonth('+x.appliedStart+')">Ver fatura</button>':'')
+      +'</div>';
+  }
+
+  var archivedDate='';
+  if(archived && x.archivedAt){
+    var d=new Date(x.archivedAt);
+    archivedDate='<span class="hist-archived-date">Arquivada em '+(isNaN(d.getTime())?'—':d.toLocaleDateString('pt-BR'))+'</span>';
+  }
+
+  var actions;
+  if(archived){
+    actions='<button type="button" class="btn btn-sm btn-ghost hrestore-btn" onclick="event.stopPropagation();unarchiveHist('+i+')" title="Voltar para o histórico ativo">↩️ Restaurar</button>'
+      +'<button type="button" class="bdel hdel-btn" onclick="event.stopPropagation();delHist('+i+')" title="Excluir definitivamente" aria-label="Excluir definitivamente">✕</button>';
+  } else {
+    actions='<button type="button" class="harch-btn" onclick="event.stopPropagation();archiveHist('+i+')" title="Arquivar esta simulação (sai da lista ativa, sem apagar)" aria-label="Arquivar simulação">📦</button>'
+      +'<button type="button" class="bdel hdel-btn" onclick="event.stopPropagation();delHist('+i+')" title="Excluir esta simulação" aria-label="Excluir esta simulação">✕</button>';
+  }
+
+  var check = archived ? '' :
+    '<label class="hcheck" onclick="event.stopPropagation()" title="Selecionar para a compra combinada">'
+    +'<input type="checkbox" class="hcheck-input" '+(isSelected?'checked ':'')+'aria-label="Selecionar '+esc(x.name)+' para combinar" onchange="toggleHistSel('+i+',this.checked)"/>'
+    +'</label>';
+
+  return '<div class="hitem'+(archived?' archived':'')+(isEditing?' is-editing':'')+(isSelected?' is-selected':'')+'" data-hidx="'+i+'"'
+    +(archived?'':' onclick="openHistToEdit('+i+')" title="Clique para abrir e editar na calculadora"')+'>'
+    +'<div class="hhead">'
+      +'<div class="hhead-left">'+check
+        +'<div>'
+          +'<div class="hname">'+esc(x.name)
+          +(archived?'':' <span style="font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</span>')
+          +(isEditing?' <span class="badge" style="background:rgba(56,189,248,0.18);color:var(--accent);border:1px solid rgba(56,189,248,0.35);font-size:10px;padding:2px 6px;margin-left:4px">✏️ Em edição</span>':'')
+          +'</div>'
+          +'<div class="hdate">'+esc(x.date||'')+'</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="hhead-right">'
+        +'<span class="badge '+bc+'">'+wl+'</span>'
+        +actions
+      +'</div>'
+    +'</div>'
+    +appliedHtml
+    +'<div class="hmeta">'
+      +'<span><em>Valor:</em> <strong>'+fmtBRL(x.cashPrice)+'</strong></span>'
+      +'<span><em>Economia:</em> <strong style="color:var(--green)">'+fmtBRL(x.savings)+'</strong></span>'
+      +'<span><em>Milhas:</em> <strong style="color:var(--accent)">'+Math.round(x.miles)+'</strong></span>'
+      +(archivedDate?'<span>'+archivedDate+'</span>':'')
+    +'</div>'
+    +'</div>';
+}
+
 function renderHist(){
   var el=document.getElementById('histList');
   var btnClear=document.getElementById('btnClearHist');
   var sub=document.getElementById('histSub');
+
   if(!purchHist.length){
     histSel={};comboN={};
-    el.innerHTML='<div class="empty"><div class="eico">🛒</div><div>Nenhum cálculo ainda</div></div>';
+    if(el) el.innerHTML='<div class="empty"><div class="eico">🛒</div><div>Nenhum cálculo ainda</div></div>';
     if(btnClear) btnClear.style.display='none';
     if(sub) sub.textContent='Salvo no navegador';
     var emptyCombo=document.getElementById('histCombo');
     if(emptyCombo) emptyCombo.innerHTML='';
     return;
   }
-  if(btnClear) btnClear.style.display='';
-  if(sub) sub.innerHTML=purchHist.length+' '+(purchHist.length===1?'simulação salva':'simulações salvas')+' · marque 2+ para combinar';
-  var h='';
+
+  var activeIdx=[], archIdx=[];
   for(var i=0;i<purchHist.length;i++){
-    var x=purchHist[i];var bc=x.winner==='vista'?'bg':'bp';
-    var wl=x.winner==='vista'?'✅ À Vista':'✅ '+x.winN+'x';
-    var isEditing = (editingHistIdx === i);
-    var isSelected = !!histSel[i];
-    h+='<div class="hitem'+(isEditing?' is-editing':'')+(isSelected?' is-selected':'')+'" data-hidx="'+i+'" onclick="openHistToEdit('+i+')" title="Clique para abrir e editar na calculadora">'
-      +'<div class="hhead">'
-      +'<div class="hhead-left">'
-      +'<label class="hcheck" onclick="event.stopPropagation()" title="Selecionar para a compra combinada">'
-      +'<input type="checkbox" class="hcheck-input" '+(isSelected?'checked ':'')+'aria-label="Selecionar '+esc(x.name)+' para combinar" onchange="toggleHistSel('+i+',this.checked)"/>'
-      +'</label>'
-      +'<div>'
-      +'<div class="hname">'+esc(x.name)+' <span style="font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</span>'
-      +(isEditing?' <span class="badge" style="background:rgba(56,189,248,0.18);color:var(--accent);border:1px solid rgba(56,189,248,0.35);font-size:10px;padding:2px 6px;margin-left:4px">✏️ Em edição</span>':'')
-      +'</div>'
-      +'<div class="hdate">'+x.date+'</div>'
-      +'</div>'
-      +'</div>'
-      +'<div class="hhead-right">'
-      +'<span class="badge '+bc+'">'+wl+'</span>'
-      +'<button class="bdel hdel-btn" onclick="event.stopPropagation();delHist('+i+')" title="Excluir esta simulação" aria-label="Excluir esta simulação">✕</button>'
-      +'</div>'
-      +'</div>'
-      +'<div class="hmeta">'
-      +'<span><em>Valor:</em> <strong>'+fmtBRL(x.cashPrice)+'</strong></span>'
-      +'<span><em>Economia:</em> <strong style="color:var(--green)">'+fmtBRL(x.savings)+'</strong></span>'
-      +'<span><em>Milhas:</em> <strong style="color:var(--accent)">'+Math.round(x.miles)+'</strong></span>'
-      +'</div>'
-      +'</div>';
+    if(purchHist[i] && purchHist[i].archived) archIdx.push(i);
+    else activeIdx.push(i);
   }
-  el.innerHTML=h;
+
+  if(btnClear) btnClear.style.display='';
+  if(sub){
+    sub.textContent=activeIdx.length+' ativa'+(activeIdx.length===1?'':'s')
+      +(archIdx.length?(' · '+archIdx.length+' arquivada'+(archIdx.length===1?'':'s')):'')
+      +' · marque 2+ para combinar';
+  }
+
+  var h='';
+  for(var a=0;a<activeIdx.length;a++) h+=histItemHtml(purchHist[activeIdx[a]], activeIdx[a], false);
+
+  if(!activeIdx.length){
+    h+='<div class="empty" style="padding:18px"><div class="eico">📦</div><div>Nenhuma simulação ativa.</div>'
+      +'<div style="margin-top:8px;color:var(--muted);font-size:12px">As que você aplicou ficam em “Arquivadas” e podem ser restauradas.</div></div>';
+  }
+
+  if(archIdx.length){
+    h+='<details class="hist-archived" id="histArchived"'+(window._histArchivedOpen?' open':'')+'>'
+      +'<summary><span>📦 Arquivadas ('+archIdx.length+')</span></summary>'
+      +'<div class="hist-archived-list">';
+    for(var b=0;b<archIdx.length;b++) h+=histItemHtml(purchHist[archIdx[b]], archIdx[b], true);
+    h+='</div>'
+      +'<div style="display:flex;justify-content:flex-end;margin-top:8px">'
+      +'<button type="button" class="btn btn-sm btn-ghost" onclick="clearArchivedHist()">🗑️ Limpar arquivadas</button>'
+      +'</div>'
+      +'</details>';
+  }
+
+  if(el) el.innerHTML=h;
+
+  var det=document.getElementById('histArchived');
+  if(det && det.addEventListener){
+    det.addEventListener('toggle', function(){ window._histArchivedOpen=det.open; });
+  }
   renderHistCombo();
+}
+
+function archiveHist(idx, silent){
+  var x=purchHist[idx];
+  if(!x) return false;
+  x.archived=true;
+  x.archivedAt=new Date().toISOString();
+  delete histSel[idx];
+  delete comboN[idx];
+  if(editingHistIdx===idx) cancelHistEdit(true);
+  saveLocal(); pushToSheets(); renderHist();
+  if(!silent) showToast('📦 Simulação arquivada · restaure em “Arquivadas”','ok');
+  return true;
+}
+
+function archiveHistItem(item){
+  var i=purchHist.indexOf(item);
+  if(i>=0) archiveHist(i);
+}
+
+function unarchiveHist(idx){
+  var x=purchHist[idx];
+  if(!x) return;
+  x.archived=false;
+  delete x.archivedAt;
+  saveLocal(); pushToSheets(); renderHist();
+  showToast('↩️ Simulação restaurada para o histórico','ok');
+}
+
+function clearArchivedHist(){
+  var n=0;
+  for(var i=0;i<purchHist.length;i++) if(purchHist[i] && purchHist[i].archived) n++;
+  if(!n){ showToast('Nenhuma simulação arquivada'); return; }
+  if(!confirm('Excluir definitivamente as '+n+' simulações arquivadas? Esta ação não pode ser desfeita.')) return;
+  purchHist=purchHist.filter(function(x){ return !x.archived; });
+  histSel={};comboN={};comboDest='sim';
+  if(editingHistIdx!==null) cancelHistEdit(true);
+  saveLocal(); pushToSheets(); renderHist();
+  showToast('🗑️ Arquivadas removidas','ok');
+}
+
+/* Marca que a simulação foi lançada nas faturas (mantém o vínculo no histórico) */
+function markHistApplied(idx, meta){
+  var x=purchHist[idx];
+  if(!x) return;
+  meta=meta||{};
+  x.appliedAt=new Date().toISOString();
+  x.appliedN=meta.n||0;
+  x.appliedPer=meta.per||0;
+  x.appliedStart=(meta.start!=null?meta.start:null);
+  x.appliedGroup=meta.group||'';
+  saveLocal(); pushToSheets();
 }
 
 /* ═══════════════════════════════════════════════
@@ -3025,6 +3197,7 @@ function getSelectedHistItems(){
   for(var i=0;i<purchHist.length;i++){
     if(!histSel[i]) continue;
     var it=purchHist[i]||{};
+    if(it.archived) continue; // arquivadas não entram na compra combinada
     arr.push({histIdx:i,name:it.name||'Produto',cashPrice:it.cashPrice,instTotal:it.instTotal,
       winN:it.winN,winner:it.winner,mOff:it.mOff,date:it.date});
   }
@@ -3265,19 +3438,37 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function overKey(desc,mIdx){return desc+'__'+mIdx;}
 
 /* Toast de feedback rápido (não bloqueante) */
-function showToast(msg,ms,variant){
-  // Aceita showToast(msg, 'ok') e showToast(msg, 3000, 'ok')
+function showToast(msg,ms,variant,action){
+  // Aceita showToast(msg, 'ok'), showToast(msg, 3000, 'ok') e showToast(msg, 6000, 'ok', {label,onClick})
   if(typeof ms==='string'){ variant=ms; ms=2200; }
   var wrap=document.getElementById('toastWrap');
   if(!wrap){ return; }
   var t=document.createElement('div');
-  t.className='toast'+(variant?' '+variant:'');
-  t.textContent=msg;
-  wrap.appendChild(t);
-  setTimeout(function(){
+  t.className='toast'+(variant?' '+variant:'')+(action&&action.label?' has-action':'');
+  var span=document.createElement('span');
+  span.textContent=msg;
+  t.appendChild(span);
+
+  function dismiss(){ if(t.parentNode) t.parentNode.removeChild(t); }
+  function close(){
     t.classList.add('out');
-    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 260);
-  }, ms||2200);
+    setTimeout(dismiss, 260);
+  }
+
+  if(action && action.label){
+    var b=document.createElement('button');
+    b.type='button';
+    b.className='toast-action';
+    b.textContent=action.label;
+    b.onclick=function(){
+      try{ if(action.onClick) action.onClick(); }
+      finally{ close(); }
+    };
+    t.appendChild(b);
+  }
+
+  wrap.appendChild(t);
+  setTimeout(close, ms||2200);
 }
 
 /* Mantém os badges do topo em sincronia com os valores do Perfil */
@@ -3780,6 +3971,10 @@ function addToFaturas(){
   }
   body+='</select></div>'
     +'<div class="ff" id="simPreview" style="background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:8px;padding:9px;font-size:11px"></div>'
+    +'<div class="ff"><label class="sim-archive-row" for="simArchive">'
+      +'<input type="checkbox" id="simArchive" checked/>'
+      +'<span>Arquivar esta simulação depois de adicionar <small style="color:var(--muted)">(dá para restaurar em “Arquivadas”)</small></span>'
+    +'</label></div>'
     +'</div>';
   document.getElementById('modalBody').innerHTML=body;
   // Trocamos o botão Salvar pelo de confirmar simulação
@@ -3823,7 +4018,16 @@ function confirmSimAdd(){
   var mStart=parseInt(document.getElementById('simMonth').value)||1;
   if(total<=0||n<1){alert('Preencha valor e número de parcelas.');return;}
   var per=total/n;
-  addSimulation(name,per,mStart,n);
+  var group=addSimulation(name,per,mStart,n);
+
+  // Liga a simulação do histórico ao lançamento feito nas faturas
+  var histIdx=(lastCalc && lastCalc.histIdx!=null)?lastCalc.histIdx:editingHistIdx;
+  if(histIdx==null) histIdx=0;
+  var histItem=purchHist[histIdx]||null;
+  if(histItem) markHistApplied(histIdx,{n:n,per:per,start:mStart,group:group});
+
+  var wantsArchive=!!(document.getElementById('simArchive') && document.getElementById('simArchive').checked);
+
   // Restaurar botão padrão do modal
   document.getElementById('modalSaveBtn').setAttribute('onclick','saveModal()');
   document.getElementById('modalSaveBtn').textContent='💾 Salvar';
@@ -3832,6 +4036,23 @@ function confirmSimAdd(){
   if(btn){btn.disabled=true;btn.style.background='linear-gradient(135deg,#15803d,#166534)';btn.textContent='✅ '+n+'x de '+fmtBRL(per)+' adicionadas às faturas!';}
   var hint=document.getElementById('simHint');
   if(hint) hint.style.display='block';
+
+  if(histItem && wantsArchive){
+    archiveHist(histIdx, true);
+    renderHist();
+    showToast('✅ '+n+'x de '+fmtBRL(per)+' adicionadas · 📦 simulação arquivada', 7000, 'ok', {
+      label:'Desfazer',
+      onClick:function(){ var i=purchHist.indexOf(histItem); if(i>=0) unarchiveHist(i); }
+    });
+  } else {
+    renderHist();
+    if(histItem){
+      showToast('✅ '+n+'x de '+fmtBRL(per)+' adicionadas às faturas', 7000, 'ok', {
+        label:'📦 Arquivar',
+        onClick:function(){ archiveHistItem(histItem); }
+      });
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -4944,6 +5165,7 @@ function calculate(skipHist){
     instTotal:instTotal,ar:ar,mOff:mOff,cMi:cMi,cMiV:cMiV,cNet:cNet,
     opts:opts,best:best,bestNet:bestNet,vistaWins:vistaWins,savings:savings,
     avail:avail,committed:committed};
+  lastCalc.histIdx=(editingHistIdx!==null?editingHistIdx:null);
 
   renderResults(lastCalc);
   if(!skipHist){
@@ -4966,15 +5188,26 @@ function calculate(skipHist){
     };
 
     if(editingHistIdx !== null && editingHistIdx >= 0 && editingHistIdx < purchHist.length){
-      // Preserva data original da simulação se existir
-      if(purchHist[editingHistIdx].date) histItem.date = purchHist[editingHistIdx].date;
+      var prevHist = purchHist[editingHistIdx] || {};
+      if(prevHist.date) histItem.date = prevHist.date;
+      // Editar não pode "desarquivar" nem perder o vínculo com as faturas
+      if(prevHist.archived){ histItem.archived = true; histItem.archivedAt = prevHist.archivedAt; }
+      if(prevHist.appliedAt){
+        histItem.appliedAt = prevHist.appliedAt;
+        histItem.appliedN = prevHist.appliedN;
+        histItem.appliedPer = prevHist.appliedPer;
+        histItem.appliedStart = prevHist.appliedStart;
+        histItem.appliedGroup = prevHist.appliedGroup;
+      }
       purchHist[editingHistIdx] = histItem;
+      lastCalc.histIdx = editingHistIdx;
       saveLocal();pushToSheets();renderHist();
       updateCalcEditUI();
       showToast('💾 Simulação atualizada no histórico!');
     } else {
       editingHistIdx = null;
       addHist(histItem);
+      lastCalc.histIdx = 0;
     }
   }
 }

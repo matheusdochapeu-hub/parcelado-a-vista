@@ -1,11 +1,11 @@
-/* Faturas · Service Worker v23
+/* Faturas · Service Worker v24
    Estratégias:
    - Navegação/HTML: Network-First (sempre pega a versão publicada)
    - Assets estáticos: Stale-While-Revalidate (abre rápido e atualiza em segundo plano)
    - Google Apps Script: Network-Only (nunca cacheia dados financeiros)
    A ativação NÃO é automática: o app mostra o banner "Nova versão disponível" e
    envia SKIP_WAITING quando o usuário toca em Atualizar. */
-const CACHE_NAME = 'faturas-pwa-v23';
+const CACHE_NAME = 'faturas-pwa-v24';
 const STATIC_ASSETS = [
   './',
   './index.html',

@@ -24,7 +24,7 @@ python -m http.server 8000   # abrir http://localhost:8000
 ## Testes
 
 ```powershell
-node --test tests/*.test.js   # 97 testes (a pasta chama "tests", no plural)
+node --test tests/*.test.js   # 104 testes (a pasta chama "tests", no plural)
 ```
 
 - `tests/backend-api.test.js` sobe o `apps_script.gs` em `node:vm` com mocks do Apps Script
@@ -48,7 +48,7 @@ node --test tests/*.test.js   # 97 testes (a pasta chama "tests", no plural)
 | Arquivo | Papel |
 |---|---|
 | `index.html` | SPA (faturas, gastos, calculadora, histórico) + design system v4 |
-| `sw.js` | Service Worker (`faturas-pwa-v23`), fluxo de banner de atualização |
+| `sw.js` | Service Worker (`faturas-pwa-v24`), fluxo de banner de atualização |
 | `apps_script.gs` | API v2 do Sheets (leitura única, escrita em lote, cache, revisão, log) |
 | `manifest.json` | Manifesto PWA com atalhos |
 | `tests/` | Suíte de testes (cálculos, itens, modais, histórico, API, sync) |
@@ -78,15 +78,22 @@ node --test tests/*.test.js   # 97 testes (a pasta chama "tests", no plural)
    funcionando em modo compatível). **A versão atual do script exige token**: sem
    `SHEETS_SECRET_TOKEN` ela recusa tudo (antes abria sem token). Ao reimplantar, configure
    o token nas Propriedades do Script e nos dois apps (Faturas e Matrix).
-8. **Privacidade não pode virar dado.** `showToast` é `(msg, ms|variant, variant)`;
-   `fmtBRL` mascara quando `privacyOn`, então rótulos **persistidos** (ex.: `simLabel`)
-   usam `fmtBRLraw`. Nunca grave string mascarada no Sheets/localStorage.
+8. **Privacidade não pode virar dado.** `showToast` é
+   `(msg, ms|variant, variant, action?)` — o 4º parâmetro aceita `{label,onClick}` para o
+   botão de ação no toast. `fmtBRL` mascara quando `privacyOn`, então rótulos **persistidos**
+   (ex.: `simLabel`) usam `fmtBRLraw`. Nunca grave string mascarada no Sheets/localStorage.
 9. **URL do Apps Script é validada, não confiada.** `normalizeGasUrl`/`isValidGasUrl`
    (regex `https://script.google.com/macros/s/<id>/exec`) barram envio com URL inválida —
    antes um `fetch('Matheus')` resolvia como 404 opaco e o app marcava "salvo" sem gravar.
    A URL se propaga pelo `profile` da planilha; **o `gasToken` nunca é enviado** (fica em
    cada aparelho). `saveProfile` não pode voltar a gravar o token na nuvem.
-10. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
+10. **Simulação aplicada vira arquivada, não excluída.** `purchHist[i].archived` +
+    `archivedAt` guardam o arquivamento; `appliedAt/appliedN/appliedPer/appliedStart/
+    appliedGroup` guardam o vínculo com as faturas. Editar uma simulação **preserva** esses
+    campos (não pode "desarquivar" sem querer). Arquivadas não entram na compra combinada
+    (`getSelectedHistItems` as ignora), mas aparecem em “Arquivadas” com **Restaurar** e
+    **Ver fatura**. O arquivamento viaja no `purchHist` sincronizado — não crie lista paralela.
+11. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
    informativos; alvos de toque ≥ 40 px no celular; conferir 1440, 768, 390 e 360 px sem
    overflow horizontal. Validado com Chrome headless via CDP (`_qa/` fora do repositório).
 
