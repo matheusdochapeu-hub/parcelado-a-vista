@@ -150,6 +150,45 @@ test('url: diagnóstico mostra URL, token, pendências e revisão', () => {
   assert.match(box.innerHTML, /13/);
 });
 
+test('url: URL inválida testa a URL padrão em modo leitura e se recupera sozinha', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = 'Matheus';
+  ctx.pingApi = () => {};
+  let probe = null;
+  ctx.jsonpGet = (url, params, onSuccess) => {
+    probe = { url, action: params.action };
+    onSuccess({ ok: true, api: '2.1', revision: 13 });
+  };
+
+  ctx.probeDefaultUrl();
+
+  assert.equal(probe.url, ctx.DEFAULT_GAS_URL);
+  assert.equal(probe.action, 'ping', 'a recuperação é somente leitura');
+  assert.equal(ctx.profile.gasUrl, ctx.DEFAULT_GAS_URL);
+  assert.equal(ctx.hasValidGasUrl(), true);
+});
+
+test('url: recuperação automática não faz nada quando a URL já é válida', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = VALID;
+  let calls = 0;
+  ctx.jsonpGet = () => { calls += 1; };
+
+  ctx.probeDefaultUrl();
+  assert.equal(calls, 0);
+});
+
+test('url: recuperação automática mantém o banner se o ping falhar (ex.: token exigido)', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = 'Matheus';
+  ctx.jsonpGet = (url, params, onSuccess) => {
+    onSuccess({ ok: false, error: 'Acesso nao autorizado' });
+  };
+
+  ctx.probeDefaultUrl();
+  assert.equal(ctx.profile.gasUrl, 'Matheus', 'não pode adotar URL sem confirmar que responde');
+});
+
 test('token: erro de autorização vira instrução acionável', () => {
   const ctx = loadAppContext();
   ctx.profile.gasUrl = VALID;

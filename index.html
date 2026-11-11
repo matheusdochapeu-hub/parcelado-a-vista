@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.1"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.2"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1075,7 +1075,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.1.1" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.1.2" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1412,7 +1412,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.1</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.2</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1648,8 +1648,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.1.1';
-var SW_CACHE_NAME='faturas-pwa-v20'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.1.2';
+var SW_CACHE_NAME='faturas-pwa-v21'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -1733,6 +1733,18 @@ function applyGasUrl(url){
 }
 
 function useDefaultGasUrl(){ applyGasUrl(DEFAULT_GAS_URL); }
+
+/* Recuperação automática: se a URL local está quebrada, testa a URL padrão em
+   modo somente leitura (ping). Só adota se ela responder — nunca grava nada. */
+function probeDefaultUrl(){
+  if(hasValidGasUrl() || !isValidGasUrl(DEFAULT_GAS_URL)) return;
+  jsonpGet(DEFAULT_GAS_URL, {action:'ping'}, function(d){
+    if(!d || d.ok===false) return;   // exige token ou fora do ar: mantém o banner
+    if(hasValidGasUrl()) return;
+    applyGasUrl(DEFAULT_GAS_URL);
+    showToast('🔌 URL da planilha recuperada automaticamente','ok');
+  }, function(){ /* silencioso */ });
+}
 
 function promptGasUrl(){
   var v=prompt('Cole a URL do Apps Script (termina em /exec):', profile.gasUrl||'');
@@ -2495,6 +2507,7 @@ function init(){
   } else if(profile.gasUrl){
     showUrlBanner();
     setSyncStatus('err','URL do Apps Script inválida — use "Usar URL padrão" ou cole a URL que termina em /exec', true);
+    setTimeout(probeDefaultUrl, 900);
   } else if(SYNC.dirty){
     setSyncStatus('ing','Alterações pendentes — configure a URL em Perfil');
   }
