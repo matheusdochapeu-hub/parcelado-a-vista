@@ -79,7 +79,7 @@ function createBackend(options = {}) {
     })
   };
 
-  const properties = new Map(Object.entries(options.properties || {}));
+  const properties = new Map(Object.entries(options.properties || { SHEETS_SECRET_TOKEN: 'test-token' }));
   const scriptProperties = {
     getProperty: (key) => (properties.has(key) ? properties.get(key) : null),
     setProperty: (key, value) => { properties.set(key, String(value)); }
@@ -146,6 +146,11 @@ function createBackend(options = {}) {
   vm.runInContext(SOURCE, sandbox, { filename: 'apps_script.gs' });
 
   function call(fnName, event) {
+    event = event || {};
+    // A API exige token desde o plano 006; os testes autenticam por padrão.
+    if (options.autoToken !== false) {
+      event.parameter = Object.assign({}, event.parameter, { token: options.token || 'test-token' });
+    }
     lastOutput = null;
     sandbox[fnName](event);
     assert.ok(lastOutput, `${fnName} deveria devolver um ContentService`);
@@ -187,7 +192,7 @@ test('api: GET restore devolve todas as chaves, metadados e ignora a linha _meta
   assert.equal(body.overrides['Café__1'], 12);
   assert.equal(body._meta, undefined, '_meta não deve vazar como chave pública');
   assert.equal(body.partial, false);
-  assert.equal(body.meta.authConfigured, false, 'token padrão conta como não configurado');
+  assert.equal(body.meta.authConfigured, true, 'o teste roda com token configurado');
 });
 
 test('api: escrita em lote usa exatamente um setValues e incrementa a revisão', () => {
@@ -258,7 +263,7 @@ test('api: campo acima do limite de célula é recusado antes de gravar', () => 
 });
 
 test('api: token configurado exige autenticação e compara em tempo constante', () => {
-  const backend = createBackend({ seed: seedBackup(), properties: { SHEETS_SECRET_TOKEN: 'segredo-forte' } });
+  const backend = createBackend({ seed: seedBackup(), properties: { SHEETS_SECRET_TOKEN: 'segredo-forte' }, autoToken: false });
 
   const denied = backend.callJson('doGet', { parameter: { action: 'restore' } });
   assert.equal(denied.ok, false);

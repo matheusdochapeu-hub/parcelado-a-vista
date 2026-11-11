@@ -4,6 +4,22 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
 
 ---
 
+## ✨ Novidades da versão 4.1 (2026-11-10)
+
+- **Comprometido de 12 meses** no resumo do topo: soma o saldo previsto dos próximos
+  12 meses (antes eram 6).
+- **Compra combinada no histórico**: marque 2 ou mais simulações e veja as parcelas
+  somadas mês a mês, o pico da parcela combinada e o impacto de cada fatura na meta.
+  O número de parcelas de cada produto pode ser ajustado na própria prévia.
+- **Inserir o combinado nas faturas**: como **📅 simulação** (previsão removível) ou
+  como **💾 lançamento real/manual** (sincroniza com a planilha) — ou apenas visualizar,
+  sem inserir nada.
+- Correções pendentes dos planos 006–008 aplicadas: token explícito no Apps Script,
+  reclassificação global limpando todas as sobrescritas de mês e inferência do mês da
+  fatura na importação CSV/OFX. Suíte com **75 testes**.
+
+---
+
 ## ✨ Novidades da versão 4.0 (2026-11-10)
 
 Modernização de front-end e back-end alinhada ao que já foi validado no **Matrix**

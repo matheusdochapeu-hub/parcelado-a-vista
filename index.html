@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.0.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -435,13 +435,42 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
   transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,0.3);
 }
 .hitem:active{transform:translateY(0)}
+.hitem.is-selected{border-color:var(--purple);background:rgba(192,132,252,0.08)}
 .hhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.hhead-left{display:flex;align-items:flex-start;gap:8px;min-width:0}
 .hhead-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hcheck{display:flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;margin:-8px -8px -8px -10px;cursor:pointer}
+.hcheck-input{width:20px;height:20px;accent-color:var(--purple);cursor:pointer}
 .hdel-btn{min-height:30px;min-width:30px;padding:4px 8px}
 .hname{font-weight:700;font-size:15px;color:#fff}
 .hdate{font-size:11px;color:var(--muted);margin-top:1px}
 .hmeta{display:flex;gap:8px 16px;font-size:12px;flex-wrap:wrap}
 .hmeta span em{font-style:normal;color:var(--muted)}
+
+/* COMPRA COMBINADA (HISTÓRICO) */
+.combo-hint{background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.28);border-radius:var(--r-md);padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--text-secondary);line-height:1.5}
+.combo-card{background:rgba(15,23,42,0.72);border:1px solid rgba(192,132,252,0.35);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;box-shadow:var(--sh-1)}
+.combo-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.combo-products{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.combo-prod{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-sm);padding:9px 11px}
+.combo-prod-main{flex:1 1 200px;min-width:0}
+.combo-prod-name{font-weight:700;font-size:13px;color:#fff}
+.combo-prod-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.combo-prod-ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.combo-prod-ctrl label{font-size:11px;color:var(--muted)}
+.combo-prod-ctrl select,.combo-insert select{background:#0b1120;border:1px solid var(--border);color:var(--text);border-radius:var(--r-sm);padding:8px 36px 8px 10px;font-size:12px;font-weight:600;min-height:40px;cursor:pointer;outline:none}
+.combo-prod-ctrl select{width:auto;min-width:80px}
+.combo-prod-ctrl select:focus,.combo-insert select:focus{border-color:var(--accent)}
+.combo-prod-per{font-size:12px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
+.combo-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:12px}
+.combo-kpi{background:rgba(15,23,42,0.65);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-sm);padding:9px 11px;display:flex;flex-direction:column;gap:2px}
+.combo-kpi span{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.combo-kpi strong{font-size:15px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.combo-kpi small{font-size:10.5px;color:var(--muted)}
+.combo-insert{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.combo-dest-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.combo-actions{display:flex;gap:8px;flex-wrap:wrap}
+.combo-actions .bcalc,.combo-actions .bcalc-secondary{margin-top:0;flex:1 1 180px}
 .empty{text-align:center;padding:34px 16px;color:var(--muted);line-height:1.6}
 .eico{font-size:34px;margin-bottom:10px;opacity:.85}
 .sep{border:none;border-top:1px solid var(--border);margin:12px 0}
@@ -1034,7 +1063,7 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.0.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.1.0" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1284,12 +1313,13 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
   <div id="tab-hist" class="tc" role="tabpanel" aria-labelledby="tabHist">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:7px">
-        <div><div class="ctitle">📋 Histórico de Cálculos</div><div class="csub" style="margin:0" id="histSub">Salvo no navegador · toque num item para reabrir ou no ✕ para excluir</div></div>
+        <div><div class="ctitle">📋 Histórico de Cálculos</div><div class="csub" style="margin:0" id="histSub">Salvo no navegador · marque 2 ou mais para simular a compra combinada</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="bsm" style="background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid rgba(56,189,248,0.3)" onclick="startNewSim()">➕ Nova Simulação</button>
           <button class="bsm" id="btnClearHist" onclick="clearHist()" style="display:none">🗑️ Limpar todos</button>
         </div>
       </div>
+      <div id="histCombo"></div>
       <div id="histList"></div>
     </div>
   </div>
@@ -1359,7 +1389,7 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.0.0</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.0</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1595,8 +1625,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.0.0';
-var SW_CACHE_NAME='faturas-pwa-v18'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.1.0';
+var SW_CACHE_NAME='faturas-pwa-v19'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -2530,9 +2560,13 @@ function fillProfileInputs(){
    HISTORY
 ═══════════════════════════════════════════════ */
 var editingHistIdx = null;
+var histSel = {};   // índices selecionados no histórico para a compra combinada
+var comboN = {};    // nº de parcelas escolhido por índice do histórico
+var comboDest = 'sim'; // destino do lançamento combinado: 'sim' | 'real'
 
 function addHist(h){
   purchHist.unshift(h);if(purchHist.length>30)purchHist.pop();
+  histSel={};comboN={};comboDest='sim';
   saveLocal();pushToSheets();renderHist();
   showToast('✓ Simulação salva no histórico!');
 }
@@ -2540,6 +2574,7 @@ function clearHist(){
   if(!purchHist.length){ showToast('Histórico já está vazio'); return; }
   if(!confirm('Apagar TODAS as '+purchHist.length+' simulações do histórico? Esta ação não pode ser desfeita.'))return;
   purchHist=[];
+  histSel={};comboN={};comboDest='sim';
   cancelHistEdit(true);
   saveLocal();pushToSheets();renderHist();
   showToast('🗑️ Histórico limpo');
@@ -2551,6 +2586,10 @@ function delHist(idx){
   if(!x) return;
   if(!confirm('Excluir a simulação “'+(x.name||'Produto')+'”?')) return;
   purchHist.splice(idx,1);
+  var nextSel={}, nextN={}, key;
+  for(key in histSel){ if(+key!==idx) nextSel[+key>idx?+key-1:+key]=true; }
+  for(key in comboN){ if(+key!==idx) nextN[+key>idx?+key-1:+key]=comboN[key]; }
+  histSel=nextSel; comboN=nextN;
   if(editingHistIdx === idx){
     cancelHistEdit(true);
   } else if(editingHistIdx !== null && editingHistIdx > idx){
@@ -2641,25 +2680,34 @@ function renderHist(){
   var btnClear=document.getElementById('btnClearHist');
   var sub=document.getElementById('histSub');
   if(!purchHist.length){
+    histSel={};comboN={};
     el.innerHTML='<div class="empty"><div class="eico">🛒</div><div>Nenhum cálculo ainda</div></div>';
     if(btnClear) btnClear.style.display='none';
     if(sub) sub.textContent='Salvo no navegador';
+    var emptyCombo=document.getElementById('histCombo');
+    if(emptyCombo) emptyCombo.innerHTML='';
     return;
   }
   if(btnClear) btnClear.style.display='';
-  if(sub) sub.innerHTML=purchHist.length+' '+(purchHist.length===1?'simulação salva':'simulações salvas')+' · toque num item para reabrir ou no ✕ para excluir';
+  if(sub) sub.innerHTML=purchHist.length+' '+(purchHist.length===1?'simulação salva':'simulações salvas')+' · marque 2+ para combinar';
   var h='';
   for(var i=0;i<purchHist.length;i++){
     var x=purchHist[i];var bc=x.winner==='vista'?'bg':'bp';
     var wl=x.winner==='vista'?'✅ À Vista':'✅ '+x.winN+'x';
     var isEditing = (editingHistIdx === i);
-    h+='<div class="hitem'+(isEditing?' is-editing':'')+'" onclick="openHistToEdit('+i+')" title="Clique para abrir e editar na calculadora">'
+    var isSelected = !!histSel[i];
+    h+='<div class="hitem'+(isEditing?' is-editing':'')+(isSelected?' is-selected':'')+'" data-hidx="'+i+'" onclick="openHistToEdit('+i+')" title="Clique para abrir e editar na calculadora">'
       +'<div class="hhead">'
+      +'<div class="hhead-left">'
+      +'<label class="hcheck" onclick="event.stopPropagation()" title="Selecionar para a compra combinada">'
+      +'<input type="checkbox" class="hcheck-input" '+(isSelected?'checked ':'')+'aria-label="Selecionar '+esc(x.name)+' para combinar" onchange="toggleHistSel('+i+',this.checked)"/>'
+      +'</label>'
       +'<div>'
       +'<div class="hname">'+esc(x.name)+' <span style="font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</span>'
       +(isEditing?' <span class="badge" style="background:rgba(56,189,248,0.18);color:var(--accent);border:1px solid rgba(56,189,248,0.35);font-size:10px;padding:2px 6px;margin-left:4px">✏️ Em edição</span>':'')
       +'</div>'
       +'<div class="hdate">'+x.date+'</div>'
+      +'</div>'
       +'</div>'
       +'<div class="hhead-right">'
       +'<span class="badge '+bc+'">'+wl+'</span>'
@@ -2674,6 +2722,225 @@ function renderHist(){
       +'</div>';
   }
   el.innerHTML=h;
+  renderHistCombo();
+}
+
+/* ═══════════════════════════════════════════════
+   HISTÓRICO — compra combinada (multi-seleção)
+   ═══════════════════════════════════════════════ */
+var COMBO_N_OPTS=[1,2,3,4,5,6,7,8,9,10,11,12,15,18,21,24];
+
+function getSelectedHistItems(){
+  var arr=[];
+  for(var i=0;i<purchHist.length;i++){
+    if(!histSel[i]) continue;
+    var it=purchHist[i]||{};
+    arr.push({histIdx:i,name:it.name||'Produto',cashPrice:it.cashPrice,instTotal:it.instTotal,
+      winN:it.winN,winner:it.winner,mOff:it.mOff,date:it.date});
+  }
+  return arr;
+}
+
+/* Soma as parcelas de várias simulações. nMap = {índice do histórico: nº de parcelas} */
+function buildComboPlan(items, nMap, firstOpen){
+  if(!items||!items.length) return {products:[],monthList:[],months:{},total:0,peak:{m:0,added:0,total:0},affected:0,maxEnd:0};
+  var first = (firstOpen!=null && firstOpen!=='') ? parseInt(firstOpen,10) : getFirstOpenMonth();
+  if(!(first>=1)) first=1;
+  nMap=nMap||{};
+
+  var products=[], months={}, maxEnd=first, total=0;
+  for(var i=0;i<items.length;i++){
+    var it=items[i]||{};
+    var key=(it.histIdx!=null?it.histIdx:i);
+    var rawTotal=(it.instTotal!=null && it.instTotal!=='')?it.instTotal:it.cashPrice;
+    var productTotal=Number(rawTotal)||0;
+    var defaultN=(it.winner==='vista')?1:(parseInt(it.winN,10)||1);
+    var n=(nMap[key]!=null)?parseInt(nMap[key],10):defaultN;
+    if(!(n>=1)) n=defaultN;
+    if(n>60) n=60;
+
+    var start=parseInt(it.mOff,10);
+    if(!(start>=1)) start=first;
+    if(start<first) start=first;
+
+    var per=productTotal/n;
+    var p={histIdx:key,name:it.name||'Produto',date:it.date||'',total:productTotal,
+      n:n,per:per,start:start,end:start+n-1};
+    products.push(p);
+    total+=productTotal;
+    for(var k=0;k<n;k++) months[start+k]=(months[start+k]||0)+per;
+    if(p.end>maxEnd) maxEnd=p.end;
+  }
+
+  var displayStart=products[0].start;
+  for(var i=1;i<products.length;i++) if(products[i].start<displayStart) displayStart=products[i].start;
+
+  var monthList=[], peak={m:displayStart,added:0,total:0}, affected=0;
+  for(var m=displayStart;m<=maxEnd;m++){
+    var added=months[m]||0;
+    var current=getMonthTotal(m);
+    var newTotal=current+added;
+    if(added>0) affected++;
+    if(added>peak.added) peak={m:m,added:added,total:newTotal};
+    monthList.push({m:m,added:added,current:current,total:newTotal,available:profile.meta-newTotal,over:newTotal>profile.meta});
+  }
+
+  return {products:products,monthList:monthList,months:months,total:total,peak:peak,affected:affected,maxEnd:maxEnd};
+}
+
+function toggleHistSel(idx, checked){
+  if(checked) histSel[idx]=true;
+  else { delete histSel[idx]; delete comboN[idx]; }
+  var row=document.querySelector('.hitem[data-hidx="'+idx+'"]');
+  if(row && row.classList) row.classList.toggle('is-selected', !!checked);
+  renderHistCombo();
+}
+
+function clearHistSelection(){
+  histSel={};comboN={};comboDest='sim';
+  renderHist();
+}
+
+function setComboN(idx,val){
+  var n=parseInt(val,10);
+  if(!(n>=1)) n=1;
+  comboN[idx]=n;
+  renderHistCombo();
+}
+
+function comboNOptions(selected){
+  var opts=COMBO_N_OPTS.slice();
+  if(opts.indexOf(selected)===-1) opts.push(selected);
+  opts.sort(function(a,b){return a-b;});
+  return opts;
+}
+
+function renderHistCombo(){
+  var box=document.getElementById('histCombo');
+  if(!box) return;
+  var selected=getSelectedHistItems();
+  if(!selected.length){ box.innerHTML=''; return; }
+
+  if(selected.length===1){
+    box.innerHTML='<div class="combo-hint">☑️ <strong>1 simulação selecionada.</strong> '
+      +'Marque mais uma para ver como ficam as parcelas comprando vários produtos ao mesmo tempo.'
+      +'<button type="button" class="bsm" style="margin-left:8px" onclick="clearHistSelection()">Limpar seleção</button></div>';
+    return;
+  }
+
+  var plan=buildComboPlan(selected,comboN);
+  if(!plan.products.length){ box.innerHTML=''; return; }
+
+  var h='<div class="combo-card">'
+    +'<div class="combo-head">'
+    +'<div><div class="ctitle">🧮 Compra combinada</div>'
+    +'<div class="csub" style="margin:0">'+plan.products.length+' simulações · parcelas somadas mês a mês</div></div>'
+    +'<button type="button" class="bsm" onclick="clearHistSelection()">✕ Limpar</button>'
+    +'</div>';
+
+  h+='<div class="combo-products">';
+  for(var i=0;i<plan.products.length;i++){
+    var p=plan.products[i];
+    var opts=comboNOptions(p.n);
+    var selOpts='';
+    for(var o=0;o<opts.length;o++) selOpts+='<option value="'+opts[o]+'"'+(opts[o]===p.n?' selected':'')+'>'+opts[o]+'x</option>';
+    h+='<div class="combo-prod">'
+      +'<div class="combo-prod-main">'
+        +'<div class="combo-prod-name">'+esc(p.name)+'</div>'
+        +'<div class="combo-prod-meta">'+(p.date?esc(p.date)+' · ':'')+'Total '+fmtBRL(p.total)+' · começa em '+esc(MNS[p.start]||('Mês '+p.start))+'</div>'
+      +'</div>'
+      +'<div class="combo-prod-ctrl">'
+        +'<label for="comboN_'+p.histIdx+'">Parcelas</label>'
+        +'<select id="comboN_'+p.histIdx+'" onchange="setComboN('+p.histIdx+',this.value)">'+selOpts+'</select>'
+        +'<span class="combo-prod-per">'+fmtBRL(p.per)+'/mês</span>'
+      +'</div>'
+    +'</div>';
+  }
+  h+='</div>';
+
+  var peakMonth=MNS[plan.peak.m]||('Mês '+plan.peak.m);
+  h+='<div class="combo-kpis">'
+    +'<div class="combo-kpi"><span>Total das compras</span><strong>'+fmtBRL(plan.total)+'</strong></div>'
+    +'<div class="combo-kpi"><span>Parcela combinada (pico)</span><strong style="color:var(--purple)">'+fmtBRL(plan.peak.added)+'</strong><small>'+esc(peakMonth)+'</small></div>'
+    +'<div class="combo-kpi"><span>Meses com parcelas</span><strong>'+plan.affected+'</strong><small>até '+esc(MNS[plan.maxEnd]||('Mês '+plan.maxEnd))+'</small></div>'
+  +'</div>';
+
+  h+='<div class="sim-grid">';
+  for(var j=0;j<plan.monthList.length;j++){
+    var ml=plan.monthList[j];
+    var affected=ml.added>0;
+    var pct=(ml.total/Math.max(1,profile.meta))*100;
+    var barColor=ml.over?'var(--red)':(pct>80?'var(--yellow)':'var(--green)');
+    h+='<div class="sim-col'+(ml.over?' over':(affected?' cur':' ok'))+'">'
+      +'<div class="sim-mname">'+esc(MNS[ml.m]||('Mês '+ml.m))+'</div>'
+      +'<div class="sim-cur-val">Fatura atual: '+fmtBRL(ml.current)+'</div>'
+      +'<div class="sim-new-val" style="color:'+(ml.over?'var(--red)':'var(--text)')+'">'+fmtBRL(ml.total)+'</div>'
+      +(affected?'<span class="sim-diff" style="background:rgba(192,132,252,.15);color:var(--purple)">+'+fmtBRL(ml.added)+'</span>':'<span class="sim-diff" style="color:var(--muted)">Sem alteração</span>')
+      +'<div class="sim-bar-bg"><div class="sim-bar-fill" style="width:'+Math.min(100,pct)+'%;background:'+barColor+'"></div></div>'
+      +'<div style="font-size:10px;margin-top:4px;color:'+(ml.available>=0?'var(--green)':'var(--red)')+'">'
+      +(ml.available>=0?'Sobra: '+fmtBRL(ml.available):'Ultrapassa: '+fmtBRLabs(ml.available))+'</div>'
+    +'</div>';
+  }
+  h+='</div>';
+
+  h+='<div class="combo-insert">'
+    +'<label class="combo-dest-lbl" for="comboDest">Destino do lançamento</label>'
+    +'<select id="comboDest" onchange="comboDest=this.value">'
+      +'<option value="sim"'+(comboDest!=='real'?' selected':'')+'>📅 Simulação (previsão nas faturas)</option>'
+      +'<option value="real"'+(comboDest==='real'?' selected':'')+'>💾 Fatura real (lançamento manual)</option>'
+    +'</select>'
+    +'<div class="combo-actions">'
+      +'<button type="button" class="bcalc" onclick="insertHistCombo()">📥 Inserir nas faturas</button>'
+      +'<button type="button" class="bcalc-secondary" onclick="clearHistSelection()">✕ Fechar sem inserir</button>'
+    +'</div>'
+    +'<div class="csub" style="margin-top:8px">Simulação entra como 📅 (removível em Faturas); fatura real entra como lançamento manual e sincroniza com a planilha.</div>'
+  +'</div>';
+
+  h+='</div>';
+  box.innerHTML=h;
+}
+
+/* Grava as parcelas combinadas no estado. asReal=true → extraItems (Manual). */
+function addComboToFaturas(products, asReal){
+  var maxEnd=1, group='sim_combo_'+Date.now();
+  for(var i=0;i<products.length;i++) if(products[i].end>maxEnd) maxEnd=products[i].end;
+
+  if(asReal){
+    for(var i=0;i<products.length;i++){
+      var p=products[i];
+      var desc=p.name+(p.n>1?' ('+p.n+'x '+fmtBRLraw(p.per)+')':' (à vista)');
+      extraItems.push({desc:desc,val:Math.round(p.per*100)/100,de:p.start,ate:p.end});
+    }
+  } else {
+    var label='Combinado · '+products.length+' produto'+(products.length===1?'':'s');
+    for(var i=0;i<products.length;i++){
+      var p=products[i];
+      for(var k=0;k<p.n;k++){
+        var m=p.start+k;
+        simItems.push({d:p.name+(p.n>1?' '+(k+1)+'/'+p.n:' (à vista)'),v:p.per,de:m,ate:m,
+          tag:'sim',isSimul:true,group:group,simLabel:label});
+      }
+    }
+  }
+  refreshMnsCache(maxEnd);
+  return {group:group,count:products.length};
+}
+
+function insertHistCombo(){
+  var selected=getSelectedHistItems();
+  if(selected.length<2){ showToast('Selecione pelo menos 2 simulações'); return; }
+  var plan=buildComboPlan(selected,comboN);
+  if(!plan.products.length) return;
+  var dest=document.getElementById('comboDest');
+  var asReal=(dest ? dest.value==='real' : comboDest==='real');
+  if(asReal && !confirm('Inserir '+plan.products.length+' produto(s) como lançamentos reais nas faturas? Eles vão contar como gastos manuais e sincronizar com a planilha.')) return;
+
+  addComboToFaturas(plan.products,asReal);
+  histSel={};comboN={};comboDest='sim';
+  saveLocal();pushToSheets();renderHist();renderFaturas();
+  showToast(asReal
+    ? '✓ '+plan.products.length+' produto(s) inserido(s) na fatura real'
+    : '✓ '+plan.products.length+' produto(s) adicionado(s) como simulação', 3200, 'ok');
 }
 
 /* ═══════════════════════════════════════════════
@@ -2917,7 +3184,7 @@ function getFaturasSummary(){
   }
 
   var committed=0, months=0;
-  for(var k=cur; k<=maxShow && k<cur+6; k++){
+  for(var k=cur; k<cur+12; k++){
     if(!isMonthClosed(k)){ committed+=getMonthTotal(k); months++; }
   }
 
@@ -2992,7 +3259,7 @@ function renderHero(){
   if(stats){
     stats.innerHTML=
       heroStatTile('Próxima fatura', s.nextIdx!=null?fmtBRL(s.nextTotal):fmtBRL(0), s.nextIdx!=null?s.nextName:'nenhuma em aberto')
-      +heroStatTile('Comprometido', fmtBRL(s.committed), s.committedMonths+' meses à frente')
+      +heroStatTile('Comprometido', fmtBRL(s.committed), '12 meses à frente')
       +heroStatTile('Alívio de parcelas', fmtBRL(s.relief), s.reliefCount+' finalizando agora');
   }
 }
@@ -3977,6 +4244,31 @@ function renderImportUploadPrompt(){
   }
 }
 
+function parseTransactionDate(raw){
+  var s=String(raw||'').trim();
+  var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return {y:+m[1],mo:+m[2],d:+m[3]};
+  m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m) return {y:+m[3],mo:+m[2],d:+m[1]};
+  return null;
+}
+
+/* Vota no ciclo da fatura a partir das datas: compras no dia 10+ caem na fatura seguinte. */
+function inferTargetMonthFromItems(items){
+  if(!items||!items.length) return getFirstOpenMonth();
+  var votes={}, best=null, bestCount=0;
+  for(var i=0;i<items.length;i++){
+    var dt=parseTransactionDate(items[i].date);
+    if(!dt || dt.mo<1 || dt.mo>12 || dt.d<1 || dt.d>31) continue;
+    var idx=(dt.y-MNS_ANCHOR_YEAR)*12 + (dt.mo-MNS_ANCHOR_MONTH) + (dt.d>=10?1:0);
+    votes[idx]=(votes[idx]||0)+1;
+    if(votes[idx]>bestCount){bestCount=votes[idx];best=idx;}
+  }
+  if(best===null) return getFirstOpenMonth();
+  if(best<0 || best>getMaxActiveMonth()+6) return getFirstOpenMonth();
+  return best;
+}
+
 function processFaturaFile(content, fileName){
   currentImportFileName = fileName;
   var items = parseFaturaData(content);
@@ -3986,6 +4278,7 @@ function processFaturaFile(content, fileName){
     return;
   }
   currentImportItems = items;
+  currentImportTargetMonth = inferTargetMonthFromItems(items);
   renderImportReview();
 }
 
@@ -4906,7 +5199,10 @@ function reclassifyItem(desc, mIdx, newCatId, applyToAll){
   var sDesc = String(desc).trim();
   if(applyToAll){
     itemCatMap[sDesc] = newCatId;
-    delete itemCatMap[mIdx + '::' + sDesc];
+    var suffix = '::' + sDesc;
+    for(var k in itemCatMap){
+      if(k !== sDesc && k.slice(-suffix.length) === suffix) delete itemCatMap[k];
+    }
   } else {
     itemCatMap[mIdx + '::' + sDesc] = newCatId;
   }

@@ -110,3 +110,38 @@ test('import: detecção de parcelamento inteligente (ex: 1/10, 02/06)', () => {
   const info3 = ctx.extractInstallmentInfo('Supermercado Extra');
   assert.equal(info3.isInstallment, false);
 });
+
+test('import: inferTargetMonthFromItems infere o mês da fatura corretamente a partir das datas das transações', () => {
+  const ctx = loadAppContext();
+
+  // 1. Transações do ciclo de Outubro/2026 (10/Set até 09/Out) -> fatura mIdx = 1
+  const itemsCicloOut = [
+    { date: '2026-09-15', desc: 'Posto Shell', val: 150 },
+    { date: '2026-09-28', desc: 'Restaurante', val: 80 },
+    { date: '2026-10-04', desc: 'Farmácia', val: 45 }
+  ];
+  assert.equal(ctx.inferTargetMonthFromItems(itemsCicloOut), 1, 'Deve inferir índice 1 (Out/2026)');
+
+  // 2. Transações do ciclo de Novembro/2026 (10/Out até 09/Nov) -> fatura mIdx = 2
+  const itemsCicloNov = [
+    { date: '2026-10-15', desc: 'Supermercado', val: 200 },
+    { date: '2026-10-20', desc: 'Loja Roupas', val: 120 },
+    { date: '2026-11-03', desc: 'Padaria', val: 35 }
+  ];
+  assert.equal(ctx.inferTargetMonthFromItems(itemsCicloNov), 2, 'Deve inferir índice 2 (Nov/2026)');
+
+  // 3. Formato DD/MM/YYYY (ciclo de Dezembro/2026: compras após 10/11) -> fatura mIdx = 3
+  const itemsCicloDez = [
+    { date: '15/11/2026', desc: 'Presente', val: 300 },
+    { date: '25/11/2026', desc: 'Jantar', val: 180 }
+  ];
+  assert.equal(ctx.inferTargetMonthFromItems(itemsCicloDez), 3, 'Deve inferir índice 3 (Dez/2026)');
+
+  // 4. Sem datas ou com datas inválidas: fallback seguro para getFirstOpenMonth()
+  const itemsInvalidos = [
+    { date: '', desc: 'Compra sem data', val: 50 },
+    { date: 'data-invalida', desc: 'Compra erro', val: 60 }
+  ];
+  assert.equal(ctx.inferTargetMonthFromItems(itemsInvalidos), ctx.getFirstOpenMonth());
+  assert.equal(ctx.inferTargetMonthFromItems([]), ctx.getFirstOpenMonth());
+});

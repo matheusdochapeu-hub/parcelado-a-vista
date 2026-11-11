@@ -107,10 +107,9 @@ function extractToken(e, payload) {
 }
 
 function isAuthorized(e, payload) {
-  var secret = getSecretToken();
-  // Mantém o uso inicial funcionando enquanto o usuário não define um token.
-  if (!isSecretConfigured()) return true;
-  return safeEqual(extractToken(e, payload), secret);
+  // Sem token configurado a API não fica aberta: o app avisa para configurar.
+  if (!isSecretConfigured()) return false;
+  return safeEqual(extractToken(e, payload), getSecretToken());
 }
 
 function tokenFingerprint(token) {

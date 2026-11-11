@@ -21,6 +21,21 @@ test('summary: getFaturasSummary descreve a fatura atual, a próxima e o comprom
   assert.equal(s.reliefCount, ctx.getFinishingItems(s.currentIdx).count);
 });
 
+test('summary: comprometido soma os próximos 12 meses', () => {
+  const ctx = loadAppContext();
+  const s = ctx.getFaturasSummary();
+  const cur = ctx.getFirstOpenMonth();
+
+  let expected = 0, months = 0;
+  for (let k = cur; k < cur + 12; k++) {
+    if (!ctx.isMonthClosed(k)) { expected += ctx.getMonthTotal(k); months++; }
+  }
+
+  assert.equal(s.committed, Math.round(expected * 100) / 100);
+  assert.equal(s.committedMonths, months);
+  assert.ok(s.committedMonths >= 12, 'os 12 meses do horizonte devem ser considerados');
+});
+
 test('summary: fechar a fatura atual move o resumo para o próximo mês em aberto', () => {
   const ctx = loadAppContext();
   const before = ctx.getFaturasSummary();
