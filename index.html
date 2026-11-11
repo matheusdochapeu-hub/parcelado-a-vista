@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.3.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.4.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1112,6 +1112,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
   .mc,.hero,.btn,.icon-btn,.tbtn{transition:none!important}
 }
 </style>
+<link rel="stylesheet" href="./nexo-theme.css">
 </head>
 <body>
 <a class="skip-link" href="#mainContent">Ir para o conteúdo</a>
@@ -1119,7 +1120,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.3.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.4.0" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1509,7 +1510,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
   </div>
 </div>
 
-<script src="js/faturas-data.js?v=4.3.0"></script>
+<script src="js/faturas-data.js?v=4.4.0"></script>
 <script>
 /* ═══════════════════════════════════════════════
    MESES — índice = mês da FATURA (quando é paga)
@@ -1707,8 +1708,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.3.0';
-var SW_CACHE_NAME='faturas-pwa-v25'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.4.0';
+var SW_CACHE_NAME='faturas-pwa-v26'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
