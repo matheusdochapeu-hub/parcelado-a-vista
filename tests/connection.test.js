@@ -149,3 +149,19 @@ test('url: diagnóstico mostra URL, token, pendências e revisão', () => {
   assert.match(box.innerHTML, /Alterações pendentes/);
   assert.match(box.innerHTML, /13/);
 });
+
+test('token: erro de autorização vira instrução acionável', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = VALID;
+  ctx.profile.gasToken = '';
+  ctx.jsonpGet = (url, params, onSuccess) => {
+    onSuccess({ ok: false, code: 'UNAUTHORIZED', error: 'Acesso nao autorizado. Verifique o token de autenticacao.' });
+  };
+
+  ctx.syncAll();
+
+  assert.match(ctx.SYNC.lastError, /exige token/);
+  assert.match(ctx.SYNC.lastError, /SHEETS_SECRET_TOKEN/);
+  assert.match(ctx.document.getElementById('syncStatus').textContent, /SHEETS_SECRET_TOKEN/);
+  assert.equal(ctx._syncing, false);
+});

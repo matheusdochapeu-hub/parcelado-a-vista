@@ -1779,6 +1779,15 @@ function invalidUrlFeedback(){
   showUrlBanner();
 }
 
+/* Traduz erros da API em uma ação concreta para o usuário */
+function friendlyApiError(error){
+  var msg=String(error||'');
+  if(/autoriz|token/i.test(msg)){
+    return 'A planilha exige token. Em Perfil → Conexão, cole o mesmo valor de SHEETS_SECRET_TOKEN configurado no Apps Script (e no Matrix).';
+  }
+  return msg;
+}
+
 function renderSyncDiag(){
   var box=document.getElementById('syncDiagBox');
   if(!box) return;
@@ -2166,10 +2175,11 @@ function syncAll(opts){
     if(!data){ fail('resposta vazia'); return; }
     if(data.ok===false){
       _syncing=false;
-      SYNC.lastError=data.error||'acesso negado';
+      var apiMsg=friendlyApiError(data.error||'acesso negado');
+      SYNC.lastError=apiMsg;
       persistSyncMeta(); renderSyncChip();
-      setSyncStatus('err',data.error||'Acesso negado');
-      showToast('⚠️ '+(data.error||'Falha na sincronização'), 'err');
+      setSyncStatus('err',apiMsg);
+      showToast('⚠️ '+apiMsg, 'err');
       return;
     }
 
@@ -2227,9 +2237,9 @@ function pingApi(){
   if(profile.gasToken) params.token=profile.gasToken;
   jsonpGet(url, params, function(d){
     if(!d || d.ok===false){
-      var msg=(d&&d.error)||'sem resposta';
+      var msg=friendlyApiError((d&&d.error)||'sem resposta');
       if(box) box.textContent='❌ Falha: '+msg;
-      showToast('📡 Sem conexão com a API','err');
+      showToast('📡 '+msg,'err');
       return;
     }
     var api=d.api||'1.x (reimplante o apps_script.gs)';

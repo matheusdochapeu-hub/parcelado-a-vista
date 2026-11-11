@@ -24,7 +24,7 @@ python -m http.server 8000   # abrir http://localhost:8000
 ## Testes
 
 ```powershell
-node --test tests/*.test.js   # 87 testes (a pasta chama "tests", no plural)
+node --test tests/*.test.js   # 88 testes (a pasta chama "tests", no plural)
 ```
 
 - `tests/backend-api.test.js` sobe o `apps_script.gs` em `node:vm` com mocks do Apps Script
@@ -75,7 +75,9 @@ node --test tests/*.test.js   # 87 testes (a pasta chama "tests", no plural)
 7. **O backend é publicado à mão.** Alterar `apps_script.gs` no repositório **não** altera
    o Apps Script em produção: é preciso colar na planilha e implantar uma nova versão.
    Sem isso, `ping` responde `1.x` e os recursos da v2 ficam inativos (o app continua
-   funcionando em modo compatível).
+   funcionando em modo compatível). **A versão atual do script exige token**: sem
+   `SHEETS_SECRET_TOKEN` ela recusa tudo (antes abria sem token). Ao reimplantar, configure
+   o token nas Propriedades do Script e nos dois apps (Faturas e Matrix).
 8. **Privacidade não pode virar dado.** `showToast` é `(msg, ms|variant, variant)`;
    `fmtBRL` mascara quando `privacyOn`, então rótulos **persistidos** (ex.: `simLabel`)
    usam `fmtBRLraw`. Nunca grave string mascarada no Sheets/localStorage.

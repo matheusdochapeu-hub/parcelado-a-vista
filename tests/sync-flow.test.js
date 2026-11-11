@@ -103,7 +103,9 @@ test('sync: erro da API mantém o estado local e registra a mensagem', () => {
 
   ctx.syncAll();
 
-  assert.equal(ctx.SYNC.lastError, 'Token inválido');
+  // Erros de token são traduzidos em instrução acionável (token obrigatório na API)
+  assert.match(ctx.SYNC.lastError, /exige token/i);
+  assert.match(ctx.SYNC.lastError, /SHEETS_SECRET_TOKEN/);
   assert.equal(ctx._syncing, false);
 });
 
