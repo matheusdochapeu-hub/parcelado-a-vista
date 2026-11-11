@@ -138,4 +138,31 @@ Matrix (`action=restore` via JSONP) e rodando o `processFaturasData` real de
 - Chrome headless, 390 e 1440: recuperação `Matheus` → **Usar URL padrão** → URL válida,
   banner escondido, `ping` disparado, `gasToken` fora do payload; 0 overflow, 0 erro.
 
+---
+
+## 9. Incidente na validação e correção de segurança (v4.1.4 — 2026-11-11)
+
+Durante a verificação do caminho automático de recuperação, um teste de navegador com
+estado semeado acabou **enviando um estado vazio** para a planilha: o app tratava qualquer
+`saveProfile()` como alteração de dados e, na reconexão, um aparelho sem histórico local
+fez push por cima da nuvem.
+
+**Recuperação:** o snapshot completo foi extraído do `localStorage` de um perfil de teste
+anterior (via CDP, sem rodar o app) — 70 itens, 4 overrides, 2 simulações no histórico,
+21 categorias, 14 meses recolhidos — e regravado pela API. Revisão final **16**, contagens
+conferidas e o Matrix voltou a bater (R$ 4.883,05 / 75 itens). Cópia de segurança fora do
+repositório: `../Backups/faturas-restore-2026-11-11.json`.
+
+**Correções**
+1. Trocar URL/token **não** marca mais o dataset como pendente.
+2. `saveProfile` só marca pendência quando um parâmetro de cálculo muda de fato.
+3. `recoverConnection` não faz push quando o aparelho não tem histórico de sincronização
+   (`revision`/`savedAt` zerados): mostra o banner de conflito e deixa o usuário decidir.
+4. Com histórico e sem conflito, envia o local em vez de puxar a nuvem por cima.
+5. Testes cobrindo os quatro cenários (97/97).
+
+**Lição:** nunca rodar teste de escrita contra a planilha real; validar escrita apenas com
+mocks (API em `node:vm`) ou com um snapshot explícito e restaurável.
+
+
 

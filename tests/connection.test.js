@@ -193,6 +193,8 @@ test('recuperação: alterações locais pendentes são enviadas, não sobrescri
   const ctx = loadAppContext();
   ctx.profile.gasUrl = VALID;
   ctx.SYNC.dirty = true;
+  ctx.SYNC.revision = 20; // este aparelho já sincronizou antes
+  ctx.SYNC.savedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   ctx._lastLocalChangeAt = Date.now();
   ctx.extraItems = [{ desc: 'Local', val: 1, de: 1, ate: 1 }];
 
@@ -214,10 +216,66 @@ test('recuperação: alterações locais pendentes são enviadas, não sobrescri
   assert.equal(ctx.SYNC.dirty, true, 'continua pendente até o envio concluir');
 });
 
+test('recuperação: aparelho sem histórico local pede decisão em vez de descartar', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = VALID;
+  ctx.SYNC.dirty = true;
+  ctx.SYNC.revision = 0;
+  ctx.SYNC.savedAt = '';
+  ctx.extraItems = [{ desc: 'Local', val: 1, de: 1, ate: 1 }];
+
+  let pushed = 0;
+  ctx.pushToSheets = () => { pushed += 1; };
+  ctx.jsonpGet = (url, params, onSuccess) => {
+    onSuccess({
+      ok: true,
+      api: '2.1',
+      meta: { revision: 21, savedAt: new Date().toISOString() },
+      extraItems: [{ desc: 'Nuvem', val: 9, de: 1, ate: 1 }]
+    });
+  };
+
+  ctx.recoverConnection();
+
+  assert.equal(pushed, 0, 'não pode sobrescrever a planilha com um estado local sem histórico');
+  assert.equal(ctx.extraItems[0].desc, 'Local');
+  assert.equal(ctx.document.getElementById('syncBanner').hidden, false);
+});
+
+test('url: trocar a URL não marca os dados como pendentes', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = 'Matheus';
+  ctx.SYNC.dirty = false;
+  ctx.pingApi = () => {};
+
+  ctx.applyGasUrl(VALID);
+
+  assert.equal(ctx.profile.gasUrl, VALID);
+  assert.equal(ctx.SYNC.dirty, false, 'configuração local não é alteração de dados');
+});
+
+test('profile: mudar só a URL não marca pendência; mudar a meta marca', () => {
+  const ctx = loadAppContext();
+  ctx.SYNC.dirty = false;
+  ctx.document.getElementById('cGasUrl').value = VALID;
+  ctx.document.getElementById('cGasToken').value = '';
+  ctx.document.getElementById('cMeta').value = String(ctx.profile.meta);
+
+  ctx.saveProfile();
+  assert.equal(ctx.SYNC.dirty, false);
+
+  ctx.document.getElementById('cMeta').value = '3500';
+  ctx.saveProfile();
+  assert.equal(ctx.SYNC.dirty, true);
+  assert.equal(ctx.profile.meta, 3500);
+});
+
 test('recuperação: se a nuvem está mais nova, pede decisão e preserva o local', () => {
   const ctx = loadAppContext();
   ctx.profile.gasUrl = VALID;
   ctx.SYNC.dirty = true;
+  ctx.SYNC.revision = 20;
+  ctx.SYNC.savedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   ctx._lastLocalChangeAt = Date.now() - 60 * 60 * 1000;
   ctx.extraItems = [{ desc: 'Local', val: 1, de: 1, ate: 1 }];
 
