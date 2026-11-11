@@ -5,7 +5,7 @@
    - Google Apps Script: Network-Only (nunca cacheia dados financeiros)
    A ativação NÃO é automática: o app mostra o banner "Nova versão disponível" e
    envia SKIP_WAITING quando o usuário toca em Atualizar. */
-const CACHE_NAME = 'faturas-pwa-v24';
+const CACHE_NAME = 'faturas-pwa-v25';
 const STATIC_ASSETS = [
   './',
   './index.html',

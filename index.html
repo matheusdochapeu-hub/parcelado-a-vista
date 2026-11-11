@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.2.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.3.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1119,7 +1119,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.2.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.3.0" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1509,6 +1509,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
   </div>
 </div>
 
+<script src="js/faturas-data.js?v=4.3.0"></script>
 <script>
 /* ═══════════════════════════════════════════════
    MESES — índice = mês da FATURA (quando é paga)
@@ -1675,6 +1676,20 @@ var BASE_ITEMS=[
   {d:'Petlove Clube 2/12',      v:9.99,   de:5, ate:12, tag:'parc'},
 ];
 
+/* v4.3 — a lista de faturas vem de js/faturas-data.js (gerada a partir deste app
+   por nexo/scripts/drift.mjs). O array acima fica como fallback offline. */
+(function () {
+  try {
+    var d = (typeof window !== 'undefined' && window.NEXO_FATURAS) || null;
+    if (!d || !Array.isArray(d.base) || !d.base.length) return;
+    BASE_ITEMS.length = 0;
+    for (var k = 0; k < d.base.length; k++) {
+      var it = d.base[k];
+      BASE_ITEMS.push({ d: it.d, v: it.v, de: it.de, ate: it.ate, tag: it.tag || 'parc' });
+    }
+  } catch (e) {}
+})();
+
 /* ═══════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════ */
@@ -1692,8 +1707,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.2.0';
-var SW_CACHE_NAME='faturas-pwa-v24'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.3.0';
+var SW_CACHE_NAME='faturas-pwa-v25'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
