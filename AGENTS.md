@@ -24,7 +24,7 @@ python -m http.server 8000   # abrir http://localhost:8000
 ## Testes
 
 ```powershell
-node --test tests/*.test.js   # 75 testes (a pasta chama "tests", no plural)
+node --test tests/*.test.js   # 87 testes (a pasta chama "tests", no plural)
 ```
 
 - `tests/backend-api.test.js` sobe o `apps_script.gs` em `node:vm` com mocks do Apps Script
@@ -32,6 +32,8 @@ node --test tests/*.test.js   # 75 testes (a pasta chama "tests", no plural)
 - `tests/sync-flow.test.js` cobre snapshot remoto, incremental (`since`), conflito
   nuvem × aparelho e diagnóstico por `ping`.
 - `tests/sync-and-summary.test.js` cobre o resumo do topo, privacidade e render dos meses.
+- `tests/connection.test.js` cobre normalização/validação da URL, recuperação por
+  "Usar URL padrão", adoção da URL vinda da planilha e o token fora do payload.
 
 ## Deploy
 
@@ -46,7 +48,7 @@ node --test tests/*.test.js   # 75 testes (a pasta chama "tests", no plural)
 | Arquivo | Papel |
 |---|---|
 | `index.html` | SPA (faturas, gastos, calculadora, histórico) + design system v4 |
-| `sw.js` | Service Worker (`faturas-pwa-v19`), fluxo de banner de atualização |
+| `sw.js` | Service Worker (`faturas-pwa-v20`), fluxo de banner de atualização |
 | `apps_script.gs` | API v2 do Sheets (leitura única, escrita em lote, cache, revisão, log) |
 | `manifest.json` | Manifesto PWA com atalhos |
 | `tests/` | Suíte de testes (cálculos, itens, modais, histórico, API, sync) |
@@ -77,7 +79,12 @@ node --test tests/*.test.js   # 75 testes (a pasta chama "tests", no plural)
 8. **Privacidade não pode virar dado.** `showToast` é `(msg, ms|variant, variant)`;
    `fmtBRL` mascara quando `privacyOn`, então rótulos **persistidos** (ex.: `simLabel`)
    usam `fmtBRLraw`. Nunca grave string mascarada no Sheets/localStorage.
-9. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
+9. **URL do Apps Script é validada, não confiada.** `normalizeGasUrl`/`isValidGasUrl`
+   (regex `https://script.google.com/macros/s/<id>/exec`) barram envio com URL inválida —
+   antes um `fetch('Matheus')` resolvia como 404 opaco e o app marcava "salvo" sem gravar.
+   A URL se propaga pelo `profile` da planilha; **o `gasToken` nunca é enviado** (fica em
+   cada aparelho). `saveProfile` não pode voltar a gravar o token na nuvem.
+10. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
    informativos; alvos de toque ≥ 40 px no celular; conferir 1440, 768, 390 e 360 px sem
    overflow horizontal. Validado com Chrome headless via CDP (`_qa/` fora do repositório).
 

@@ -63,6 +63,18 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 > `apps_script.gs` (Extensões → Apps Script → Deploy → Gerenciar implantações → Nova versão).
 > A URL `/exec` não muda. Use **Perfil → Testar conexão** para conferir `API 2.x` e a revisão.
 
+### 🔄 Sincronização entre computador e celular (v4.0.1)
+
+- A **URL do Apps Script agora viaja junto com o backup**: você configura em um aparelho e os
+  outros adotam a URL válida da planilha ao sincronizar.
+- O **token nunca é enviado para a planilha** — cada aparelho guarda o seu.
+- Se a URL estiver inválida (ex.: um texto qualquer colado no campo), o app **não tenta
+  sincronizar** e mostra um banner com **Usar URL padrão** e **Colar URL**, além de um
+  diagnóstico em *Perfil → Conexão com a planilha*.
+- Ao voltar para o app (trocar de aba, desbloquear o celular), se houver mais de 3 minutos
+  desde a última sincronização, ele busca as mudanças automaticamente. Alterações locais
+  pendentes são reenviadas em segundo plano.
+
 ---
 
 ## 🚀 Principais Funcionalidades
@@ -143,7 +155,7 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── tests/                  # Suíte Node (57 testes): cálculos, API v2, sync, render
+├── tests/                  # Suíte Node (87 testes): cálculos, API v2, sync, conexão
 ├── scripts/                # Geração de ícones PWA
 └── plans/                  # Planos e auditorias técnicas
 ```
@@ -159,8 +171,9 @@ node --test tests/*.test.js
 
 A suíte cobre: matemática financeira (VPL, CDP/Selic, milhas), ciclo e recorrência de
 parcelas, importação CSV/OFX, histórico sem duplicação, carrossel de abas, o contrato da
-**API v2** (leitura única, escrita em lote, validação, token, JSONP, rate limit, log) e o
-**motor de sincronização** (snapshot, incremental, conflito nuvem × aparelho, ping).
+**API v2** (leitura única, escrita em lote, validação, token, JSONP, rate limit, log), o
+**motor de sincronização** (snapshot, incremental, conflito nuvem × aparelho, ping) e a
+**conexão** (validação da URL, recuperação por URL padrão e token fora do backup).
 
 A CI (`.github/workflows/test.yml`) roda a suíte em todo push/PR para `main`.
 

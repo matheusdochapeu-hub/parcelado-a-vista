@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.1"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -945,6 +945,18 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
 .toast.ok{border-color:rgba(52,211,153,.45)}
 .toast.err{border-color:rgba(251,113,133,.45)}
 
+/* ── Estados de validação da URL ────────────────────────────── */
+input[type=url]{
+  width:100%;background:rgba(15,23,42,0.85);border:1.5px solid rgba(255,255,255,0.16);
+  color:#fff;border-radius:var(--r-md);padding:11px 14px;font-size:16px;outline:none;min-height:48px;
+  transition:border-color .18s ease,box-shadow .18s ease;
+}
+input[type=url]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+input.input-ok{border-color:rgba(52,211,153,.55)!important}
+input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3px rgba(251,113,133,.12)}
+.ok-text{color:var(--green)!important}
+.err-text{color:var(--red)!important}
+
 /* ── Estados vazios ─────────────────────────────────────────── */
 .empty{border:1px dashed var(--border);border-radius:var(--r-lg);background:rgba(10,17,32,.45)}
 
@@ -1063,7 +1075,7 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.1.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.1.1" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1335,14 +1347,6 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
         <div><label for="cCambio">Cotação USD/BRL (para cálculo de milhas)</label><input type="text" id="cCambio" value="5.55" inputmode="decimal" oninput="saveProfile()"/></div>
         <div><label for="cMilhas">Milhas por dólar gasto (Nubank Black)</label><input type="text" id="cMilhas" value="2.2" inputmode="decimal" oninput="saveProfile()"/></div>
         <div><label for="cMilhaVal">Valor de cada milha (R$)</label><input type="text" id="cMilhaVal" value="0.03" inputmode="decimal" oninput="saveProfile()"/></div>
-        <div class="ff">
-          <label for="cGasUrl">URL do Google Apps Script (Backup no Google Sheets)</label>
-          <input type="text" id="cGasUrl" placeholder="https://script.google.com/macros/s/…/exec" oninput="saveProfile()"/>
-        </div>
-        <div class="ff">
-          <label for="cGasToken">Token Secreto de Acesso (SHARED_SECRET do Apps Script)</label>
-          <input type="password" id="cGasToken" placeholder="Token configurado no Apps Script" oninput="saveProfile()"/>
-        </div>
       </div>
       <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <button class="btn btn-ghost" onclick="syncAll()">🔄 Sincronizar agora</button>
@@ -1354,15 +1358,34 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
     </div>
 
     <!-- CONEXÃO COM A API v2 -->
-    <div class="card">
+    <div class="card" id="cardConexao">
       <div class="ctitle">🔌 Conexão com a planilha</div>
-      <div class="csub">A API v2 lê o snapshot uma única vez, grava em lote e devolve revisão + data. Use “Testar conexão” depois de reimplantar o <code>apps_script.gs</code>.</div>
+      <div class="csub">Cole a URL do Apps Script (a mesma que o Matrix usa para puxar as faturas). A URL viaja entre seus aparelhos; o token fica só neste.</div>
+
+      <div class="fg" style="margin-top:12px">
+        <div class="ff">
+          <label for="cGasUrl">URL do Google Apps Script (termina em /exec)</label>
+          <input type="text" id="cGasUrl" placeholder="https://script.google.com/macros/s/…/exec"
+                 autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url"
+                 oninput="onGasUrlInput()" onblur="onGasUrlBlur()"/>
+          <div class="csub" id="gasUrlHint" style="margin-top:6px;font-size:11.5px">Implantar → Gerenciar implantações → copie a URL que termina em <code>/exec</code>.</div>
+        </div>
+        <div class="ff">
+          <label for="cGasToken">Token Secreto de Acesso (opcional)</label>
+          <input type="password" id="cGasToken" placeholder="Igual ao SHEETS_SECRET_TOKEN" autocomplete="off" oninput="saveProfile()"/>
+          <div class="csub" style="margin-top:6px;font-size:11.5px">Não é enviado para a planilha: cada aparelho guarda o seu.</div>
+        </div>
+      </div>
+
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <button class="btn btn-primary btn-sm" onclick="pingApi()">📡 Testar conexão</button>
+        <button class="btn btn-ghost btn-sm" onclick="pasteGasUrl()">📋 Colar URL</button>
+        <button class="btn btn-ghost btn-sm" onclick="useDefaultGasUrl()">↩️ Usar URL padrão</button>
         <button class="btn btn-ghost btn-sm" onclick="syncAll({incremental:true})">⏱️ Sync incremental</button>
         <button class="btn btn-ghost btn-sm" onclick="checkForUpdate()">✨ Procurar atualização</button>
       </div>
       <div class="api-box" id="apiStatusBox">Nenhum teste executado nesta sessão.</div>
+      <div class="api-box" id="syncDiagBox" style="display:none"></div>
     </div>
 
     <!-- CARD INSTALAÇÃO DO APP -->
@@ -1389,7 +1412,7 @@ h1,h2,h3,.ctitle,.mc-month,.hero-amount{letter-spacing:-.02em}
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.0</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.1</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1625,8 +1648,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.1.0';
-var SW_CACHE_NAME='faturas-pwa-v19'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.1.1';
+var SW_CACHE_NAME='faturas-pwa-v20'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -1635,6 +1658,144 @@ var _syncing=false;
 var _syncRetries=0;
 var _syncTimer=null;
 var SYNC={lastOkAt:0, revision:0, savedAt:'', dirty:false, lastError:''};
+
+/* ── URL do Apps Script: normalização, validação e recuperação ── */
+var DEFAULT_GAS_URL='https://script.google.com/macros/s/AKfycbzXFXbZQ8TfHYwntMXg5k1lI_1pzBx7rTwVYycNESff8KC3DV95CRq15OrcP6dsC2_F/exec';
+
+function normalizeGasUrl(value){
+  var v=String(value==null?'':value).trim();
+  if(!v) return '';
+  // aceita a URL colada no meio de um texto (ex.: "Implantação: https://…/exec")
+  var m=v.match(/https?:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec/);
+  if(m) return m[0];
+  if(/^script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec/.test(v)) return 'https://'+v;
+  return v;
+}
+
+function isValidGasUrl(value){
+  return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(normalizeGasUrl(value));
+}
+
+function hasValidGasUrl(){ return isValidGasUrl(profile.gasUrl); }
+
+function gasUrlHint(value){
+  var raw=String(value==null?'':value).trim();
+  var input=document.getElementById('cGasUrl');
+  var el=document.getElementById('gasUrlHint');
+  if(input && input.classList){
+    input.classList.remove('input-ok','input-err');
+    if(raw) input.classList.add(isValidGasUrl(raw)?'input-ok':'input-err');
+  }
+  if(!el) return;
+  if(!raw){
+    el.className='csub';
+    el.textContent='Implantar → Gerenciar implantações → copie a URL que termina em /exec.';
+    return;
+  }
+  if(isValidGasUrl(raw)){
+    el.className='csub ok-text';
+    el.textContent='✓ URL válida — script.google.com';
+  } else {
+    el.className='csub err-text';
+    el.textContent='⚠️ Isso não é a URL do Apps Script. Ela começa com https://script.google.com/macros/s/ e termina em /exec.';
+  }
+}
+
+function onGasUrlInput(){
+  gasUrlHint(document.getElementById('cGasUrl').value);
+  saveProfile();
+}
+
+function onGasUrlBlur(){
+  var el=document.getElementById('cGasUrl');
+  if(!el) return;
+  var normalized=normalizeGasUrl(el.value);
+  if(normalized!==el.value) el.value=normalized;
+  saveProfile();
+}
+
+function applyGasUrl(url){
+  var normalized=normalizeGasUrl(url);
+  var input=document.getElementById('cGasUrl');
+  if(input) input.value=normalized;
+  saveProfile();
+  gasUrlHint(normalized);
+  if(isValidGasUrl(normalized)){
+    hideSyncBanner();
+    showToast('🔌 URL da planilha atualizada','ok');
+    pingApi();
+    // Já aproveita para convergir os dados deste aparelho com a planilha
+    if(typeof fetch==='function'){
+      setTimeout(function(){ syncAll({incremental:false}); }, 700);
+    }
+  }
+  return normalized;
+}
+
+function useDefaultGasUrl(){ applyGasUrl(DEFAULT_GAS_URL); }
+
+function promptGasUrl(){
+  var v=prompt('Cole a URL do Apps Script (termina em /exec):', profile.gasUrl||'');
+  if(v) applyGasUrl(normalizeGasUrl(v));
+}
+
+function pasteGasUrl(){
+  if(typeof navigator!=='undefined' && navigator.clipboard && navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(text){
+      var url=normalizeGasUrl(text);
+      if(!url){ showToast('A área de transferência está vazia','err'); return; }
+      if(!isValidGasUrl(url)) showToast('⚠️ O texto colado não parece a URL do Apps Script','err');
+      applyGasUrl(url);
+    }).catch(function(){ promptGasUrl(); });
+  } else {
+    promptGasUrl();
+  }
+}
+
+function goToConnectionCard(){
+  showTab('cfg');
+  var card=document.getElementById('cardConexao');
+  if(card && card.scrollIntoView) card.scrollIntoView({behavior:'smooth',block:'start'});
+  var input=document.getElementById('cGasUrl');
+  if(input && input.focus) input.focus();
+}
+
+function showUrlBanner(){
+  var el=document.getElementById('syncBanner');
+  if(!el) return;
+  el.className='banner banner-err';
+  el.innerHTML='<div>🔌 <b>A URL da planilha está inválida.</b><br>'
+    + 'Cole a URL do Apps Script terminada em <code>/exec</code> ou use a URL padrão do app.</div>'
+    + '<div class="banner-actions">'
+    + '<button type="button" class="btn btn-sm btn-ghost" onclick="goToConnectionCard()">Abrir Perfil</button>'
+    + '<button type="button" class="btn btn-sm btn-primary" onclick="useDefaultGasUrl()">Usar URL padrão</button>'
+    + '</div>';
+  el.hidden=false;
+}
+
+function invalidUrlFeedback(){
+  setSyncStatus('err','URL do Apps Script inválida — cole a URL …/exec em Perfil');
+  renderSyncChip();
+  showUrlBanner();
+}
+
+function renderSyncDiag(){
+  var box=document.getElementById('syncDiagBox');
+  if(!box) return;
+  var urlOk=hasValidGasUrl();
+  var rows=[
+    ['URL do Apps Script', profile.gasUrl ? (urlOk?'✅ válida':'❌ inválida') : '— não configurada'],
+    ['Token', profile.gasToken?'✅ preenchido (só neste aparelho)':'— vazio'],
+    ['Alterações pendentes', SYNC.dirty?'⚠️ sim':'✓ não'],
+    ['Última sincronização', SYNC.lastOkAt?new Date(SYNC.lastOkAt).toLocaleString('pt-BR'):'nunca'],
+    ['Revisão da planilha', SYNC.revision||'—'],
+    ['API', _apiInfo ? ('v'+_apiInfo.api+( _apiInfo.authConfigured?' · token ativo':' · sem token')) : 'não verificada']
+  ];
+  box.style.display='block';
+  box.innerHTML=rows.map(function(r){
+    return '<div class="api-row"><span>'+esc(r[0])+'</span><span>'+esc(String(r[1]))+'</span></div>';
+  }).join('');
+}
 
 /* Utilitário de conversão de decimais (suporte a vírgula em teclados PT-BR - Corrige M4) */
 function parseNum(val){
@@ -1773,6 +1934,7 @@ function renderSyncChip(){
 
   if(_syncing){ label='Sincronizando…'; state='ing'; }
   else if(SYNC.lastError){ label='Erro'; state='err'; }
+  else if(profile.gasUrl && !isValidGasUrl(profile.gasUrl)){ label='URL inválida'; state='err'; }
   else if(profile.gasUrl){
     if(SYNC.dirty){ label='Pendente'; state='ing'; }
     else if(SYNC.lastOkAt){ label=timeAgo(SYNC.lastOkAt); state='ok'; }
@@ -1788,6 +1950,7 @@ function renderSyncChip(){
   }
   var about=document.getElementById('aboutLastSync');
   if(about) about.textContent = SYNC.lastOkAt ? new Date(SYNC.lastOkAt).toLocaleString('pt-BR') : 'nunca';
+  renderSyncDiag();
 }
 
 function updateAboutBox(){
@@ -1797,6 +1960,18 @@ function updateAboutBox(){
   if(c) c.textContent=SW_CACHE_NAME;
   var a=document.getElementById('aboutApi');
   if(a) a.textContent = _apiInfo ? ('API '+_apiInfo.api+' · rev '+(_apiInfo.revision||0)) : 'não verificada';
+}
+
+/* Payload do backup: mesmo contrato da v1 + revisão conhecida para auditoria */
+function profileForSync(){
+  var out={};
+  for(var k in profile){
+    if(!profile.hasOwnProperty(k) || k==='gasToken') continue;
+    out[k]=profile[k];
+  }
+  // Só propaga a URL se ela for válida; o token nunca vai para a planilha
+  out.gasUrl=isValidGasUrl(profile.gasUrl)?normalizeGasUrl(profile.gasUrl):'';
+  return out;
 }
 
 /* Payload do backup: mesmo contrato da v1 + revisão conhecida para auditoria */
@@ -1814,7 +1989,7 @@ function buildSyncPayload(){
     userCategories: userCategories,
     userCatRules: userCatRules,
     itemCatMap: itemCatMap,
-    profile: profile
+    profile: profileForSync()
   };
 }
 
@@ -1833,6 +2008,7 @@ function pushToSheets(delay){
 function flushPush(){
   var url=profile.gasUrl;
   if(!url) return;
+  if(!isValidGasUrl(url)){ invalidUrlFeedback(); return; }
   if(_syncing){ schedulePush(1500); return; }
   if(!SYNC.dirty){ renderSyncChip(); return; }
   if(typeof fetch!=='function'){ setSyncStatus('err','Navegador não suporta requisição POST'); return; }
@@ -1961,6 +2137,7 @@ function resolveSync(side){
 function syncAll(opts){
   opts=opts||{};
   if(!profile.gasUrl){ setSyncStatus('err','Sem URL — configure em Perfil'); renderSyncChip(); return; }
+  if(!isValidGasUrl(profile.gasUrl)){ invalidUrlFeedback(); return; }
   if(_syncing) return;
 
   _syncing=true;
@@ -1976,9 +2153,13 @@ function syncAll(opts){
 
   function fail(err){
     _syncing=false;
-    SYNC.lastError=String(err||'falha de rede');
+    var msg=String(err||'falha de rede');
+    if(msg==='script error' || msg==='timeout'){
+      msg='não foi possível carregar a URL do Apps Script. Confira a implantação (Acesso: Qualquer pessoa) e se a URL termina em /exec.';
+    }
+    SYNC.lastError=msg;
     persistSyncMeta(); renderSyncChip();
-    setSyncStatus('err','Erro: '+SYNC.lastError);
+    setSyncStatus('err','Erro: '+msg);
   }
 
   function handle(data){
@@ -2010,7 +2191,7 @@ function syncAll(opts){
     SYNC.lastError='';
     SYNC.revision=Number(meta.revision)||SYNC.revision;
     SYNC.savedAt=meta.savedAt||SYNC.savedAt;
-    _apiInfo={api:data.api||'1.x', revision:SYNC.revision, keys:meta.keys};
+    _apiInfo={api:data.api||'1.x', revision:SYNC.revision, keys:meta.keys, authConfigured:!!meta.authConfigured};
     persistSyncMeta(); hideSyncBanner(); renderSyncChip(); updateAboutBox();
     setSyncStatus('ok','Sincronizado ✓ '+new Date().toLocaleTimeString('pt-BR'));
     _syncing=false;
@@ -2036,6 +2217,11 @@ function pingApi(){
     showToast('Configure a URL do Apps Script primeiro','err');
     return;
   }
+  if(!isValidGasUrl(url)){
+    if(box) box.textContent='❌ A URL salva é inválida. Cole a URL que termina em /exec.';
+    invalidUrlFeedback();
+    return;
+  }
   if(box) box.textContent='Testando conexão…';
   var params={action:'ping'};
   if(profile.gasToken) params.token=profile.gasToken;
@@ -2047,15 +2233,16 @@ function pingApi(){
       return;
     }
     var api=d.api||'1.x (reimplante o apps_script.gs)';
-    _apiInfo={api:api, revision:d.revision||0, keys:d.keys||[]};
+    _apiInfo={api:api, revision:d.revision||0, keys:d.keys||[], authConfigured:d.authConfigured!==false};
     if(box){
       box.innerHTML='<div class="api-row"><span>Status</span><span>✅ conectado</span></div>'
         +'<div class="api-row"><span>API</span><span>'+esc(String(api))+'</span></div>'
         +'<div class="api-row"><span>Revisão</span><span>'+esc(String(d.revision||0))+'</span></div>'
         +'<div class="api-row"><span>Salvo em</span><span>'+esc(d.savedAt?new Date(d.savedAt).toLocaleString('pt-BR'):'—')+'</span></div>'
-        +'<div class="api-row"><span>Token</span><span>'+(d.authConfigured?'configurado':'padrão (defina SHEETS_SECRET_TOKEN)')+'</span></div>';
+        +'<div class="api-row"><span>Token</span><span>'+(d.authConfigured?'configurado':'não configurado (API aberta)')+'</span></div>';
     }
     updateAboutBox();
+    renderSyncDiag();
     showToast('📡 API '+api+' respondeu ✓','ok');
   }, function(err){
     if(box) box.textContent='❌ Falha de rede: '+err;
@@ -2144,7 +2331,7 @@ function initLifecycle(){
       if(e && e.key==='Escape') closeTopModal();
     });
     window.addEventListener('pagehide', function(){
-      if(!SYNC.dirty || !profile.gasUrl) return;
+      if(!SYNC.dirty || !hasValidGasUrl()) return;
       try{
         if(navigator && typeof navigator.sendBeacon==='function'){
           navigator.sendBeacon(profile.gasUrl, JSON.stringify(buildSyncPayload()));
@@ -2152,11 +2339,18 @@ function initLifecycle(){
       }catch(e){}
     });
   }
+
   if(typeof document!=='undefined' && document.addEventListener){
     document.addEventListener('visibilitychange', function(){
-      if(!document.hidden) renderSyncChip();
+      if(document.hidden) return;
+      renderSyncChip();
+      if(!hasValidGasUrl()) return;
+      if(SYNC.dirty){ pushToSheets(800); return; }
+      var elapsed=Date.now()-(SYNC.lastOkAt||0);
+      if(elapsed>3*60*1000) syncAll({incremental:!!SYNC.savedAt});
     });
   }
+
   // requestAnimationFrame existe no navegador e não no sandbox dos testes
   if(typeof setInterval==='function' && typeof requestAnimationFrame==='function'){
     setInterval(function(){ renderSyncChip(); }, 30000);
@@ -2286,8 +2480,11 @@ function init(){
   initTabsSwipeCarousel();
 
   // Primeira sincronização em segundo plano (incremental quando já existe revisão)
-  if(profile.gasUrl){
+  if(hasValidGasUrl()){
     setTimeout(function(){ syncAll({incremental:!!SYNC.savedAt}); }, 500);
+  } else if(profile.gasUrl){
+    showUrlBanner();
+    setSyncStatus('err','URL do Apps Script inválida — use "Usar URL padrão" ou cole a URL que termina em /exec', true);
   } else if(SYNC.dirty){
     setSyncStatus('ing','Alterações pendentes — configure a URL em Perfil');
   }
@@ -2517,30 +2714,53 @@ function saveLocal(){
 
 var _profilePushTimer=null;
 function saveProfile(){
-  profile.meta    =parseNum(document.getElementById('cMeta').value)||3000;
-  profile.selic   =parseNum(document.getElementById('cSelic').value)||13.75;
-  profile.cambio  =parseNum(document.getElementById('cCambio').value)||5.55;
-  profile.milhas  =parseNum(document.getElementById('cMilhas').value)||2.2;
-  profile.milhaVal=parseNum(document.getElementById('cMilhaVal').value)||0.03;
-  profile.gasUrl  =(document.getElementById('cGasUrl').value||'').trim();
-  profile.gasToken=(document.getElementById('cGasToken').value||'').trim();
+  var read=function(id){ var el=document.getElementById(id); return el?String(el.value):''; };
+
+  if(document.getElementById('cMeta'))     profile.meta    =parseNum(read('cMeta'))||3000;
+  if(document.getElementById('cSelic'))    profile.selic   =parseNum(read('cSelic'))||13.75;
+  if(document.getElementById('cCambio'))   profile.cambio  =parseNum(read('cCambio'))||5.55;
+  if(document.getElementById('cMilhas'))   profile.milhas  =parseNum(read('cMilhas'))||2.2;
+  if(document.getElementById('cMilhaVal')) profile.milhaVal=parseNum(read('cMilhaVal'))||0.03;
+
+  profile.gasUrl  = normalizeGasUrl(read('cGasUrl'));
+  profile.gasToken= read('cGasToken').trim();
+
   try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
+  gasUrlHint(profile.gasUrl);
   markDirty();
   renderFaturas();
   renderBadges();
+
   // Debounce do backup remoto para não disparar a cada tecla digitada
   if(_profilePushTimer) clearTimeout(_profilePushTimer);
+  if(profile.gasUrl && !isValidGasUrl(profile.gasUrl)){
+    setSyncStatus('err','URL do Apps Script inválida — cole a URL que termina em /exec', true);
+    return;
+  }
   _profilePushTimer=setTimeout(function(){ pushToSheets(); }, 1200);
 }
 
 /* Aplica um profile vindo do Sheets (mantém a URL e token locais, que são por-dispositivo) */
+/* Aplica um profile vindo do Sheets.
+   URL: mantém a local se válida; senão adota a da planilha (recupera aparelho quebrado).
+   Token: sempre local, nunca vem da planilha. */
 function applyRemoteProfile(p){
   var localUrl=profile.gasUrl;
   var localToken=profile.gasToken;
-  for(var k in p){ if(profile.hasOwnProperty(k) && k!=='gasUrl' && k!=='gasToken') profile[k]=p[k]; }
-  if(localUrl) profile.gasUrl=localUrl;
+
+  for(var k in p){
+    if(!p.hasOwnProperty(k) || !profile.hasOwnProperty(k)) continue;
+    if(k==='gasUrl' || k==='gasToken') continue;
+    profile[k]=p[k];
+  }
+
+  if(isValidGasUrl(localUrl)) profile.gasUrl=normalizeGasUrl(localUrl);
+  else if(isValidGasUrl(p.gasUrl)) profile.gasUrl=normalizeGasUrl(p.gasUrl);
+
   if(localToken) profile.gasToken=localToken;
+
   fillProfileInputs();
+  gasUrlHint(profile.gasUrl);
   try{localStorage.setItem('pv4_profile',JSON.stringify(profile));}catch(e){}
 }
 
@@ -2554,6 +2774,7 @@ function fillProfileInputs(){
   set('cMilhaVal',(profile.milhaVal!=null?profile.milhaVal:0.03));
   set('cGasUrl',profile.gasUrl||'');
   set('cGasToken',profile.gasToken||'');
+  gasUrlHint(profile.gasUrl||'');
 }
 
 /* ═══════════════════════════════════════════════

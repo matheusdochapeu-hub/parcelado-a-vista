@@ -104,3 +104,38 @@ Matrix (`action=restore` via JSONP) e rodando o `processFaturasData` real de
   **Faturas → Perfil** e em **Matrix → Backup & Conexões** (campo de token das faturas).
   Sem o token no Matrix, o satélite para de sincronizar no momento em que a auth for ligada.
 
+---
+
+## 8. Correção da sincronização entre aparelhos (v4.0.1 — 2026-11-11)
+
+### Diagnóstico
+- O Perfil de um dos aparelhos estava com a **URL do Apps Script = `Matheus`** (o campo
+  aceitava qualquer texto). Resultado: `jsonpGet` caía em `script error` e o `fetch` do
+  backup ia para uma URL relativa (404 opaco), que o app interpretava como sucesso —
+  ou seja, o aparelho achava que havia salvado sem gravar nada.
+- A URL era tratada como dado **por aparelho**: a planilha já tinha a URL correta, mas
+  `applyRemoteProfile` ignorava `gasUrl`, então o aparelho quebrado nunca se recuperava.
+- O `gasToken` era enviado dentro do `profile` para a planilha (e devolvido no GET),
+  expondo o segredo no backup.
+
+### Correções
+1. `normalizeGasUrl` / `isValidGasUrl`: aceita a URL colada no meio de texto, exige
+   `https://script.google.com/macros/s/<id>/exec` e **bloqueia** sync/POST com URL inválida.
+2. Banner **"A URL da planilha está inválida"** com **Abrir Perfil**, **Colar URL** e
+   **Usar URL padrão**; o chip do topo mostra `URL inválida`.
+3. Os campos de URL e token saíram de "Configurações & Parâmetros" e foram para o card
+   **Conexão com a planilha**, com hint de validação ao vivo e diagnóstico (URL, token,
+   pendências, última sync, revisão, API).
+4. `applyRemoteProfile` adota a URL válida da planilha quando a local está quebrada;
+   `saveProfile` normaliza ao sair do campo; `profileForSync` **remove o `gasToken`**.
+5. Ao salvar uma URL válida, o app já testa a conexão e sincroniza em seguida; ao voltar
+   para o app (visibilitychange), busca mudanças se a última sync tiver mais de 3 min.
+6. `input[type=url]` ganhou o mesmo estilo dos demais campos (o campo aparecia "pelado").
+
+### Validação
+- **74/74 testes** (12 novos em `tests/connection.test.js`).
+- Roundtrip real de escrita: POST de `collapsedMonths` → revisão **12 → 13**, dados intactos.
+- Chrome headless, 390 e 1440: recuperação `Matheus` → **Usar URL padrão** → URL válida,
+  banner escondido, `ping` disparado, `gasToken` fora do payload; 0 overflow, 0 erro.
+
+
