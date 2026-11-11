@@ -158,7 +158,7 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── tests/                  # Suíte Node (91 testes): cálculos, API v2, sync, conexão
+├── tests/                  # Suíte Node (94 testes): cálculos, API v2, sync, conexão
 ├── scripts/                # Geração de ícones PWA
 └── plans/                  # Planos e auditorias técnicas
 ```

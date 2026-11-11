@@ -189,6 +189,70 @@ test('url: recuperação automática mantém o banner se o ping falhar (ex.: tok
   assert.equal(ctx.profile.gasUrl, 'Matheus', 'não pode adotar URL sem confirmar que responde');
 });
 
+test('recuperação: alterações locais pendentes são enviadas, não sobrescritas', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = VALID;
+  ctx.SYNC.dirty = true;
+  ctx._lastLocalChangeAt = Date.now();
+  ctx.extraItems = [{ desc: 'Local', val: 1, de: 1, ate: 1 }];
+
+  let pushed = 0;
+  ctx.pushToSheets = () => { pushed += 1; };
+  ctx.jsonpGet = (url, params, onSuccess) => {
+    onSuccess({
+      ok: true,
+      api: '2.1',
+      meta: { revision: 20, savedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString() },
+      extraItems: [{ desc: 'Nuvem', val: 9, de: 1, ate: 1 }]
+    });
+  };
+
+  ctx.recoverConnection();
+
+  assert.equal(pushed, 1, 'o local pendente deve ser enviado');
+  assert.equal(ctx.extraItems[0].desc, 'Local');
+  assert.equal(ctx.SYNC.dirty, true, 'continua pendente até o envio concluir');
+});
+
+test('recuperação: se a nuvem está mais nova, pede decisão e preserva o local', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = VALID;
+  ctx.SYNC.dirty = true;
+  ctx._lastLocalChangeAt = Date.now() - 60 * 60 * 1000;
+  ctx.extraItems = [{ desc: 'Local', val: 1, de: 1, ate: 1 }];
+
+  let pushed = 0;
+  ctx.pushToSheets = () => { pushed += 1; };
+  ctx.jsonpGet = (url, params, onSuccess) => {
+    onSuccess({
+      ok: true,
+      api: '2.1',
+      meta: { revision: 21, savedAt: new Date().toISOString() },
+      extraItems: [{ desc: 'Nuvem', val: 9, de: 1, ate: 1 }]
+    });
+  };
+
+  ctx.recoverConnection();
+
+  assert.equal(pushed, 0);
+  assert.equal(ctx.extraItems[0].desc, 'Local');
+  const banner = ctx.document.getElementById('syncBanner');
+  assert.equal(banner.hidden, false);
+  assert.match(banner.innerHTML, /Usar a nuvem/);
+});
+
+test('recuperação: sem pendências, apenas sincroniza', () => {
+  const ctx = loadAppContext();
+  ctx.profile.gasUrl = VALID;
+  ctx.SYNC.dirty = false;
+
+  let synced = 0;
+  ctx.syncAll = () => { synced += 1; };
+  ctx.recoverConnection();
+
+  assert.equal(synced, 1);
+});
+
 test('token: erro de autorização vira instrução acionável', () => {
   const ctx = loadAppContext();
   ctx.profile.gasUrl = VALID;

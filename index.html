@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.2"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.1.3"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1075,7 +1075,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.1.2" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.1.3" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1412,7 +1412,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.2</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.1.3</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1648,8 +1648,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.1.2';
-var SW_CACHE_NAME='faturas-pwa-v21'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.1.3';
+var SW_CACHE_NAME='faturas-pwa-v22'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -1724,12 +1724,47 @@ function applyGasUrl(url){
     hideSyncBanner();
     showToast('🔌 URL da planilha atualizada','ok');
     pingApi();
-    // Já aproveita para convergir os dados deste aparelho com a planilha
+    // Já aproveita para convergir, preservando alterações locais pendentes
     if(typeof fetch==='function'){
-      setTimeout(function(){ syncAll({incremental:false}); }, 700);
+      setTimeout(recoverConnection, 700);
     }
   }
   return normalized;
+}
+
+/* Depois de recuperar a URL: se há alterações locais pendentes, envia-as em vez
+   de puxar a nuvem por cima (isso descartaria edições feitas enquanto offline).
+   Só mostra o conflito quando a planilha realmente está mais nova. */
+function recoverConnection(){
+  if(!hasValidGasUrl()) return;
+  if(!SYNC.dirty){ syncAll({incremental:false}); return; }
+
+  var params={action:'restore'};
+  if(profile.gasToken) params.token=profile.gasToken;
+  jsonpGet(profile.gasUrl, params, function(d){
+    if(!d || d.ok===false){
+      setSyncStatus('err', friendlyApiError((d&&d.error)||'sem resposta'));
+      return;
+    }
+    var meta=d.meta||{};
+    var remoteMs=meta.savedAt?Date.parse(meta.savedAt)||0:0;
+    SYNC.revision=Number(meta.revision)||SYNC.revision;
+    SYNC.savedAt=meta.savedAt||SYNC.savedAt;
+    _apiInfo={api:d.api||'1.x', revision:SYNC.revision, authConfigured:!!meta.authConfigured};
+    persistSyncMeta();
+
+    if(remoteMs && _lastLocalChangeAt && remoteMs > (_lastLocalChangeAt + 1500)){
+      showSyncConflict(remoteMs);
+      setSyncStatus('ing','Conflito: a nuvem está mais nova');
+      renderSyncChip();
+      return;
+    }
+    // A nuvem não é mais nova: as edições deste aparelho são a intenção mais recente
+    pushToSheets(0);
+    setSyncStatus('ing','Enviando alterações locais…');
+  }, function(err){
+    setSyncStatus('err','Não foi possível conferir a planilha: '+err);
+  });
 }
 
 function useDefaultGasUrl(){ applyGasUrl(DEFAULT_GAS_URL); }
