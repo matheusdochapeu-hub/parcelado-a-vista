@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.4.2"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.5.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1120,7 +1120,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.4.2" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.5.0" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1510,7 +1510,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
   </div>
 </div>
 
-<script src="js/faturas-data.js?v=4.4.2"></script>
+<script src="js/faturas-data.js?v=4.5.0"></script>
 <script>
 /* ═══════════════════════════════════════════════
    MESES — índice = mês da FATURA (quando é paga)
@@ -1708,8 +1708,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.4.2';
-var SW_CACHE_NAME='faturas-pwa-v28'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.5.0';
+var SW_CACHE_NAME='faturas-pwa-v29'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -6708,6 +6708,59 @@ init();
       'backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)';
     document.body.appendChild(voltar);
   } catch (e) {}
+})();
+</script>
+
+<!-- Instalar como app: aparece só quando o navegador oferece a instalação -->
+<a id="ft-instalar" href="#" hidden style="position:fixed;right:14px;bottom:14px;z-index:2147483000;display:none;align-items:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:999px;background:#22c55e;color:#06210f;font:700 14px/1 system-ui,-apple-system,'Segoe UI',sans-serif;text-decoration:none;box-shadow:0 8px 22px rgba(0,0,0,.35)">⤓ Instalar app</a>
+<script>
+/* Instalar o Faturas como app (depende do beforeinstallprompt do navegador). */
+(function () {
+  var botao = document.getElementById('ft-instalar');
+  var prompt = null;
+
+  function emApp() {
+    try {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+        window.navigator.standalone === true;
+    } catch (e) { return false; }
+  }
+
+  function atualizar() {
+    if (!botao) return;
+    var visivel = !!prompt && !emApp() && localStorage.getItem('ft_instalado') !== '1';
+    botao.hidden = !visivel;
+    botao.style.display = visivel ? 'inline-flex' : 'none';
+  }
+
+  window.addEventListener('beforeinstallprompt', function (ev) {
+    ev.preventDefault();
+    prompt = ev;
+    atualizar();
+  });
+
+  window.addEventListener('appinstalled', function () {
+    try { localStorage.setItem('ft_instalado', '1'); } catch (e) {}
+    prompt = null;
+    atualizar();
+  });
+
+  if (botao) {
+    botao.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      if (!prompt) { atualizar(); return; }
+      prompt.prompt();
+      prompt.userChoice.then(function (escolha) {
+        if (escolha && escolha.outcome === 'accepted') {
+          try { localStorage.setItem('ft_instalado', '1'); } catch (e) {}
+        }
+        prompt = null;
+        atualizar();
+      }).catch(function () { prompt = null; atualizar(); });
+    });
+  }
+
+  atualizar();
 })();
 </script>
 </body>
