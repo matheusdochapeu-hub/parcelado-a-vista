@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.5.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.5.1"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1120,7 +1120,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.5.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.5.1" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1510,7 +1510,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
   </div>
 </div>
 
-<script src="js/faturas-data.js?v=4.5.0"></script>
+<script src="js/faturas-data.js?v=4.5.1"></script>
 <script>
 /* ═══════════════════════════════════════════════
    MESES — índice = mês da FATURA (quando é paga)
@@ -1708,8 +1708,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.5.0';
-var SW_CACHE_NAME='faturas-pwa-v29'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.5.1';
+var SW_CACHE_NAME='faturas-pwa-v30'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -6728,9 +6728,33 @@ init();
 
   function atualizar() {
     if (!botao) return;
-    var visivel = !!prompt && !emApp() && localStorage.getItem('ft_instalado') !== '1';
+    var instalado = localStorage.getItem('ft_instalado') === '1';
+    var visivel = !instalado && !emApp();
     botao.hidden = !visivel;
     botao.style.display = visivel ? 'inline-flex' : 'none';
+    botao.textContent = prompt ? '⤓ Instalar app' : '⤓ Instalar app (ver como)';
+  }
+
+  /* Sem o convite do Chrome não existe prompt: explica o caminho manual. */
+  function instrucoes() {
+    var velho = document.getElementById('ft-instalar-dica');
+    if (velho) { velho.remove(); return; }
+    var dica = document.createElement('div');
+    dica.id = 'ft-instalar-dica';
+    dica.style.cssText =
+      'position:fixed;right:14px;bottom:74px;z-index:2147483000;max-width:290px;' +
+      'padding:14px 16px;border-radius:14px;background:#0f172a;color:#e2e8f0;' +
+      "font:13px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;" +
+      'box-shadow:0 12px 30px rgba(0,0,0,.45);border:1px solid #1e293b';
+    dica.innerHTML =
+      '<b style="display:block;margin-bottom:6px">Instalar o Faturas</b>' +
+      'No Chrome: menu <b>⋮</b> → <b>Salvar e compartilhar</b> → <b>Instalar página como app</b>.' +
+      '<br><br>Se a opção não aparecer, o Chrome ainda acha que o app já está instalado neste perfil.' +
+      '<div style="margin-top:10px;text-align:right">' +
+      '<a href="#" id="ft-dica-fechar" style="color:#93c5fd;text-decoration:none;font-weight:700">Fechar</a></div>';
+    document.body.appendChild(dica);
+    var fechar = document.getElementById('ft-dica-fechar');
+    if (fechar) fechar.addEventListener('click', function (ev) { ev.preventDefault(); dica.remove(); });
   }
 
   window.addEventListener('beforeinstallprompt', function (ev) {
@@ -6748,7 +6772,7 @@ init();
   if (botao) {
     botao.addEventListener('click', function (ev) {
       ev.preventDefault();
-      if (!prompt) { atualizar(); return; }
+      if (!prompt) { instrucoes(); return; }
       prompt.prompt();
       prompt.userChoice.then(function (escolha) {
         if (escolha && escolha.outcome === 'accepted') {
