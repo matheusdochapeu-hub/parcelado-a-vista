@@ -349,6 +349,16 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 @keyframes modalPop{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .modal h3{font-size:17px;font-weight:800;margin-bottom:14px;color:#fff;letter-spacing:-.2px}
 .medit-row{display:grid;grid-template-columns:1fr 130px 44px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.row-rep-btn{
+  background:rgba(56,189,248,0.14);color:var(--accent);border:1px solid rgba(56,189,248,0.4);
+  border-radius:var(--r-sm);padding:2px 7px;font-size:11px;font-weight:700;cursor:pointer;
+  transition:all .15s ease;display:inline-flex;align-items:center;gap:4px;touch-action:manipulation;
+}
+.row-rep-btn:hover{background:rgba(56,189,248,0.25);border-color:var(--accent);color:#fff;transform:translateY(-1px)}
+.row-rep-done{
+  background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.3);
+  border-radius:var(--r-sm);padding:2px 7px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px;
+}
 .medit-row:last-child{border-bottom:none}
 .medit-row input[type=text],.medit-row input[type=number]{padding:6px 8px;font-size:14px;text-align:right;min-height:44px}
 .medit-row .desc-txt{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
@@ -1510,6 +1520,21 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
   </div>
 </div>
 
+<!-- MODAL REPLICAR PARCELAMENTO -->
+<div class="modal-bg" id="repModalBg" onclick="closeRepModalIfBg(event)" style="z-index:1060">
+  <div class="modal" id="repModalBox" style="max-width:580px;max-height:92vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-shrink:0">
+      <h3 id="repModalTitle" style="margin:0;font-size:18px">🔁 Replicar Parcelamento Futuro</h3>
+      <button class="bsm" style="padding:4px 10px;font-size:13px" onclick="closeRepModal()">✕</button>
+    </div>
+    <div id="repModalBody" style="overflow-y:auto;flex:1 1 auto;padding-right:4px"></div>
+    <div class="mbtns" id="repModalBtns" style="flex-shrink:0;margin-top:12px">
+      <button class="bsm" onclick="closeRepModal()">Cancelar</button>
+      <button class="bcalc" id="btnConfirmReplicate" style="width:auto;margin:0;padding:8px 18px;font-size:13px" onclick="commitReplication()">🚀 Confirmar e Replicar</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/faturas-data.js?v=4.5.1"></script>
 <script>
 /* ═══════════════════════════════════════════════
@@ -1709,7 +1734,7 @@ var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
 var APP_VERSION='4.5.1';
-var SW_CACHE_NAME='faturas-pwa-v30'; // manter em sincronia com o CACHE_NAME do sw.js
+var SW_CACHE_NAME='faturas-pwa-v31'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -2775,6 +2800,11 @@ function closeModalIfBg(e){
 
 // Intercepta gesto/botão "Voltar" do smartphone para fechar modais ou voltar abas
 window.addEventListener('popstate', function(e){
+  var repBg=document.getElementById('repModalBg');
+  if(repBg && repBg.classList.contains('on')){
+    closeRepModal();
+    return;
+  }
   var impBg=document.getElementById('importModalBg');
   if(impBg && impBg.classList.contains('on')){
     closeImportModal();
@@ -4117,10 +4147,30 @@ function openEditMonthModal(mIdx){
             : '<span class="row-tag tag-est">Estimado</span>');
     var editedBadge = (it.isBase && it.val!==it.origVal) ? '<span class="row-tag tag-edited">editado</span>' : '';
     var searchName = esc((it.desc||'').toLowerCase());
+
+    // Detecção de parcelamento inteligente para botão de replicação
+    var instInfo = extractInstallmentInfo(it.desc);
+    var repBtn = '';
+    if(instInfo.isInstallment && instInfo.total > instInfo.current){
+      var nextCur = instInfo.current + 1;
+      var nextDesc = buildNextInstallmentDesc(it.desc, nextCur, instInfo.total);
+      var alreadyReplicated = (mIdx + 1 < MNS.length) && getMonthItems(mIdx + 1).some(function(nextIt){
+        return normalizeDesc(nextIt.desc) === normalizeDesc(nextDesc);
+      });
+
+      if(alreadyReplicated){
+        repBtn = '<span class="row-rep-done" title="As parcelas seguintes deste item já constam nas faturas futuras">✅ Replicado</span>';
+      } else {
+        repBtn = '<button type="button" class="row-rep-btn" onclick="openReplicateModal('+i+', '+mIdx+')" title="Replicar nos meses subsequentes até '+instInfo.total+'/'+instInfo.total+'">🔁 Replicar até '+instInfo.total+'/'+instInfo.total+'</button>';
+      }
+    } else {
+      repBtn = '<button type="button" class="row-rep-btn" style="background:rgba(255,255,255,0.06);color:var(--muted);border-color:var(--border);font-weight:500;font-size:10.5px" onclick="openReplicateModal('+i+', '+mIdx+')" title="Replicar este lançamento nos meses subsequentes">🔁 Replicar…</button>';
+    }
+
     body+='<div class="medit-row" id="mrow_'+i+'" data-name="'+searchName+'" data-isbase="'+(it.isBase?1:0)+'" data-key="'+(it.key||'')+'" data-isextra="'+(it.isExtra?1:0)+'" data-extraidx="'+(it.extraIdx!=null?it.extraIdx:'')+'" data-issim="'+(it.isSimul?1:0)+'" data-simgroup="'+(it.group||'')+'" data-orig="'+(it.isBase?(it.origVal||0).toFixed(2):'')+'">'
       +'<div class="medit-main">'
         +'<span class="desc-txt" title="'+esc(it.desc)+'">'+esc(it.desc)+'</span>'
-        +'<span class="row-tags">'+typeBadge+editedBadge+'</span>'
+        +'<span class="row-tags">'+typeBadge+editedBadge+repBtn+'</span>'
       +'</div>'
       +'<div class="medit-input-wrap"><span class="medit-prefix">R$</span>'
         +'<input type="text" class="medit-val" data-row="'+i+'" value="'+(it.val||0).toFixed(2)+'" inputmode="decimal" oninput="recalcEditTotal()"/></div>'
@@ -4147,7 +4197,7 @@ function openEditMonthModal(mIdx){
   document.getElementById('modalBg').classList.add('on');
   recalcEditTotal();
   var se=document.getElementById('editSearch');
-  if(se) se.focus();
+  if(se && typeof se.focus === 'function') se.focus();
 }
 
 /* Recalcula o total/sobra/barra ao vivo enquanto o usuário edita os valores */
@@ -4444,6 +4494,215 @@ function delExtra(idx){
   extraItems.splice(idx,1);
   saveLocal();pushToSheets();renderFaturas();
 }
+
+/* ═══════════════════════════════════════════════
+   REPLICAÇÃO DE PARCELAMENTO FUTURO
+═══════════════════════════════════════════════ */
+var _activeRepData = null;
+
+/* Reconstrói a descrição com o número da próxima parcela preservando formatação (ex: 1/10 -> 2/10, 01/10 -> 02/10) */
+function buildNextInstallmentDesc(originalDesc, nextCur, total){
+  var str = String(originalDesc || '').trim();
+  var m = str.match(/((?:(?:\(|\[)?\s*(?:parcela\s*)?))(\d{1,2})(\s*(?:\/|\s+de\s+))(\d{1,2})((?:\)|\])?)/i);
+  if(m){
+    var prefix = m[1] || '';
+    var numStr = m[2];
+    var sep = m[3];
+    var totStr = m[4];
+    var suffix = m[5] || '';
+    var formattedCur = (numStr.length === 2 && nextCur < 10) ? ('0' + nextCur) : String(nextCur);
+    var newInstallmentStr = prefix + formattedCur + sep + totStr + suffix;
+    return str.substring(0, m.index) + newInstallmentStr + str.substring(m.index + m[0].length);
+  }
+  return str + ' (' + nextCur + '/' + total + ')';
+}
+
+function openReplicateModal(rowIdx, mIdx){
+  var items = getMonthItems(mIdx);
+  var it = items[rowIdx];
+  if(!it) return;
+
+  var rowEl = document.getElementById('mrow_' + rowIdx);
+  var valInp = (rowEl && rowEl.querySelector) ? rowEl.querySelector('.medit-val') : null;
+  var curInputVal = valInp ? parseNum(valInp.value) : it.val;
+  var currentVal = (!isNaN(curInputVal) && curInputVal > 0) ? curInputVal : it.val;
+  var desc = it.desc;
+  var info = extractInstallmentInfo(desc);
+
+  var currentN = info.isInstallment ? info.current : 1;
+  var defaultTotalN = info.isInstallment ? info.total : Math.max(currentN + 1, 10);
+  var nextN = currentN + 1;
+
+  _activeRepData = {
+    rowIdx: rowIdx,
+    mIdx: mIdx,
+    desc: desc,
+    val: currentVal,
+    currentN: currentN,
+    info: info
+  };
+
+  var body = ''
+    + '<div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:var(--r-md);padding:14px;margin-bottom:14px">'
+    + '  <div style="font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:3px">Lançamento de Referência em ' + (MNS[mIdx] || ('Mês ' + mIdx)) + ':</div>'
+    + '  <div style="font-size:15px;font-weight:700;color:#fff;word-break:break-word">' + esc(desc) + '</div>'
+    + '  <div style="font-size:12.5px;color:var(--text-secondary);margin-top:4px">Valor: <strong style="color:var(--green)">' + fmtBRL(currentVal) + '</strong> · Parcela atual: <strong>' + currentN + (info.isInstallment ? '/' + info.total : '') + '</strong></div>'
+    + '</div>'
+    + '<div class="fg" style="margin-bottom:14px">'
+    + '  <div>'
+    + '    <label for="repTotalN">Parcela final (total de parcelas)</label>'
+    + '    <input type="number" id="repTotalN" min="' + nextN + '" max="60" value="' + defaultTotalN + '" oninput="updateRepPreview()"/>'
+    + '  </div>'
+    + '  <div>'
+    + '    <label for="repValInput">Valor de cada parcela (R$)</label>'
+    + '    <input type="text" id="repValInput" value="' + currentVal.toFixed(2) + '" inputmode="decimal" oninput="updateRepPreview()"/>'
+    + '  </div>'
+    + '</div>'
+    + '<div style="margin-bottom:8px;font-size:12.5px;font-weight:700;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">'
+    + '  <span>📅 Parcelas a lançar nos meses seguintes:</span>'
+    + '  <span id="repSummaryTxt" style="font-size:11px;color:var(--accent)"></span>'
+    + '</div>'
+    + '<div id="repPreviewList" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-md);background:rgba(15,23,42,0.5);padding:8px"></div>';
+
+  document.getElementById('repModalBody').innerHTML = body;
+  var repTotInp = document.getElementById('repTotalN');
+  if(repTotInp) repTotInp.value = defaultTotalN;
+  var repVInp = document.getElementById('repValInput');
+  if(repVInp) repVInp.value = currentVal.toFixed(2);
+  document.getElementById('repModalBg').classList.add('on');
+  updateRepPreview();
+}
+
+function updateRepPreview(){
+  if(!_activeRepData) return;
+  var repTotInp = document.getElementById('repTotalN');
+  var totalN = (repTotInp && repTotInp.value) ? parseInt(repTotInp.value) : (_activeRepData && _activeRepData.info.isInstallment ? _activeRepData.info.total : 10);
+  var repVInp = document.getElementById('repValInput');
+  var val = (repVInp && repVInp.value) ? parseNum(repVInp.value) : (_activeRepData ? _activeRepData.val : 0);
+  var currentN = _activeRepData.currentN;
+  var mIdx = _activeRepData.mIdx;
+  var desc = _activeRepData.desc;
+  var btn = document.getElementById('btnConfirmReplicate');
+  var list = document.getElementById('repPreviewList');
+  var sumTxt = document.getElementById('repSummaryTxt');
+
+  if(totalN <= currentN){
+    list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--red);font-size:12px">⚠️ A parcela final deve ser maior que a parcela atual (' + currentN + ').</div>';
+    if(btn) btn.disabled = true;
+    if(sumTxt) sumTxt.textContent = 'Nenhuma parcela a criar';
+    return;
+  }
+
+  var count = totalN - currentN;
+  var maxTargetMonth = mIdx + count;
+  refreshMnsCache(maxTargetMonth + 2);
+
+  var h = '';
+  for(var k = currentN + 1; k <= totalN; k++){
+    var targetM = mIdx + (k - currentN);
+    var targetMName = MNS[targetM] || ('Mês ' + (targetM + 1));
+    var nextDesc = buildNextInstallmentDesc(desc, k, totalN);
+
+    // Checa se já existe lançamento similar no mês destino
+    var existingInMonth = getMonthItems(targetM);
+    var alreadyExists = existingInMonth.some(function(ex){
+      return normalizeDesc(ex.desc) === normalizeDesc(nextDesc);
+    });
+
+    var statusBadge = alreadyExists
+      ? '<span style="font-size:10px;color:var(--yellow);background:rgba(251,191,36,0.15);padding:2px 6px;border-radius:4px">Já existe</span>'
+      : '<span style="font-size:10px;color:var(--green);background:rgba(52,211,153,0.15);padding:2px 6px;border-radius:4px">Novo</span>';
+
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;gap:8px">'
+      + '  <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">'
+      + '    <span style="font-weight:700;color:var(--accent);min-width:70px">' + targetMName + '</span>'
+      + '    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + esc(nextDesc) + '">' + esc(nextDesc) + '</span>'
+      + '  </div>'
+      + '  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+      + '    <strong style="color:#fff">' + fmtBRL(val) + '</strong>'
+      + '    ' + statusBadge
+      + '  </div>'
+      + '</div>';
+  }
+
+  list.innerHTML = h;
+  if(sumTxt) sumTxt.textContent = count + ' parcela' + (count > 1 ? 's' : '') + ' · Total ' + fmtBRL(count * val);
+  if(btn){
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Replicar ' + count + ' Parcela' + (count > 1 ? 's' : '') + ' (' + fmtBRL(count * val) + ')';
+  }
+}
+
+function commitReplication(){
+  if(!_activeRepData) return;
+  var repTotInp = document.getElementById('repTotalN');
+  var totalN = (repTotInp && repTotInp.value) ? parseInt(repTotInp.value) : (_activeRepData && _activeRepData.info.isInstallment ? _activeRepData.info.total : 10);
+  var repVInp = document.getElementById('repValInput');
+  var val = (repVInp && repVInp.value) ? parseNum(repVInp.value) : (_activeRepData ? _activeRepData.val : 0);
+  var currentN = _activeRepData.currentN;
+  var mIdx = _activeRepData.mIdx;
+  var desc = _activeRepData.desc;
+
+  if(totalN <= currentN || val <= 0){
+    if(typeof alert !== 'undefined') alert('Verifique os valores preenchidos antes de confirmar.');
+    return;
+  }
+
+  var count = totalN - currentN;
+  var maxTargetMonth = mIdx + count;
+  refreshMnsCache(maxTargetMonth + 2);
+
+  var createdCount = 0;
+  for(var k = currentN + 1; k <= totalN; k++){
+    var targetM = mIdx + (k - currentN);
+    var nextDesc = buildNextInstallmentDesc(desc, k, totalN);
+
+    // Evita duplicatas se o lançamento já existir no mês destino
+    var existingInMonth = getMonthItems(targetM);
+    var alreadyExists = existingInMonth.some(function(ex){
+      return normalizeDesc(ex.desc) === normalizeDesc(nextDesc);
+    });
+
+    if(!alreadyExists){
+      extraItems.push({
+        desc: nextDesc,
+        val: val,
+        de: targetM,
+        ate: targetM,
+        tag: 'extra',
+        isExtra: true
+      });
+      createdCount++;
+    }
+  }
+
+  // Re-indexar extraItems
+  for(var j=0; j<extraItems.length; j++) extraItems[j].extraIdx = j;
+
+  var cleanItemName = (_activeRepData && _activeRepData.info) ? (_activeRepData.info.cleanDesc || desc) : desc;
+  saveLocal();
+  pushToSheets();
+  closeRepModal();
+
+  // Recarrega o modal de edição do mês para mostrar o status atualizado
+  openEditMonthModal(mIdx);
+  renderFaturas();
+  if(typeof renderGastosView === 'function') renderGastosView();
+
+  var lastMonthName = MNS[maxTargetMonth] || ('Mês ' + (maxTargetMonth + 1));
+  showToast('🎉 ' + createdCount + ' parcelas de "' + esc(cleanItemName) + '" replicadas com sucesso até ' + lastMonthName + ' (' + totalN + '/' + totalN + ')!');
+}
+
+function closeRepModal(){
+  var bg = document.getElementById('repModalBg');
+  if(bg) bg.classList.remove('on');
+  _activeRepData = null;
+}
+
+function closeRepModalIfBg(e){
+  if(e.target === document.getElementById('repModalBg')) closeRepModal();
+}
+
 
 /* ═══════════════════════════════════════════════
    FATURA IMPORT & RECONCILIATION ENGINE
@@ -5067,18 +5326,32 @@ function commitFaturaImport(){
     }
 
     if(it.isInstallment && it.projectInstallments && it.totalInstallments > it.current){
-      var rem = it.totalInstallments - it.current;
-      var ateMonth = mIdx + rem;
+      // 1. Lança a parcela do mês selecionado
       extraItems.push({
         desc: desc,
         val: val,
         de: mIdx,
-        ate: ateMonth,
-        tag: 'parc',
+        ate: mIdx,
+        tag: 'extra',
         isExtra: true
       });
-      refreshMnsCache(ateMonth);
       addedCount++;
+
+      // 2. Projeta as parcelas seguintes com descrição incremental (ex: 2/10, 3/10...)
+      for(var k = it.current + 1; k <= it.totalInstallments; k++){
+        var targetMonth = mIdx + (k - it.current);
+        var nextDesc = buildNextInstallmentDesc(desc, k, it.totalInstallments);
+        extraItems.push({
+          desc: nextDesc,
+          val: val,
+          de: targetMonth,
+          ate: targetMonth,
+          tag: 'extra',
+          isExtra: true
+        });
+        addedCount++;
+      }
+      refreshMnsCache(mIdx + (it.totalInstallments - it.current));
     } else {
       extraItems.push({
         desc: desc,
