@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.6.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.6.1"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1152,7 +1152,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.6.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.6.1" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1489,7 +1489,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.6.0</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.6.1</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1755,8 +1755,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.6.0';
-var SW_CACHE_NAME='faturas-pwa-v32'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.6.1';
+var SW_CACHE_NAME='faturas-pwa-v33'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -5599,7 +5599,7 @@ function renderResults(d){
     +'<span style="font-weight:700;font-size:13px">📅 '+bN+'x</span>'+(!d.vistaWins?'<span class="badge bg">✅</span>':'')+'</div>'
     +'<div style="font-size:19px;font-weight:800;margin-bottom:4px">'+fmtBRL(bPer)+'<span style="font-size:10px;color:var(--muted)">/mês</span></div>'
     +'<div style="font-size:11px;margin-bottom:3px">Total: <strong>'+fmtBRL(d.instTotal)+'</strong></div>'
-    +'<div style="font-size:11px;margin-bottom:3px">📈 Ganho: <strong style="color:var(--green)">+'+fmtBRL(bGain)+'</strong></div>'
+    +'<div style="font-size:11px;margin-bottom:3px">📈 Ganho: <strong style="color:'+(bGain>=0?'var(--green)':'var(--red)')+'">'+(bGain>=0?'+':'')+fmtBRL(bGain)+'</strong></div>'
     +(useMiles?'<div style="font-size:11px">✈️ <strong style="color:var(--purple)">'+Math.round(bMi)+' mi</strong> ≈ '+fmtBRL(bMiV)+'</div>':'')
     +'<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)">'
     +'<div style="font-size:10px;color:var(--muted)">Custo real</div>'
