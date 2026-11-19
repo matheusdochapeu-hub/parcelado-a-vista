@@ -16,7 +16,7 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   sem inserir nada.
 - Correções pendentes dos planos 006–008 aplicadas: token explícito no Apps Script,
   reclassificação global limpando todas as sobrescritas de mês e inferência do mês da
-  fatura na importação CSV/OFX. Suíte com **114 testes**.
+  fatura na importação CSV/OFX. Suíte com **125 testes**.
 
 ---
 
@@ -119,7 +119,8 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 
 - **🧮 Calculadora de Inteligência Financeira:**
   - Simulações comparativas: À Vista com Desconto vs. Parcelado Sem Juros.
-  - Método de pagamento à vista configurável: **PIX / Dinheiro** (débito imediato no momento $t=0$) ou **Cartão de Crédito 1x** (com float de 1 mês no CDI e acúmulo de milhas).
+  - Método de pagamento à vista configurável: **PIX / Dinheiro** (débito imediato) ou **Cartão de Crédito 1x** (com float de 1 mês e acúmulo de milhas).
+  - **🏦 Entrada + boletos (v4.7):** simula o formato comum de fornecedor — entrada agora e N boletos a cada 15/30/60 dias. O app desconta os boletos pela Selic e compara com o cartão, sem você calcular valor presente na mão. A fatura inicial já vem na fatura que recebe a compra (após o dia 9, cai na seguinte).
   - Cálculo de rendimento real de aplicações (100% CDI / Tesouro Selic) resgatando mês a mês para pagamento das parcelas via VPL/VP.
   - Pontuação de milhas configurável (ex: 2.2 milhas/dólar no Nubank Ultravioleta).
   - Respeito à chave de "Considerar meta de gastos": penalizações de orçamento só são aplicadas se a opção estiver ativada.
@@ -168,7 +169,7 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── tests/                  # Suíte Node (114 testes): cálculos, API v2, sync, conexão
+├── tests/                  # Suíte Node (125 testes): cálculos, API v2, sync, conexão
 ├── scripts/                # Geração de ícones PWA
 └── plans/                  # Planos e auditorias técnicas
 ```

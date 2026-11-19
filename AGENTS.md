@@ -24,7 +24,7 @@ python -m http.server 8000   # abrir http://localhost:8000
 ## Testes
 
 ```powershell
-node --test tests/*.test.js   # 114 testes (a pasta chama "tests", no plural)
+node --test tests/*.test.js   # 125 testes (a pasta chama "tests", no plural)
 ```
 
 - `tests/backend-api.test.js` sobe o `apps_script.gs` em `node:vm` com mocks do Apps Script
@@ -48,7 +48,7 @@ node --test tests/*.test.js   # 114 testes (a pasta chama "tests", no plural)
 | Arquivo | Papel |
 |---|---|
 | `index.html` | SPA (faturas, gastos, calculadora, histórico) + design system v4 |
-| `sw.js` | Service Worker (`faturas-pwa-v33`), fluxo de banner de atualização |
+| `sw.js` | Service Worker (`faturas-pwa-v34`), fluxo de banner de atualização |
 | `apps_script.gs` | API v2 do Sheets (leitura única, escrita em lote, cache, revisão, log) |
 | `manifest.json` | Manifesto PWA com atalhos |
 | `tests/` | Suíte de testes (cálculos, itens, modais, histórico, API, sync) |
@@ -101,6 +101,12 @@ node --test tests/*.test.js   # 114 testes (a pasta chama "tests", no plural)
 12. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
    informativos; alvos de toque ≥ 40 px no celular; conferir 1440, 768, 390 e 360 px sem
    overflow horizontal. Validado com Chrome headless via CDP (`_qa/` fora do repositório).
+13. **Entrada + boletos é fluxo, não preço.** `getEntradaPlan()` valida entrada < valor à
+   vista; `entradaPV(plan, mr)` desconta cada boleto em `i × intervalo/30` meses. Nesse
+   modo `cPv = entradaPV(...)`, `cMi = 0` (sem milhas/float) e o `purchHist` guarda
+   `entrada/boletos/boletoInterval`. A fatura inicial padrão é `getDefaultInvoiceMonth()`
+   (após o dia 9 cai na fatura seguinte), e `_pMonthUserSet` preserva a escolha do usuário —
+   não volte a usar a primeira opção do select como padrão.
 
 ## Dívida técnica conhecida
 
