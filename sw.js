@@ -1,11 +1,11 @@
-/* Faturas · Service Worker v35
+/* Faturas · Service Worker v36
    Estratégias:
    - Navegação/HTML: Network-First (sempre pega a versão publicada)
    - Assets estáticos: Stale-While-Revalidate (abre rápido e atualiza em segundo plano)
    - Google Apps Script: Network-Only (nunca cacheia dados financeiros)
    A ativação NÃO é automática: o app mostra o banner "Nova versão disponível" e
    envia SKIP_WAITING quando o usuário toca em Atualizar. */
-const CACHE_NAME = 'faturas-pwa-v35';
+const CACHE_NAME = 'faturas-pwa-v36';
 const STATIC_ASSETS = [
   './nexo-theme.css',
   './',

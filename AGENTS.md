@@ -48,7 +48,7 @@ node --test tests/*.test.js   # 126 testes (a pasta chama "tests", no plural)
 | Arquivo | Papel |
 |---|---|
 | `index.html` | SPA (faturas, gastos, calculadora, histórico) + design system v4 |
-| `sw.js` | Service Worker (`faturas-pwa-v35`), fluxo de banner de atualização |
+| `sw.js` | Service Worker (`faturas-pwa-v36`), fluxo de banner de atualização |
 | `apps_script.gs` | API v2 do Sheets (leitura única, escrita em lote, cache, revisão, log) |
 | `manifest.json` | Manifesto PWA com atalhos |
 | `tests/` | Suíte de testes (cálculos, itens, modais, histórico, API, sync) |
