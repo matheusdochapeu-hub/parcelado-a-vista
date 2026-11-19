@@ -171,3 +171,19 @@ test('fatura inicial: escolha do usuário é preservada', () => {
   const details = ctx._cycleDetails || [];
   assert.equal(ctx.document.getElementById('pMonthHint').textContent, details[1]);
 });
+
+test('entrada: atalho visível ativa o modo e esconde o próprio atalho', () => {
+  const ctx = loadAppContext();
+  const sel = ctx.document.getElementById('pCashMethod');
+  const box = ctx.document.getElementById('entradaFields');
+  const shortcut = ctx.document.getElementById('btnEntradaShortcut');
+
+  sel.value = 'cartao';
+  ctx.updateCashMethodHint();
+  assert.notEqual(shortcut.style.display, 'none', 'atalho aparece no modo cartão');
+
+  ctx.setCashMethod('entrada');
+  assert.equal(sel.value, 'entrada');
+  assert.equal(box.style.display, '');
+  assert.equal(shortcut.style.display, 'none');
+});

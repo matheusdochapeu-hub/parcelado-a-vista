@@ -16,7 +16,7 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   sem inserir nada.
 - Correções pendentes dos planos 006–008 aplicadas: token explícito no Apps Script,
   reclassificação global limpando todas as sobrescritas de mês e inferência do mês da
-  fatura na importação CSV/OFX. Suíte com **125 testes**.
+  fatura na importação CSV/OFX. Suíte com **126 testes**.
 
 ---
 
@@ -169,7 +169,7 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── tests/                  # Suíte Node (125 testes): cálculos, API v2, sync, conexão
+├── tests/                  # Suíte Node (126 testes): cálculos, API v2, sync, conexão
 ├── scripts/                # Geração de ícones PWA
 └── plans/                  # Planos e auditorias técnicas
 ```

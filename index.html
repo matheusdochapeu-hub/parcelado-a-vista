@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.7.0"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.7.1"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1035,6 +1035,12 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 
 /* ── Calculadora: entrada + boletos ─────────────────────────── */
 .entrada-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:2px}
+.cash-shortcut{
+  display:inline-flex;align-items:center;gap:5px;margin-top:6px;min-height:32px;
+  background:transparent;border:0;color:var(--accent);font-family:inherit;
+  font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 0;text-decoration:underline;
+}
+.cash-shortcut:hover{color:#fff}
 
 /* ── Estados vazios ─────────────────────────────────────────── */
 .empty{border:1px dashed var(--border);border-radius:var(--r-lg);background:rgba(10,17,32,.45)}
@@ -1155,7 +1161,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.7.0" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.7.1" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1360,6 +1366,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
             <option value="entrada">🏦 Entrada + boletos (fornecedor)</option>
           </select>
           <div class="csub" id="pCashMethodHint" style="margin-top:6px;font-size:11px"></div>
+          <button type="button" id="btnEntradaShortcut" class="cash-shortcut" onclick="setCashMethod('entrada')">🏦 Novo: simular entrada + boletos</button>
         </div>
         <div class="ff" id="entradaFields" style="display:none">
           <div class="entrada-grid">
@@ -1507,7 +1514,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.7.0</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.7.1</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1785,8 +1792,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.7.0';
-var SW_CACHE_NAME='faturas-pwa-v34'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.7.1';
+var SW_CACHE_NAME='faturas-pwa-v35'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _pMonthUserSet=false; // true depois que o usuário escolhe a fatura inicial na calculadora
@@ -4477,8 +4484,10 @@ function updateCashMethodHint(){
   var sel=document.getElementById('pCashMethod');
   var el=document.getElementById('pCashMethodHint');
   var box=document.getElementById('entradaFields');
+  var shortcut=document.getElementById('btnEntradaShortcut');
   var isEntrada=!!(sel && sel.value==='entrada');
   if(box) box.style.display=isEntrada?'':'none';
+  if(shortcut) shortcut.style.display=isEntrada?'none':'';
   if(isEntrada) updateEntradaPreview();
   if(!sel || !el) return;
   if(isEntrada){
@@ -4488,6 +4497,17 @@ function updateCashMethodHint(){
   el.textContent = sel.value === 'pix'
     ? 'Sai do caixa agora: sem rendimento no mês e sem milhas.'
     : 'Entra na fatura do ciclo: rende ~1 mês e acumula milhas.';
+}
+
+/* Atalho visível para o modo entrada + boletos (evita depender do dropdown) */
+function setCashMethod(value){
+  var sel=document.getElementById('pCashMethod');
+  if(sel) sel.value=value;
+  updateCashMethodHint();
+  var box=document.getElementById('entradaFields');
+  if(box && box.style.display!=='none' && box.scrollIntoView) box.scrollIntoView({behavior:'smooth',block:'center'});
+  var entrada=document.getElementById('pEntrada');
+  if(entrada && entrada.focus) entrada.focus();
 }
 
 function openAddModal(){
