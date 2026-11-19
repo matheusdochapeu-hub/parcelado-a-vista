@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Faturas"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.5.1"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4.6.0"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -461,6 +461,28 @@ select option{background:#0f172a;color:#f8fafc;padding:8px}
 .combo-hint{background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.28);border-radius:var(--r-md);padding:11px 14px;margin-bottom:12px;font-size:12.5px;color:var(--text-secondary);line-height:1.5}
 .combo-card{background:rgba(15,23,42,0.72);border:1px solid rgba(192,132,252,0.35);border-radius:var(--r-lg);padding:14px;margin-bottom:14px;box-shadow:var(--sh-1)}
 .combo-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.combo-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.combo-start{
+  display:flex;align-items:center;gap:8px;padding:0;background:transparent;border:0;
+}
+.combo-start label{
+  font-size:10.5px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);margin:0;white-space:nowrap;
+}
+.combo-start select{
+  appearance:none;-webkit-appearance:none;color:#fff;font-family:inherit;
+  font-size:12.5px;font-weight:650;padding:8px 28px 8px 10px;min-height:38px;max-width:220px;
+  background-color:rgba(15,23,42,.85);border:1px solid var(--border);border-radius:9px;outline:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239fb0c4' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;
+}
+.combo-start select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.combo-start select option{background:#0f172a;color:#f8fafc}
+@media(max-width:560px){
+  .combo-head-actions{width:100%}
+  .combo-start{width:100%;justify-content:space-between}
+  .combo-start select{flex:1 1 auto;max-width:none;text-align:left}
+}
 .combo-products{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .combo-prod{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r-sm);padding:9px 11px}
 .combo-prod-main{flex:1 1 200px;min-width:0}
@@ -1130,7 +1152,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
 <header class="appbar">
   <div class="appbar-inner">
     <div class="brand">
-      <img src="./icon-192.png?v=4.5.1" alt="" class="brand-logo"/>
+      <img src="./icon-192.png?v=4.6.0" alt="" class="brand-logo"/>
       <div class="brand-text">
         <strong>Faturas</strong>
         <span>Matheus &amp; Scarlet</span>
@@ -1467,7 +1489,7 @@ input.input-err{border-color:rgba(251,113,133,.65)!important;box-shadow:0 0 0 3p
     <div class="card">
       <div class="ctitle">ℹ️ Sobre este app</div>
       <div class="api-box" style="margin-top:8px">
-        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.2.0</span></div>
+        <div class="api-row"><span>Versão do app</span><span id="aboutVersion">4.6.0</span></div>
         <div class="api-row"><span>Cache do Service Worker</span><span id="aboutCache">—</span></div>
         <div class="api-row"><span>Última sincronização</span><span id="aboutLastSync">—</span></div>
         <div class="api-row"><span>API conectada</span><span id="aboutApi">não verificada</span></div>
@@ -1733,8 +1755,8 @@ var modalMode='add';
 var modalMonthIdx=1; // padrão = fatura Out/2026
 
 /* ── Estado da modernização v4 ── */
-var APP_VERSION='4.5.1';
-var SW_CACHE_NAME='faturas-pwa-v31'; // manter em sincronia com o CACHE_NAME do sw.js
+var APP_VERSION='4.6.0';
+var SW_CACHE_NAME='faturas-pwa-v32'; // manter em sincronia com o CACHE_NAME do sw.js
 var privacyOn=false;
 var faturasFilter='todas';
 var _applyingRemote=false;
@@ -2943,10 +2965,11 @@ var editingHistIdx = null;
 var histSel = {};   // índices selecionados no histórico para a compra combinada
 var comboN = {};    // nº de parcelas escolhido por índice do histórico
 var comboDest = 'sim'; // destino do lançamento combinado: 'sim' | 'real'
+var comboStart = null; // mês inicial escolhido para a compra combinada (null = cada simulação no seu mês)
 
 function addHist(h){
   purchHist.unshift(h);if(purchHist.length>30)purchHist.pop();
-  histSel={};comboN={};comboDest='sim';
+  histSel={};comboN={};comboDest='sim';comboStart=null;
   saveLocal();pushToSheets();renderHist();
   showToast('✓ Simulação salva no histórico!');
 }
@@ -2954,7 +2977,7 @@ function clearHist(){
   if(!purchHist.length){ showToast('Histórico já está vazio'); return; }
   if(!confirm('Apagar TODAS as '+purchHist.length+' simulações do histórico? Esta ação não pode ser desfeita.'))return;
   purchHist=[];
-  histSel={};comboN={};comboDest='sim';
+  histSel={};comboN={};comboDest='sim';comboStart=null;
   cancelHistEdit(true);
   saveLocal();pushToSheets();renderHist();
   showToast('🗑️ Histórico limpo');
@@ -3214,7 +3237,7 @@ function clearArchivedHist(){
   if(!n){ showToast('Nenhuma simulação arquivada'); return; }
   if(!confirm('Excluir definitivamente as '+n+' simulações arquivadas? Esta ação não pode ser desfeita.')) return;
   purchHist=purchHist.filter(function(x){ return !x.archived; });
-  histSel={};comboN={};comboDest='sim';
+  histSel={};comboN={};comboDest='sim';comboStart=null;
   if(editingHistIdx!==null) cancelHistEdit(true);
   saveLocal(); pushToSheets(); renderHist();
   showToast('🗑️ Arquivadas removidas','ok');
@@ -3251,10 +3274,12 @@ function getSelectedHistItems(){
 }
 
 /* Soma as parcelas de várias simulações. nMap = {índice do histórico: nº de parcelas} */
-function buildComboPlan(items, nMap, firstOpen){
+function buildComboPlan(items, nMap, firstOpen, startOverride){
   if(!items||!items.length) return {products:[],monthList:[],months:{},total:0,peak:{m:0,added:0,total:0},affected:0,maxEnd:0};
   var first = (firstOpen!=null && firstOpen!=='') ? parseInt(firstOpen,10) : getFirstOpenMonth();
   if(!(first>=1)) first=1;
+  var override = (startOverride!=null && startOverride!=='') ? parseInt(startOverride,10) : null;
+  if(override!=null && !(override>=1)) override=null;
   nMap=nMap||{};
 
   var products=[], months={}, maxEnd=first, total=0;
@@ -3268,7 +3293,7 @@ function buildComboPlan(items, nMap, firstOpen){
     if(!(n>=1)) n=defaultN;
     if(n>60) n=60;
 
-    var start=parseInt(it.mOff,10);
+    var start = (override!=null) ? override : parseInt(it.mOff,10);
     if(!(start>=1)) start=first;
     if(start<first) start=first;
 
@@ -3306,7 +3331,7 @@ function toggleHistSel(idx, checked){
 }
 
 function clearHistSelection(){
-  histSel={};comboN={};comboDest='sim';
+  histSel={};comboN={};comboDest='sim';comboStart=null;
   renderHist();
 }
 
@@ -3315,6 +3340,27 @@ function setComboN(idx,val){
   if(!(n>=1)) n=1;
   comboN[idx]=n;
   renderHistCombo();
+}
+
+/* Opções do seletor de mês inicial da compra combinada */
+function comboStartOptionsHtml(){
+  var floor=getFirstOpenMonth();
+  var maxShow=Math.max(getMaxActiveMonth(),floor)+24;
+  refreshMnsCache(maxShow);
+  var html='<option value="">Automático (mês de cada simulação)</option>';
+  for(var m=floor;m<=maxShow;m++){
+    if(isMonthClosed(m)) continue;
+    html+='<option value="'+m+'"'+(comboStart===m?' selected':'')+'>'+esc(MNS[m]||('Mês '+m))+'</option>';
+  }
+  return html;
+}
+
+function setComboStart(val){
+  var n=parseInt(val,10);
+  comboStart=(n>=1 && !isMonthClosed(n))?n:null;
+  renderHistCombo();
+  var sel=document.getElementById('comboStartSel');
+  if(sel && sel.value!==String(comboStart||'')) sel.value=String(comboStart||'');
 }
 
 function comboNOptions(selected){
@@ -3337,14 +3383,21 @@ function renderHistCombo(){
     return;
   }
 
-  var plan=buildComboPlan(selected,comboN);
+  if(comboStart!=null && isMonthClosed(comboStart)) comboStart=null;
+  var plan=buildComboPlan(selected,comboN,null,comboStart);
   if(!plan.products.length){ box.innerHTML=''; return; }
 
   var h='<div class="combo-card">'
     +'<div class="combo-head">'
     +'<div><div class="ctitle">🧮 Compra combinada</div>'
     +'<div class="csub" style="margin:0">'+plan.products.length+' simulações · parcelas somadas mês a mês</div></div>'
-    +'<button type="button" class="bsm" onclick="clearHistSelection()">✕ Limpar</button>'
+    +'<div class="combo-head-actions">'
+      +'<div class="combo-start">'
+        +'<label for="comboStartSel">Mês inicial</label>'
+        +'<select id="comboStartSel" onchange="setComboStart(this.value)" aria-label="Mês inicial da compra combinada">'+comboStartOptionsHtml()+'</select>'
+      +'</div>'
+      +'<button type="button" class="bsm" onclick="clearHistSelection()">✕ Limpar</button>'
+    +'</div>'
     +'</div>';
 
   h+='<div class="combo-products">';
@@ -3438,14 +3491,14 @@ function addComboToFaturas(products, asReal){
 function insertHistCombo(){
   var selected=getSelectedHistItems();
   if(selected.length<2){ showToast('Selecione pelo menos 2 simulações'); return; }
-  var plan=buildComboPlan(selected,comboN);
+  var plan=buildComboPlan(selected,comboN,null,comboStart);
   if(!plan.products.length) return;
   var dest=document.getElementById('comboDest');
   var asReal=(dest ? dest.value==='real' : comboDest==='real');
   if(asReal && !confirm('Inserir '+plan.products.length+' produto(s) como lançamentos reais nas faturas? Eles vão contar como gastos manuais e sincronizar com a planilha.')) return;
 
   addComboToFaturas(plan.products,asReal);
-  histSel={};comboN={};comboDest='sim';
+  histSel={};comboN={};comboDest='sim';comboStart=null;
   saveLocal();pushToSheets();renderHist();renderFaturas();
   showToast(asReal
     ? '✓ '+plan.products.length+' produto(s) inserido(s) na fatura real'

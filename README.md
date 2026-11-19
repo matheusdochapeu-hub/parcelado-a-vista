@@ -16,7 +16,7 @@ Aplicativo web progressivo (PWA) e calculadora de inteligência financeira volta
   sem inserir nada.
 - Correções pendentes dos planos 006–008 aplicadas: token explícito no Apps Script,
   reclassificação global limpando todas as sobrescritas de mês e inferência do mês da
-  fatura na importação CSV/OFX. Suíte com **75 testes**.
+  fatura na importação CSV/OFX. Suíte com **114 testes**.
 
 ---
 
@@ -112,6 +112,10 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
     momento; a seção **“Arquivadas”** permite **restaurar**, **ver a fatura** ou
     **limpar arquivadas**. Arquivar não apaga: o histórico ativo fica limpo sem perder o
     registro do que já virou compra real.
+  - **Compra combinada (v4.3):** selecione 2+ simulações para somar as parcelas mês a mês,
+    escolha o **mês inicial** (ou deixe em “Automático”, que respeita o mês de cada
+    simulação), ajuste as parcelas por produto e insira como **simulação** ou
+    **lançamento real**. O seletor de mês inicial fica no topo do painel.
 
 - **🧮 Calculadora de Inteligência Financeira:**
   - Simulações comparativas: À Vista com Desconto vs. Parcelado Sem Juros.
@@ -164,7 +168,7 @@ Modernização de front-end e back-end alinhada ao que já foi validado no **Mat
 ├── icon-192.png            # Ícone PWA (192x192)
 ├── icon-512.png            # Ícone PWA (512x512)
 ├── apple-touch-icon.png    # Ícone para iOS
-├── tests/                  # Suíte Node (104 testes): cálculos, API v2, sync, conexão
+├── tests/                  # Suíte Node (114 testes): cálculos, API v2, sync, conexão
 ├── scripts/                # Geração de ícones PWA
 └── plans/                  # Planos e auditorias técnicas
 ```

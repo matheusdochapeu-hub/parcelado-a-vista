@@ -24,7 +24,7 @@ python -m http.server 8000   # abrir http://localhost:8000
 ## Testes
 
 ```powershell
-node --test tests/*.test.js   # 104 testes (a pasta chama "tests", no plural)
+node --test tests/*.test.js   # 114 testes (a pasta chama "tests", no plural)
 ```
 
 - `tests/backend-api.test.js` sobe o `apps_script.gs` em `node:vm` com mocks do Apps Script
@@ -48,7 +48,7 @@ node --test tests/*.test.js   # 104 testes (a pasta chama "tests", no plural)
 | Arquivo | Papel |
 |---|---|
 | `index.html` | SPA (faturas, gastos, calculadora, histórico) + design system v4 |
-| `sw.js` | Service Worker (`faturas-pwa-v24`), fluxo de banner de atualização |
+| `sw.js` | Service Worker (`faturas-pwa-v32`), fluxo de banner de atualização |
 | `apps_script.gs` | API v2 do Sheets (leitura única, escrita em lote, cache, revisão, log) |
 | `manifest.json` | Manifesto PWA com atalhos |
 | `tests/` | Suíte de testes (cálculos, itens, modais, histórico, API, sync) |
@@ -93,7 +93,12 @@ node --test tests/*.test.js   # 104 testes (a pasta chama "tests", no plural)
     campos (não pode "desarquivar" sem querer). Arquivadas não entram na compra combinada
     (`getSelectedHistItems` as ignora), mas aparecem em “Arquivadas” com **Restaurar** e
     **Ver fatura**. O arquivamento viaja no `purchHist` sincronizado — não crie lista paralela.
-11. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
+11. **Compra combinada tem mês inicial explícito.** `comboStart` (null = automático) é
+    passado como 4º argumento de `buildComboPlan(items, nMap, firstOpen, startOverride)`;
+    quando definido, **todos** os produtos começam nele (limitado ao primeiro mês aberto).
+    Só aceite mês aberto (`setComboStart` ignora fechado) e zere `comboStart` ao limpar a
+    seleção ou inserir. Não volte a fixar `getFirstOpenMonth()` ignorando o override.
+12. **UX: informação nunca é cortada.** Nada de `text-overflow: ellipsis` em textos
    informativos; alvos de toque ≥ 40 px no celular; conferir 1440, 768, 390 e 360 px sem
    overflow horizontal. Validado com Chrome headless via CDP (`_qa/` fora do repositório).
 
